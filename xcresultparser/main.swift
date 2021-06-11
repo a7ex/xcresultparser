@@ -8,6 +8,8 @@
 import Foundation
 import ArgumentParser
 
+private let marketingVersion = "0.1"
+
 enum ParseError: Error {
     case argumentError
 }
@@ -26,10 +28,17 @@ struct xcresultparser: ParsableCommand {
     @Flag(name: .shortAndLong, help: "Whether to print coverage data.")
     var coverage: Int
     
+    @Flag(name: .shortAndLong, help: "Print version.")
+    var version: Int
+    
     @Argument(help: "The path to the .xcresult file.")
     var xcresultFile: String
     
     mutating func run() throws {
+        guard version != 1 else {
+            printVersion()
+            return
+        }
         if outputFormat == "xml" {
             if coverage == 1 {
                 try outputSonarXML()
@@ -39,6 +48,10 @@ struct xcresultparser: ParsableCommand {
         } else {
             try outputDescription()
         }
+    }
+    
+    private func printVersion() {
+        print("xcresultparser \(marketingVersion)")
     }
     
     private func outputSonarXML() throws {
