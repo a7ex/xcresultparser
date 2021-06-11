@@ -1,0 +1,25 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "swift-argument-parser",
+        "repositoryURL": "https://github.com/apple/swift-argument-parser.git",
+        "state": {
+          "branch": null,
+          "revision": "986d191f94cec88f6350056da59c2e59e83d1229",
+          "version": "0.4.3"
+        }
+      },
+      {
+        "package": "XCResultKit",
+        "repositoryURL": "https://github.com/davidahouse/XCResultKit.git",
+        "state": {
+          "branch": null,
+          "revision": "21b70efcb8ce026c049368de7ac54d52a1e9a543",
+          "version": "0.9.1"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
