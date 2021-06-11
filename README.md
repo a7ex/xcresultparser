@@ -14,4 +14,4 @@ You can also specify the name of the project root. If present paths and urls are
 
 This tool can read test result data and code coverage data from an .xcarchive using the developer tools included in `Xcode 11`. Namely here: xcresulttool and xccov to get json data from .xcresult bundles.
 
-Parsing the JSON is done using the great XCResultKit package.
+Parsing the JSON is done using the great [XCResultKit](https://github.com/davidahouse/XCResultKit) package.
