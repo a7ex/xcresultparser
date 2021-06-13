@@ -31,6 +31,7 @@ and since it can not spawn it to different threads, it takes about 5x the time.
 
 ## How to get it
 - Download the `xcresultparser` binary from the latest [release](https://github.com/a7ex/xcresultparser/releases/latest/xcresultparser.zip)
+- [zwei](https://github.com/a7ex/xcresultparser/releases/download/latest/xcresultparser.zip)
 - Copy `xcresultparser` to your desktop
 - Open a Terminal window and run this command to give the app permission to execute:
 
