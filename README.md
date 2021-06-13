@@ -1,5 +1,6 @@
 # xcresultparser
 
+## Overview
 Parse the binary xcresult bundle from Xcode builds and testruns
 
 Interpret binary .xcresult files and print summary in different formats:
@@ -28,8 +29,68 @@ Until now we used [xccov-to-sonarqube-generic.sh]( https://github.com/SonarSourc
 which does the same job, just in a shell script. It has the same problem
 and since it can not spawn it to different threads, it takes about 5x the time.
 
-## Examples
+## How to get it
+- Download the `xcresultparser` binary from the latest [release](https://github.com/a7ex/xcresultparser/tree/main/release)
+- Copy `xcresultparser` to your desktop
+- Open a Terminal window and run this command to give the app permission to execute:
 
+```
+chmod +x ~/Desktop/xcresultparser
+```
+
+Or build the tool in Xcode yourself:
+
+- Clone the repository / Download the source code
+- Build the project
+- Open a Finder window to the executable file
+
+- Drag `xcresultparser` from the Finder window to your desktop
+
+## How to install it
+Assuming that the `xcresultparser` app is on your desktop…
+
+Open a Terminal window and run this command:
+```
+cp ~/Desktop/xcresultparser /usr/local/bin/
+```
+Verify `xcresultparser` is in your search path by running this in Terminal:
+```
+xcresultparser
+```
+You should see the tool respond like this:
+```
+Error: Missing expected argument '<xcresult-file>'
+
+OVERVIEW: Interpret binary .xcresult files and print summary in different formats: txt, xml, html or colored cli output.
+
+USAGE: xcresultparser [--output-format <output-format>] [--project-root <project-root>] [--coverage ...] [--version ...] [--quiet ...] <xcresult-file>
+
+ARGUMENTS:
+<xcresult-file>         The path to the .xcresult file. 
+
+OPTIONS:
+-o, --output-format <output-format>
+The output format. It can be either 'txt', 'cli', 'html' or 'xml'. In case of 'xml' JUnit format for test results and generic format (Sonarqube) for coverage data
+is used. 
+-p, --project-root <project-root>
+The name of the project root. If present paths and urls are relative to the specified directory. 
+-c, --coverage          Whether to print coverage data. 
+-v, --version           Print version. 
+-q, --quiet             Quiet. Don't print status output. 
+-h, --help              Show help information.
+```
+Now that a copy of `xcresultparser` is in your search path, delete it from your desktop.
+
+You're ready to go! 🎉
+
+## How to use it
+The tool doesn't create any file. It justs outputs its results to standard out. It is up to you to write the output to a file, using redirection.
+For example, if you want to write the text output into a file named `output.txt` on your desktop:
+```
+./xcresultparser -o txt test.xcresult > ~/Desktop/output.txt
+```
+
+## Examples
 ### Colored CLI output
 Print the test results in color to the command line:
 ```
