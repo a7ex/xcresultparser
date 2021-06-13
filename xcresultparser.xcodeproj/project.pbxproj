@@ -35,6 +35,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		FA042FDC26760F6900A729F7 /* cliColor.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = cliColor.png; sourceTree = "<group>"; };
+		FA042FDD267610E900A729F7 /* testResultHTML.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testResultHTML.png; sourceTree = "<group>"; };
 		FA1D13772674D7680076C07F /* HelperFunctions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HelperFunctions.swift; sourceTree = "<group>"; };
 		FAC76A232673E8FA001D7398 /* xcresultparser */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xcresultparser; sourceTree = BUILT_PRODUCTS_DIR; };
 		FAC76A262673E8FA001D7398 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -64,12 +66,22 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		FA042FDB26760F1D00A729F7 /* images */ = {
+			isa = PBXGroup;
+			children = (
+				FA042FDD267610E900A729F7 /* testResultHTML.png */,
+				FA042FDC26760F6900A729F7 /* cliColor.png */,
+			);
+			path = images;
+			sourceTree = "<group>";
+		};
 		FAC76A1A2673E8FA001D7398 = {
 			isa = PBXGroup;
 			children = (
 				FAC76A322673EA18001D7398 /* README.md */,
 				FAC76A312673EA18001D7398 /* LICENSE */,
 				FAC76A252673E8FA001D7398 /* xcresultparser */,
+				FA042FDB26760F1D00A729F7 /* images */,
 				FAC76A242673E8FA001D7398 /* Products */,
 			);
 			sourceTree = "<group>";
