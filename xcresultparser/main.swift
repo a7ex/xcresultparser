@@ -31,6 +31,9 @@ struct xcresultparser: ParsableCommand {
     @Flag(name: .shortAndLong, help: "Print version.")
     var version: Int
     
+    @Flag(name: .shortAndLong, help: "Quiet. Don't print status output.")
+    var quiet: Int
+    
     @Argument(help: "The path to the .xcresult file.")
     var xcresultFile: String
     
@@ -51,21 +54,22 @@ struct xcresultparser: ParsableCommand {
     }
     
     private func printVersion() {
-        print("xcresultparser \(marketingVersion)")
+        writeToStdOutLn("xcresultparser \(marketingVersion)")
     }
     
     private func outputSonarXML() throws {
         guard let converter = CoverageConverter(with: URL(fileURLWithPath: xcresultFile), projectRoot: projectRoot ?? "") else {
             throw ParseError.argumentError
         }
-        print(converter.xmlString)
+        let rslt = try converter.xmlString(quiet: quiet == 1)
+        writeToStdOut(rslt)
     }
     
     private func outputJUnitXML() throws {
         guard let junitXML = JunitXML(with: URL(fileURLWithPath: xcresultFile), projectRoot: projectRoot ?? "") else {
             throw ParseError.argumentError
         }
-        print(junitXML.xmlString)
+        writeToStdOut(junitXML.xmlString)
     }
     
     private func outputDescription() throws {
@@ -74,14 +78,14 @@ struct xcresultparser: ParsableCommand {
                 formatter: outputFormatter) else {
             throw ParseError.argumentError
         }
-        print(resultParser.documentPrefix(title: "XCResults"))
-        print(resultParser.summary)
-        print(resultParser.divider)
-        print(resultParser.testDetails)
+        writeToStdOutLn(resultParser.documentPrefix(title: "XCResults"))
+        writeToStdOutLn(resultParser.summary)
+        writeToStdOutLn(resultParser.divider)
+        writeToStdOutLn(resultParser.testDetails)
         if coverage == 1 {
-            print(resultParser.coverageDetails)
+            writeToStdOutLn(resultParser.coverageDetails)
         }
-        print(resultParser.documentSuffix)
+        writeToStdOutLn(resultParser.documentSuffix)
     }
     
     private var outputFormatter: XCResultFormatting {

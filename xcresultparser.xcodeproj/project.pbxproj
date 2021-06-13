@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		FA1D13782674D7680076C07F /* HelperFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1D13772674D7680076C07F /* HelperFunctions.swift */; };
 		FAC76A272673E8FA001D7398 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC76A262673E8FA001D7398 /* main.swift */; };
 		FAC76A352673EA97001D7398 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = FAC76A342673EA97001D7398 /* ArgumentParser */; };
 		FAC76A382673EAB4001D7398 /* XCResultKit in Frameworks */ = {isa = PBXBuildFile; productRef = FAC76A372673EAB4001D7398 /* XCResultKit */; };
@@ -34,6 +35,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		FA1D13772674D7680076C07F /* HelperFunctions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HelperFunctions.swift; sourceTree = "<group>"; };
 		FAC76A232673E8FA001D7398 /* xcresultparser */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xcresultparser; sourceTree = BUILT_PRODUCTS_DIR; };
 		FAC76A262673E8FA001D7398 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		FAC76A312673EA18001D7398 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
@@ -88,6 +90,7 @@
 				FAC76A3B2673EB0C001D7398 /* OutputFormatting */,
 				FAC76A3D2673EB0C001D7398 /* JunitXML.swift */,
 				FAC76A442673EB0C001D7398 /* CoverageConverter.swift */,
+				FA1D13772674D7680076C07F /* HelperFunctions.swift */,
 			);
 			path = xcresultparser;
 			sourceTree = "<group>";
@@ -211,6 +214,7 @@
 				FAC76A4E2673EB0C001D7398 /* TextResultFormatter.swift in Sources */,
 				FAC76A4C2673EB0C001D7398 /* CLIFormat.swift in Sources */,
 				FAC76A4D2673EB0C001D7398 /* CoverageConverter.swift in Sources */,
+				FA1D13782674D7680076C07F /* HelperFunctions.swift in Sources */,
 				FAC76A272673E8FA001D7398 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
