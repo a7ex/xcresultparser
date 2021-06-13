@@ -89,6 +89,10 @@ For example, if you want to write the text output into a file named `output.txt`
 ```
 ./xcresultparser -o txt test.xcresult > ~/Desktop/output.txt
 ```
+However, if all you need is to output the contents of the xcresult bundle to the terminal:
+```
+./xcresultparser -o cli test.xcresult
+```
 
 ## Examples
 ### Colored CLI output
