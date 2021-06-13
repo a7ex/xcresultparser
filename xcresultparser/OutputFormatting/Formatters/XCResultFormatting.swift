@@ -18,7 +18,7 @@ protocol XCResultFormatting {
     var tableCloseTag: String { get }
     
     func resultSummaryLine(_ item: String, failed: Bool) -> String
-    func resultSummaryLineWarning(_ item: String, failed: Bool) -> String
+    func resultSummaryLineWarning(_ item: String, hasWarnings: Bool) -> String
     func testConfiguration(_ item: String) -> String
     func testTarget(_ item: String, failed: Bool) -> String
     func testClass(_ item: String, failed: Bool) -> String

@@ -35,8 +35,8 @@ struct CLIResultFormatter: XCResultFormatting {
     func resultSummaryLine(_ item: String, failed: Bool) -> String {
         return color(for: failed) + indentWidth + item + style.reset
     }
-    func resultSummaryLineWarning(_ item: String, failed: Bool) -> String {
-        return warningColor(for: failed) + indentWidth + item + style.reset
+    func resultSummaryLineWarning(_ item: String, hasWarnings: Bool) -> String {
+        return warningColor(for: hasWarnings) + indentWidth + item + style.reset
     }
     func testConfiguration(_ item: String) -> String {
         return style.bold + item + style.reset

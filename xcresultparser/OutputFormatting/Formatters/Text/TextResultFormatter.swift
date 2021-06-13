@@ -34,7 +34,7 @@ struct TextResultFormatter: XCResultFormatting {
     func resultSummaryLine(_ item: String, failed: Bool) -> String {
         return indentWidth + item
     }
-    func resultSummaryLineWarning(_ item: String, failed: Bool) -> String {
+    func resultSummaryLineWarning(_ item: String, hasWarnings: Bool) -> String {
         return indentWidth + item
     }
     func testConfiguration(_ item: String) -> String {

@@ -13,26 +13,7 @@ struct HTMLResultFormatter: XCResultFormatting {
         return htmlDocStart(with: title)
     }
     var documentSuffix: String {
-        return
-            """
-<script>
-var acc = document.getElementsByClassName("accordion");
-var i;
-
-for (i = 0; i < acc.length; i++) {
-  acc[i].addEventListener("click", function() {
-    this.classList.toggle("active");
-    var panel = this.nextElementSibling;
-    if (panel.style.maxHeight) {
-      panel.style.maxHeight = null;
-    } else {
-      panel.style.maxHeight = panel.scrollHeight + "px";
-    }
-  });
-}
-</script>
-</body>\n</html>
-"""
+        return htmlDocEnd
     }
     var accordionOpenTag: String {
         return "<div class=\"panel\">"
@@ -51,45 +32,78 @@ for (i = 0; i < acc.length; i++) {
     }
     func resultSummaryLine(_ item: String, failed: Bool) -> String {
         let cssClass = failed ? "resultSummaryLineFailed": "resultSummaryLineSuccess"
-        return "<p class=\"\(cssClass)\">" + item + "</p>"
+        return htmlParagraph(content: item, cssClass: cssClass)
     }
-    func resultSummaryLineWarning(_ item: String, failed: Bool) -> String {
-        let cssClass = failed ? "resultSummaryLineWarning": "resultSummaryLineSuccess"
-        return "<p class=\"\(cssClass)\">" + item + "</p>"
+    func resultSummaryLineWarning(_ item: String, hasWarnings: Bool) -> String {
+        let cssClass = hasWarnings ? "resultSummaryLineWarning": "resultSummaryLineSuccess"
+        return htmlParagraph(content: item, cssClass: cssClass)
     }
     func testConfiguration(_ item: String) -> String {
-        return "<h2>" + item + "</h2>"
+        return htmlNode("h2", content: item)
     }
     func testTarget(_ item: String, failed: Bool) -> String {
         let cssClass = failed ? "testTargetFailed": "testTargetSuccess"
-        return "<p class=\"\(cssClass)\">" + item + "</p>"
+        return htmlParagraph(content: item, cssClass: cssClass)
     }
     func testClass(_ item: String, failed: Bool) -> String {
         let cssClass = failed ? "testClassFailed": "testClassSuccess"
-        return "<button class=\"accordion\"><span class=\"\(cssClass)\">\(item)</span></button>"
+        let buttonContent = htmlSpan(content: item, cssClass: cssClass)
+        return htmlButton(content: buttonContent, cssClass: "accordion")
     }
     func singleTestItem(_ item: String, failed: Bool) -> String {
         let cssClass = failed ? "singleTestItemFailed": "singleTestItemSuccess"
-        return "<p class=\"\(cssClass)\">" + item + "</p>"
+        return htmlParagraph(content: item, cssClass: cssClass)
     }
     func failedTestItem(_ item: String, message: String) -> String {
-        let button = "<button class=\"accordion\"><span class=\"singleTestItemFailedWithMessage\">\(item)</span></button>"
-        let msg = "<p class=\"singleTestItemFailedMessage\">\(message)</p>"
-        return button + "\n" +
-        accordionOpenTag + msg + accordionCloseTag
+        let buttonContent = htmlSpan(content: item, cssClass: "singleTestItemFailedWithMessage")
+        let button = htmlButton(content: buttonContent, cssClass: "accordion")
+        let msg = htmlParagraph(content: message, cssClass: "singleTestItemFailedMessage")
+        return button + "\n" + htmlDiv(content: msg, cssClass: "panel")
     }
     func codeCoverageTargetSummary(_ item: String) -> String {
-        return "<button class=\"accordion\">\(item)</button>"
+        return htmlButton(content: item, cssClass: "accordion")
     }
     func codeCoverageFileSummary(_ item: String) -> String {
-        return "<button class=\"accordion\">\(item)</button>"
+        return htmlButton(content: item, cssClass: "accordion")
     }
     func codeCoverageFunctionSummary(_ items: [String]) -> String {
-        return "<tr><td>" + items.joined(separator: "</td><td>") + "</td></tr>"
-//        return "<p class=\"codeCoverageFunctionSummary\">" + item + "</p>"
+        let tr = XMLElement(name: "tr")
+        items.forEach { item in
+            tr.addChild(htmlElement("td", content: item))
+        }
+        return tr.xmlString(options: .documentTidyHTML)
     }
     
     // MARK: - Private
+    
+    private func htmlDiv(content: String, cssClass: String? = nil) -> String {
+        return htmlNode("div", content: content, cssClass: cssClass)
+    }
+    
+    private func htmlParagraph(content: String, cssClass: String? = nil) -> String {
+        return htmlNode("p", content: content, cssClass: cssClass)
+    }
+    
+    private func htmlSpan(content: String, cssClass: String? = nil) -> String {
+        return htmlNode("span", content: content, cssClass: cssClass)
+    }
+    
+    private func htmlButton(content: String, cssClass: String? = nil) -> String {
+        return htmlNode("button", content: content, cssClass: cssClass)
+    }
+    
+    private func htmlNode(_ nodeName: String, content: String, cssClass: String? = nil) -> String {
+        return htmlElement(nodeName, content: content, cssClass: cssClass)
+            .xmlString(options: .documentTidyHTML)
+    }
+    
+    private func htmlElement(_ nodeName: String, content: String, cssClass: String? = nil) -> XMLElement {
+        let node = XMLElement(name: nodeName, stringValue: content)
+        if let cssClass = cssClass {
+            node.addAttribute(name: "class", stringValue: cssClass)
+        }
+        return node
+    }
     
     private func htmlDocStart(with title: String) -> String {
         """
@@ -182,5 +196,29 @@ for (i = 0; i < acc.length; i++) {
         </head>
         <body>
         """
+    }
+    
+    var htmlDocEnd: String {
+        return
+            """
+        <script>
+            var acc = document.getElementsByClassName("accordion");
+            var i;
+        
+            for (i = 0; i < acc.length; i++) {
+                acc[i].addEventListener("click", function() {
+                    this.classList.toggle("active");
+                    var panel = this.nextElementSibling;
+                    if (panel.style.maxHeight) {
+                        panel.style.maxHeight = null;
+                    } else {
+                        panel.style.maxHeight = panel.scrollHeight + "px";
+                    }
+                });
+            }
+        </script>
+    </body>
+    </html>
+    """
     }
 }

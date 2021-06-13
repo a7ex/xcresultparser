@@ -8,10 +8,10 @@
 import Foundation
 
 enum OutputFormat: String {
-    case txt, cli, html
+    case txt, cli, html, xml
     
     init(string: String?) {
-        if let input = string,
+        if let input = string?.lowercased(),
            let fmt = OutputFormat(rawValue: input) {
             self = fmt
         } else {

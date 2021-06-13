@@ -94,10 +94,10 @@ struct XCResultFormatter {
             outputFormatter.resultSummaryLine("Number of errors = \(errorCount)", failed: errorCount != 0)
         )
         lines.append(
-            outputFormatter.resultSummaryLineWarning("Number of warnings = \(warningCount)", failed: warningCount != 0)
+            outputFormatter.resultSummaryLineWarning("Number of warnings = \(warningCount)", hasWarnings: warningCount != 0)
         )
         lines.append(
-            outputFormatter.resultSummaryLineWarning("Number of analyzer warnings = \(analyzerWarningCount)", failed: analyzerWarningCount != 0)
+            outputFormatter.resultSummaryLineWarning("Number of analyzer warnings = \(analyzerWarningCount)", hasWarnings: analyzerWarningCount != 0)
         )
         lines.append(
             outputFormatter.resultSummaryLine("Number of tests = \(testsCount)", failed: false)
@@ -113,9 +113,7 @@ struct XCResultFormatter {
     
     private func createTestDetailsString() -> [String] {
         var lines = [String]()
-        let testAction = invocationRecord.actions.first { action in
-            return action.schemeCommandName == "Test"
-        }
+        let testAction = invocationRecord.actions.first { $0.schemeCommandName == "Test" }
         guard let testsId = testAction?.actionResult.testsRef?.id,
               let testPlanRun = resultFile.getTestPlanRunSummaries(id: testsId) else {
             return lines
@@ -181,20 +179,14 @@ struct XCResultFormatter {
     }
     
     private func actionTestFileStatusString(for testData: ActionTestMetadata, failureSummaries: [TestFailureIssueSummary]) -> String {
-        
         let duration = numFormatter.unwrappedString(for: testData.duration)
-        let testStr = "\(testData.name) (\(duration))"
-        let summary = failureSummaries.first { summary in
-            return summary.testCaseName == testData.identifier.replacingOccurrences(of: "/", with: ".")
-        }
-        if testData.isFailed {
-            if let summary = summary {
-                return actionTestFailureStatusString(with: "✖︎ " + testStr, and: summary)
-            } else {
-                return outputFormatter.singleTestItem("✖︎ " + testStr, failed: true)
-            }
+        let icon = testData.isFailed ? "✖︎": "✓"
+        let testTitle = "\(icon) \(testData.name) (\(duration))"
+        let testCaseName = testData.identifier.replacingOccurrences(of: "/", with: ".")
+        if let summary = failureSummaries.first(where: { $0.testCaseName == testCaseName }) {
+            return actionTestFailureStatusString(with: testTitle, and: summary)
         } else {
-            return outputFormatter.singleTestItem("✓ " + testStr, failed: false)
+            return outputFormatter.singleTestItem(testTitle, failed: testData.isFailed)
         }
     }
     

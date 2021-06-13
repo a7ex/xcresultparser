@@ -10,10 +10,6 @@ import ArgumentParser
 
 private let marketingVersion = "0.1"
 
-enum ParseError: Error {
-    case argumentError
-}
-
 struct xcresultparser: ParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Interpret binary .xcresult files and print summary in different formats: txt, xml, html or colored cli output."
@@ -42,7 +38,7 @@ struct xcresultparser: ParsableCommand {
             printVersion()
             return
         }
-        if outputFormat == "xml" {
+        if format == .xml {
             if coverage == 1 {
                 try outputSonarXML()
             } else {
@@ -88,17 +84,27 @@ struct xcresultparser: ParsableCommand {
         writeToStdOutLn(resultParser.documentSuffix)
     }
     
+    private var format: OutputFormat {
+        return OutputFormat(string: outputFormat)
+    }
+    
     private var outputFormatter: XCResultFormatting {
-        let fmt = OutputFormat(string: outputFormat)
-        switch fmt {
+        switch format {
         case .cli:
             return CLIResultFormatter()
         case .html:
             return HTMLResultFormatter()
         case .txt:
             return TextResultFormatter()
+        case .xml:
+            // outputFormatter is not used in case of .xml
+            return TextResultFormatter()
         }
     }
+}
+
+enum ParseError: Error {
+    case argumentError
 }
 
 xcresultparser.main()
