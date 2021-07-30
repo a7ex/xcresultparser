@@ -12,7 +12,7 @@ private let marketingVersion = "0.2"
 
 struct xcresultparser: ParsableCommand {
     static let configuration = CommandConfiguration(
-        abstract: "Interpret binary .xcresult files and print summary in different formats: txt, xml, html or colored cli output."
+        abstract: "xcresultparser \(marketingVersion)\nInterpret binary .xcresult files and print summary in different formats: txt, xml, html or colored cli output."
     )
     
     @Option(name: .shortAndLong, help: "The output format. It can be either 'txt', 'cli', 'html' or 'xml'. In case of 'xml' JUnit format for test results and generic format (Sonarqube) for coverage data is used.")
