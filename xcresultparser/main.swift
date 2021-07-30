@@ -62,7 +62,11 @@ struct xcresultparser: ParsableCommand {
     }
     
     private func outputJUnitXML() throws {
-        guard let junitXML = JunitXML(with: URL(fileURLWithPath: xcresultFile), projectRoot: projectRoot ?? "") else {
+        guard let junitXML = JunitXML(
+            with: URL(fileURLWithPath: xcresultFile),
+            projectRoot: projectRoot ?? "",
+            format: .sonar
+        ) else {
             throw ParseError.argumentError
         }
         writeToStdOut(junitXML.xmlString)

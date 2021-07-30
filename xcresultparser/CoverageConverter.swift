@@ -89,9 +89,19 @@ struct CoverageConverter {
     }
     
     private func relativePath(for path: String, relativeTo projectRoot: String) -> String {
-        return projectRoot.isEmpty ? path:
-            path.components(separatedBy: "/\(projectRoot)/").last ?? path
+        guard !projectRoot.isEmpty else {
+            return path
+        }
+        let parts = path.components(separatedBy: "/\(projectRoot)")
+        guard parts.count > 1 else {
+            return path
+        }
+        let relative = parts[parts.count - 1]
+        return relative.starts(with: "/") ?
+            String(relative.dropFirst()):
+            relative
     }
+    
     
     private func coverageFileList() throws -> [String] {
         var arguments = ["xccov", "view"]

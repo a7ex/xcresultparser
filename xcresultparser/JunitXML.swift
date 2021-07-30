@@ -8,6 +8,23 @@
 import Foundation
 import XCResultKit
 
+enum TestReportFormat {
+    case junit, sonar
+}
+
+struct NodeNames {
+    let testsuitesName: String
+    let testcaseName: String
+    let testcaseDurationName: String
+    let testcaseClassNameName: String
+}
+fileprivate var nodeNames = NodeNames(
+    testsuitesName: "testsuites",
+    testcaseName: "testcase",
+    testcaseDurationName: "time",
+    testcaseClassNameName: "classname"
+)
+
 struct JunitXML {
     
     struct TestrunProperty {
@@ -26,46 +43,66 @@ struct JunitXML {
     private let resultFile: XCResultFile
     private let projectRoot: String
     private let invocationRecord: ActionsInvocationRecord
+    private let testReportFormat: TestReportFormat
+    
     
     init?(with url: URL,
-          projectRoot: String = "") {
+          projectRoot: String = "",
+          format: TestReportFormat = .junit) {
         resultFile = XCResultFile(url: url)
         guard let record = resultFile.getInvocationRecord() else {
             return nil
         }
         self.projectRoot = projectRoot
         invocationRecord = record
+        testReportFormat = format
+        if testReportFormat == .sonar {
+            nodeNames = NodeNames(
+                testsuitesName: "testExecutions",
+                testcaseName: "testCase",
+                testcaseDurationName: "duration",
+                testcaseClassNameName: ""
+            )
+        }
+    }
+    
+    func createRootElement() -> XMLElement {
+        let element = XMLElement(name: nodeNames.testsuitesName)
+        element.addAttribute(name: "version", stringValue: "1")
+        return element
     }
     
     var xmlString: String {
-        let testsuites = XMLElement(name: "testsuites")
+        let testsuites = createRootElement()
         let xml = XMLDocument(rootElement: testsuites)
         xml.characterEncoding = "UTF-8"
         
-        let metrics = invocationRecord.metrics
-        let testsCount = metrics.testsCount ?? 0
-        testsuites.addAttribute(name: "tests", stringValue: String(testsCount))
-        let testsFailedCount = metrics.testsFailedCount ?? 0
-        testsuites.addAttribute(name: "failures", stringValue: String(testsFailedCount))
-        
-        let testAction = invocationRecord.actions.first { action in
-            return action.schemeCommandName == "Test"
+        if testReportFormat != .sonar {
+            let metrics = invocationRecord.metrics
+            let testsCount = metrics.testsCount ?? 0
+            testsuites.addAttribute(name: "tests", stringValue: String(testsCount))
+            let testsFailedCount = metrics.testsFailedCount ?? 0
+            testsuites.addAttribute(name: "failures", stringValue: String(testsFailedCount))
         }
+        
+        let testAction = invocationRecord.actions.first { $0.schemeCommandName == "Test" }
         guard let testsId = testAction?.actionResult.testsRef?.id,
               let testPlanRun = resultFile.getTestPlanRunSummaries(id: testsId) else {
             return xml.xmlString(options: [.nodePrettyPrint, .nodeCompactEmptyElement])
         }
         
-        if let date = testAction?.startedTime {
-            let dateFormatter = ISO8601DateFormatter()
-            testsuites.addAttribute(name: "timestamp", stringValue: dateFormatter.string(from: date))
-            if let ended = testAction?.endedTime {
-                let duration = ended.timeIntervalSince(date)
-                testsuites.addAttribute(name: "time", stringValue: String(duration))
+        if testReportFormat != .sonar {
+            if let date = testAction?.startedTime {
+                let dateFormatter = ISO8601DateFormatter()
+                testsuites.addAttribute(name: "timestamp", stringValue: dateFormatter.string(from: date))
+                if let ended = testAction?.endedTime {
+                    let duration = ended.timeIntervalSince(date)
+                    testsuites.addAttribute(name: "time", stringValue: String(duration))
+                }
             }
-        }
-        if let runDestination = testAction?.runDestination {
-            testsuites.addChild(runDestinationXML(runDestination))
+            if let runDestination = testAction?.runDestination {
+                testsuites.addChild(runDestinationXML(runDestination))
+            }
         }
         let testPlanRunSummaries = testPlanRun.summaries
         let failureSummaries = invocationRecord.issues.testFailureSummaries
@@ -97,24 +134,28 @@ struct JunitXML {
         return properties
     }
     
-    private func createTestSuite(_ group: ActionTestSummaryGroup, failureSummaries: [TestFailureIssueSummary]) -> [XMLElement] {
+    private func createTestSuite(
+        _ group: ActionTestSummaryGroup,
+        failureSummaries: [TestFailureIssueSummary],
+        testDirectory: String = ""
+    ) -> [XMLElement] {
         guard group.identifier.hasSuffix(".xctest") || group.subtestGroups.isEmpty else {
             var combined = [XMLElement]()
             for subGroup in group.subtestGroups {
-                combined = combined + createTestSuite(subGroup, failureSummaries: failureSummaries)
+                combined = combined + createTestSuite(subGroup, failureSummaries: failureSummaries, testDirectory: subGroup.identifier)
             }
             return combined
         }
         if group.subtestGroups.isEmpty {
             return [
-                createTestSuiteFinally(group, tests: group.subtests, failureSummaries: failureSummaries)
+                createTestSuiteFinally(group, tests: group.subtests, failureSummaries: failureSummaries, testDirectory: testDirectory)
             ]
         } else {
             var combined = [XMLElement]()
             for subGroup in group.subtestGroups {
                 combined = combined + createTestCases(for: subGroup.name, tests: subGroup.subtests, failureSummaries: failureSummaries)
             }
-            let node = group.testSuiteXML
+            let node = testReportFormat == .sonar ? group.sonarFileXML: group.testSuiteXML
             for element in combined {
                 node.addChild(element)
             }
@@ -122,8 +163,13 @@ struct JunitXML {
         }
     }
     
-    private func createTestSuiteFinally(_ group: ActionTestSummaryGroup, tests: [ActionTestMetadata], failureSummaries: [TestFailureIssueSummary]) -> XMLElement {
-        let node = group.testSuiteXML
+    private func createTestSuiteFinally(
+        _ group: ActionTestSummaryGroup,
+        tests: [ActionTestMetadata],
+        failureSummaries: [TestFailureIssueSummary],
+        testDirectory: String = ""
+    ) -> XMLElement {
+        let node = testReportFormat == .sonar ? group.sonarFileXML: group.testSuiteXML
         for thisTest in tests {
             let testcase = thisTest.xmlNode(classname: group.name)
             if thisTest.isFailed {
@@ -174,12 +220,16 @@ extension XMLElement {
 }
 
 private extension ActionTestMetadata {
-    func xmlNode(classname: String) -> XMLElement {
-        let testcase = XMLElement(name: "testcase")
-        testcase.addAttribute(name: "classname", stringValue: classname)
+    func xmlNode(classname: String, format: TestReportFormat = .junit) -> XMLElement {
+        let testcase = XMLElement(name: nodeNames.testcaseName)
         testcase.addAttribute(name: "name", stringValue: name)
-        if let time = duration {
-            testcase.addAttribute(name: "time", stringValue: String(time))
+        if let time = duration,
+           !nodeNames.testcaseDurationName.isEmpty {
+            let correctedTime = format == .sonar ? time * 1000: time
+            testcase.addAttribute(name: nodeNames.testcaseDurationName, stringValue: String(correctedTime))
+            if !nodeNames.testcaseClassNameName.isEmpty {
+                testcase.addAttribute(name: nodeNames.testcaseClassNameName, stringValue: classname)
+            }
         }
         return testcase
     }
@@ -198,6 +248,12 @@ private extension ActionTestSummaryGroup {
         testsuite.addAttribute(name: "tests", stringValue: String(stats.tests))
         testsuite.addAttribute(name: "failures", stringValue: String(stats.failures))
         testsuite.addAttribute(name: "time", stringValue: String(duration))
+        return testsuite
+    }
+    
+    var sonarFileXML: XMLElement {
+        let testsuite = XMLElement(name: "file")
+        testsuite.addAttribute(name: "path", stringValue: identifier)
         return testsuite
     }
     
@@ -226,9 +282,7 @@ private extension TestFailureIssueSummary {
         var value = message
         if let loc = documentLocationInCreatingWorkspace?.url {
             if let url = URL(string: loc) {
-                let relative: String = projectRoot.isEmpty ?
-                    url.path:
-                    url.path.components(separatedBy: "/\(projectRoot)/").last ?? url.path
+                let relative = relativePart(of: url, relativeTo: projectRoot)
                 if let comps = URLComponents(url: url, resolvingAgainstBaseURL: false),
                    let line = comps.fragment?.components(separatedBy: "&").first(where: { $0.starts(with: "StartingLineNumber") }),
                    let num = line.components(separatedBy: "=").last {
@@ -244,6 +298,20 @@ private extension TestFailureIssueSummary {
             failure.addAttribute(name: "name", stringValue: value)
         }
         return failure
+    }
+    
+    private func relativePart(of url: URL, relativeTo projectRoot: String) -> String {
+        guard !projectRoot.isEmpty else {
+            return url.path
+        }
+        let parts = url.path.components(separatedBy: "/\(projectRoot)")
+        guard parts.count > 1 else {
+            return url.path
+        }
+        let relative = parts[parts.count - 1]
+        return relative.starts(with: "/") ?
+            String(relative.dropFirst()):
+            relative
     }
 }
 

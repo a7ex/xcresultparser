@@ -56,11 +56,19 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "/Users/alex/Downloads/Xcresult-11.xcresult"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-q"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-p paketapp_ios"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-p DHL-Ciam-iOS"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -69,7 +77,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-c"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o html"
