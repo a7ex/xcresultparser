@@ -30,7 +30,7 @@ which does the same job, just in a shell script. It has the same problem
 and since it can not spawn it to different threads, it takes about 5x the time.
 
 ## How to get it
-- Download `xcresultparser.zip` binary from the latest [release](https://github.com/a7ex/xcresultparser/releases/latest/xcresultparser.zip)
+- Download `xcresultparser.zip` binary from the latest [release](https://github.com/a7ex/xcresultparser/releases/latest)
 - Copy `xcresultparser` to your desktop
 - Open a Terminal window and run this command to give the app permission to execute:
 
