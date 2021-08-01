@@ -14,10 +14,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "FAC76A222673E8FA001D7398"
+               BlueprintIdentifier = "xcresultparser"
                BuildableName = "xcresultparser"
                BlueprintName = "xcresultparser"
-               ReferencedContainer = "container:xcresultparser.xcodeproj">
+               ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -44,10 +44,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "FAC76A222673E8FA001D7398"
+            BlueprintIdentifier = "xcresultparser"
             BuildableName = "xcresultparser"
             BlueprintName = "xcresultparser"
-            ReferencedContainer = "container:xcresultparser.xcodeproj">
+            ReferencedContainer = "container:">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
@@ -95,10 +95,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "FAC76A222673E8FA001D7398"
+            BlueprintIdentifier = "xcresultparser"
             BuildableName = "xcresultparser"
             BlueprintName = "xcresultparser"
-            ReferencedContainer = "container:xcresultparser.xcodeproj">
+            ReferencedContainer = "container:">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
