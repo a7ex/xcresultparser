@@ -32,18 +32,18 @@ struct HTMLResultFormatter: XCResultFormatting {
     }
     func resultSummaryLine(_ item: String, failed: Bool) -> String {
         let cssClass = failed ? "resultSummaryLineFailed": "resultSummaryLineSuccess"
-        return htmlParagraph(content: item, cssClass: cssClass)
+        return htmlParagraphXML(content: item, cssClass: cssClass)
     }
     func resultSummaryLineWarning(_ item: String, hasWarnings: Bool) -> String {
         let cssClass = hasWarnings ? "resultSummaryLineWarning": "resultSummaryLineSuccess"
-        return htmlParagraph(content: item, cssClass: cssClass)
+        return htmlParagraphXML(content: item, cssClass: cssClass)
     }
     func testConfiguration(_ item: String) -> String {
         return htmlNode("h2", content: item)
     }
     func testTarget(_ item: String, failed: Bool) -> String {
         let cssClass = failed ? "testTargetFailed": "testTargetSuccess"
-        return htmlParagraph(content: item, cssClass: cssClass)
+        return htmlParagraphXML(content: item, cssClass: cssClass)
     }
     func testClass(_ item: String, failed: Bool) -> String {
         let cssClass = failed ? "testClassFailed": "testClassSuccess"
@@ -52,7 +52,7 @@ struct HTMLResultFormatter: XCResultFormatting {
     }
     func singleTestItem(_ item: String, failed: Bool) -> String {
         let cssClass = failed ? "singleTestItemFailed": "singleTestItemSuccess"
-        return htmlParagraph(content: item, cssClass: cssClass)
+        return htmlParagraphXML(content: item, cssClass: cssClass)
     }
     func failedTestItem(_ item: String, message: String) -> String {
         let buttonContent = htmlSpan(content: item, cssClass: "singleTestItemFailedWithMessage")
@@ -76,23 +76,36 @@ struct HTMLResultFormatter: XCResultFormatting {
     
     // MARK: - Private
     
-    private func htmlDiv(content: String, cssClass: String? = nil) -> String {
+    private func htmlDiv(content: XMLElement, cssClass: String? = nil) -> String {
         return htmlNode("div", content: content, cssClass: cssClass)
     }
     
-    private func htmlParagraph(content: String, cssClass: String? = nil) -> String {
+    private func htmlParagraphXML(content: String, cssClass: String? = nil) -> String {
         return htmlNode("p", content: content, cssClass: cssClass)
     }
     
-    private func htmlSpan(content: String, cssClass: String? = nil) -> String {
-        return htmlNode("span", content: content, cssClass: cssClass)
+    private func htmlParagraph(content: String, cssClass: String? = nil) -> XMLElement {
+        return htmlElement("p", content: content, cssClass: cssClass)
+    }
+    
+    private func htmlSpan(content: String, cssClass: String? = nil) -> XMLElement {
+        return htmlElement("span", content: content, cssClass: cssClass)
     }
     
     private func htmlButton(content: String, cssClass: String? = nil) -> String {
         return htmlNode("button", content: content, cssClass: cssClass)
     }
     
+    private func htmlButton(content: XMLElement, cssClass: String? = nil) -> String {
+        return htmlNode("button", content: content, cssClass: cssClass)
+    }
+    
     private func htmlNode(_ nodeName: String, content: String, cssClass: String? = nil) -> String {
+        return htmlElement(nodeName, content: content, cssClass: cssClass)
+            .xmlString(options: .documentTidyHTML)
+    }
+    
+    private func htmlNode(_ nodeName: String, content: XMLElement, cssClass: String? = nil) -> String {
         return htmlElement(nodeName, content: content, cssClass: cssClass)
             .xmlString(options: .documentTidyHTML)
     }
@@ -102,6 +115,15 @@ struct HTMLResultFormatter: XCResultFormatting {
         if let cssClass = cssClass {
             node.addAttribute(name: "class", stringValue: cssClass)
         }
+        return node
+    }
+    
+    private func htmlElement(_ nodeName: String, content: XMLElement, cssClass: String? = nil) -> XMLElement {
+        let node = XMLElement(name: nodeName)
+        if let cssClass = cssClass {
+            node.addAttribute(name: "class", stringValue: cssClass)
+        }
+        node.addChild(content)
         return node
     }
     
