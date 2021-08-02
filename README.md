@@ -37,6 +37,8 @@ and since it can not spawn it to different threads, it takes about 5x the time.
 ```
 chmod +x ~/Desktop/xcresultparser
 ```
+**IMPORTANT NOTE:** This binary is not notarized/certified by Apple yet. So you must go to SystemSettings:Security and explicitely allow the app to execute, after the first attempt to launch it in the terminal, in case you want to take the risk. I will try to notarize it asap and get rid of this 'Important note'.
+
 
 Or build the tool yourself:
 
