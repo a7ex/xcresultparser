@@ -18,6 +18,7 @@ struct NodeNames {
     let testcaseDurationName: String
     let testcaseClassNameName: String
 }
+
 fileprivate var nodeNames = NodeNames(
     testsuitesName: "testsuites",
     testcaseName: "testcase",
@@ -139,10 +140,10 @@ struct JunitXML {
         failureSummaries: [TestFailureIssueSummary],
         testDirectory: String = ""
     ) -> [XMLElement] {
-        guard group.identifier.hasSuffix(".xctest") || group.subtestGroups.isEmpty else {
+        guard group.identifierString.hasSuffix(".xctest") || group.subtestGroups.isEmpty else {
             var combined = [XMLElement]()
             for subGroup in group.subtestGroups {
-                combined = combined + createTestSuite(subGroup, failureSummaries: failureSummaries, testDirectory: subGroup.identifier)
+                combined = combined + createTestSuite(subGroup, failureSummaries: failureSummaries, testDirectory: subGroup.identifierString)
             }
             return combined
         }
@@ -153,7 +154,7 @@ struct JunitXML {
         } else {
             var combined = [XMLElement]()
             for subGroup in group.subtestGroups {
-                combined = combined + createTestCases(for: subGroup.name, tests: subGroup.subtests, failureSummaries: failureSummaries)
+                combined = combined + createTestCases(for: subGroup.nameString, tests: subGroup.subtests, failureSummaries: failureSummaries)
             }
             let node = testReportFormat == .sonar ? group.sonarFileXML: group.testSuiteXML
             for element in combined {
@@ -171,7 +172,7 @@ struct JunitXML {
     ) -> XMLElement {
         let node = testReportFormat == .sonar ? group.sonarFileXML: group.testSuiteXML
         for thisTest in tests {
-            let testcase = thisTest.xmlNode(classname: group.name)
+            let testcase = thisTest.xmlNode(classname: group.nameString)
             if thisTest.isFailed {
                 let summary = failureSummaries.first { summary in
                     return summary.testCaseName == thisTest.identifier.replacingOccurrences(of: "/", with: ".")
@@ -241,9 +242,13 @@ private extension ActionTestSummaryGroup {
         let failures: Int
     }
     
+    var identifierString: String {
+        return identifier ?? ""
+    }
+    
     var testSuiteXML: XMLElement {
         let testsuite = XMLElement(name: "testsuite")
-        testsuite.addAttribute(name: "name", stringValue: name)
+        testsuite.addAttribute(name: "name", stringValue: nameString)
         let stats = statistics
         testsuite.addAttribute(name: "tests", stringValue: String(stats.tests))
         testsuite.addAttribute(name: "failures", stringValue: String(stats.failures))
@@ -253,7 +258,7 @@ private extension ActionTestSummaryGroup {
     
     var sonarFileXML: XMLElement {
         let testsuite = XMLElement(name: "file")
-        testsuite.addAttribute(name: "path", stringValue: identifier)
+        testsuite.addAttribute(name: "path", stringValue: identifierString)
         return testsuite
     }
     
@@ -295,7 +300,11 @@ private extension TestFailureIssueSummary {
             }
         }
         if !value.isEmpty {
-            failure.addAttribute(name: "name", stringValue: value)
+//            failure.addAttribute(name: "name", stringValue: value)
+            let textNode = XMLNode(kind: .text)
+            textNode.objectValue = value
+            failure.addChild(textNode)
+            failure.addAttribute(name: "message", stringValue: "short")
         }
         return failure
     }

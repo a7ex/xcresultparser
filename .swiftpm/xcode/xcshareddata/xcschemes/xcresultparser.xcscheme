@@ -69,7 +69,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-p DHL-Ciam-iOS"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o xml"

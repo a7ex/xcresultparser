@@ -16,12 +16,12 @@ let package = Package(
         .package(
             name: "swift-argument-parser",
             url: "https://github.com/apple/swift-argument-parser.git",
-            .exact("0.4.3")
+            .upToNextMajor(from: "0.4.3")
         ),
         .package(
             name: "XCResultKit",
             url: "https://github.com/davidahouse/XCResultKit.git",
-            .exact("0.9.1")
+            .exact("0.9.2")
         ),
     ],
     targets: [

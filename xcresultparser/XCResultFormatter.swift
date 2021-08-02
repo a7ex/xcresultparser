@@ -139,7 +139,7 @@ struct XCResultFormatter {
     
     private func createTestSummaryInfo(_ group: ActionTestSummaryGroup, level: Int, failureSummaries: [TestFailureIssueSummary]) -> [String] {
         var lines = [String]()
-        let header = "\(group.name) (\(numFormatter.unwrappedString(for: group.duration)))"
+        let header = "\(group.nameString) (\(numFormatter.unwrappedString(for: group.duration)))"
         
         switch level {
         case 0:
@@ -286,5 +286,11 @@ private extension ActionTestSummaryGroup {
 extension ActionTestMetadata {
     var isFailed: Bool {
         return testStatus != "Success"
+    }
+}
+
+extension ActionTestSummaryGroup {
+    var nameString: String {
+        return name ?? "Unnamed"
     }
 }
