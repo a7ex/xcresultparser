@@ -38,13 +38,12 @@ and since it can not spawn it to different threads, it takes about 5x the time.
 chmod +x ~/Desktop/xcresultparser
 ```
 
-Or build the tool in Xcode yourself:
+Or build the tool yourself:
 
 - Clone the repository / Download the source code
-- Build the project
-- Open a Finder window to the executable file
-
-- Drag `xcresultparser` from the Finder window to your desktop
+- Run `swift build -c release` to build `xcresultparser` executable
+- Run `open .build/release` to open directory containing the executable file in Finder
+- Drag `xcresultparser` executable from the Finder window to your desktop
 
 ## How to install it
 Assuming that the `xcresultparser` app is on your desktop…
