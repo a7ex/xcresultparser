@@ -73,8 +73,7 @@ The output format. It can be either 'txt', 'cli', 'html' or 'xml'. In case of 'x
 is used. 
 -p, --project-root <project-root>
 The name of the project root. If present paths and urls are relative to the specified directory. 
--c, --coverage          Whether to print coverage data. 
--v, --version           Print version. 
+-c, --coverage          Whether to print coverage data.
 -q, --quiet             Quiet. Don't print status output. 
 -h, --help              Show help information.
 ```

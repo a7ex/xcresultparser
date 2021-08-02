@@ -8,7 +8,7 @@
 import Foundation
 import ArgumentParser
 
-private let marketingVersion = "0.2"
+private let marketingVersion = "1.0"
 
 struct xcresultparser: ParsableCommand {
     static let configuration = CommandConfiguration(
@@ -24,9 +24,6 @@ struct xcresultparser: ParsableCommand {
     @Flag(name: .shortAndLong, help: "Whether to print coverage data.")
     var coverage: Int
     
-    @Flag(name: .shortAndLong, help: "Print version.")
-    var version: Int
-    
     @Flag(name: .shortAndLong, help: "Quiet. Don't print status output.")
     var quiet: Int
     
@@ -34,10 +31,6 @@ struct xcresultparser: ParsableCommand {
     var xcresultFile: String
     
     mutating func run() throws {
-        guard version != 1 else {
-            printVersion()
-            return
-        }
         if format == .xml {
             if coverage == 1 {
                 try outputSonarXML()
@@ -47,10 +40,6 @@ struct xcresultparser: ParsableCommand {
         } else {
             try outputDescription()
         }
-    }
-    
-    private func printVersion() {
-        writeToStdOutLn("xcresultparser \(marketingVersion)")
     }
     
     private func outputSonarXML() throws {
