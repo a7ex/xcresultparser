@@ -16,6 +16,7 @@ struct XCResultFormatter {
     private let invocationRecord: ActionsInvocationRecord
     private let codeCoverage: CodeCoverage?
     private let outputFormatter: XCResultFormatting
+    private let targets: [String]?
     
     private var numFormatter: NumberFormatter = {
         let numFormatter = NumberFormatter()
@@ -32,7 +33,8 @@ struct XCResultFormatter {
     // MARK: - Initializer
     
     init?(with url: URL,
-          formatter: XCResultFormatting
+          formatter: XCResultFormatting,
+          targets: [String]?
     ) {
         resultFile = XCResultFile(url: url)
         guard let record = resultFile.getInvocationRecord() else {
@@ -41,6 +43,7 @@ struct XCResultFormatter {
         invocationRecord = record
         outputFormatter = formatter
         codeCoverage = resultFile.getCodeCoverage()
+        self.targets = targets
         
         //if let logsId = invocationRecord?.actions.last?.actionResult.logRef?.id {
         //    let testLogs = resultFile.getLogs(id: logsId)
@@ -202,8 +205,17 @@ struct XCResultFormatter {
         guard let codeCoverage = codeCoverage else {
             return lines
         }
+        var executableLines: Int = 0
+        var coveredLines: Int = 0
         for target in codeCoverage.targets {
+            // Clean up target.name. Split on '.' because the target.name is appended with .framework or .app
+            let targetName: String = String(target.name.split(separator: ".").first ?? "")
+            if let targets = targets, targets.count > 0, !targets.contains(targetName) {
+                continue
+            }
             let covPercent = percentFormatter.unwrappedString(for: (target.lineCoverage * 100))
+            executableLines += target.executableLines
+            coveredLines += target.coveredLines
             lines.append(
                 outputFormatter.codeCoverageTargetSummary(
                     "\(target.name): \(covPercent)% (\(target.coveredLines)/\(target.executableLines))"
@@ -257,6 +269,12 @@ struct XCResultFormatter {
                 )
             }
         }
+        // Append the total coverage below the header
+        guard executableLines > 0 else { return lines }
+        let fraction = Double(coveredLines) / Double(executableLines)
+        let covPercent: String = percentFormatter.unwrappedString(for: fraction * 100)
+        let line = outputFormatter.codeCoverageTargetSummary("Total coverage: \(covPercent)% (\(coveredLines)/\(executableLines))")
+        lines.insert(line, at: 1)
         return lines
     }
 }
