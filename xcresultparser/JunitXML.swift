@@ -141,25 +141,20 @@ struct JunitXML {
         testDirectory: String = ""
     ) -> [XMLElement] {
         guard group.identifierString.hasSuffix(".xctest") || group.subtestGroups.isEmpty else {
-            var combined = [XMLElement]()
-            for subGroup in group.subtestGroups {
-                combined = combined + createTestSuite(subGroup, failureSummaries: failureSummaries, testDirectory: subGroup.identifierString)
+            return group.subtestGroups.reduce([XMLElement]()) { rslt, subGroup in
+                return rslt + createTestSuite(subGroup, failureSummaries: failureSummaries, testDirectory: subGroup.identifierString)
             }
-            return combined
         }
         if group.subtestGroups.isEmpty {
             return [
                 createTestSuiteFinally(group, tests: group.subtests, failureSummaries: failureSummaries, testDirectory: testDirectory)
             ]
         } else {
-            var combined = [XMLElement]()
-            for subGroup in group.subtestGroups {
-                combined = combined + createTestCases(for: subGroup.nameString, tests: subGroup.subtests, failureSummaries: failureSummaries)
+            let combined = group.subtestGroups.reduce([XMLElement]()) { rslt, subGroup in
+                return rslt + createTestCases(for: subGroup.nameString, tests: subGroup.subtests, failureSummaries: failureSummaries)
             }
             let node = testReportFormat == .sonar ? group.sonarFileXML: group.testSuiteXML
-            for element in combined {
-                node.addChild(element)
-            }
+            combined.forEach { node.addChild($0) }
             return [node]
         }
     }
@@ -193,10 +188,8 @@ struct JunitXML {
         for thisTest in tests {
             let testcase = thisTest.xmlNode(classname: name)
             if thisTest.isFailed {
-                let summary = failureSummaries.first { summary in
-                    return summary.testCaseName == thisTest.identifier.replacingOccurrences(of: "/", with: ".")
-                }
-                if let summary = summary {
+                let identifier = thisTest.identifier.replacingOccurrences(of: "/", with: ".")
+                if let summary = failureSummaries.first(where: { $0.testCaseName == identifier }) {
                     testcase.addChild(summary.failureXML(projectRoot: projectRoot))
                 } else {
                     testcase.addChild(failureWithoutSummary)
