@@ -16,7 +16,7 @@ struct XCResultFormatter {
     private let invocationRecord: ActionsInvocationRecord
     private let codeCoverage: CodeCoverage?
     private let outputFormatter: XCResultFormatting
-    private let targets: [String]?
+    private let coverageTargets: Set<String>
     
     private var numFormatter: NumberFormatter = {
         let numFormatter = NumberFormatter()
@@ -34,7 +34,7 @@ struct XCResultFormatter {
     
     init?(with url: URL,
           formatter: XCResultFormatting,
-          targets: [String]?
+          coverageTargets: [String] = []
     ) {
         resultFile = XCResultFile(url: url)
         guard let record = resultFile.getInvocationRecord() else {
@@ -43,7 +43,7 @@ struct XCResultFormatter {
         invocationRecord = record
         outputFormatter = formatter
         codeCoverage = resultFile.getCodeCoverage()
-        self.targets = targets
+        self.coverageTargets = codeCoverage?.targets(filteredBy: coverageTargets) ?? []
         
         //if let logsId = invocationRecord?.actions.last?.actionResult.logRef?.id {
         //    let testLogs = resultFile.getLogs(id: logsId)
@@ -208,11 +208,7 @@ struct XCResultFormatter {
         var executableLines: Int = 0
         var coveredLines: Int = 0
         for target in codeCoverage.targets {
-            // Clean up target.name. Split on '.' because the target.name is appended with .framework or .app
-            let targetName: String = String(target.name.split(separator: ".").first ?? "")
-            if let targets = targets, targets.count > 0, !targets.contains(targetName) {
-                continue
-            }
+            guard coverageTargets.contains(target.name) else { continue }
             let covPercent = percentFormatter.unwrappedString(for: (target.lineCoverage * 100))
             executableLines += target.executableLines
             coveredLines += target.coveredLines
@@ -276,6 +272,22 @@ struct XCResultFormatter {
         let line = outputFormatter.codeCoverageTargetSummary("Total coverage: \(covPercent)% (\(coveredLines)/\(executableLines))")
         lines.insert(line, at: 1)
         return lines
+    }
+}
+
+private extension CodeCoverage {
+    func targets(filteredBy filter: [String]) -> Set<String> {
+        let targetNames = targets.map { $0.name }
+        guard !filter.isEmpty else {
+            return Set(targetNames)
+        }
+        let filterSet = Set(filter)
+        let filtered = targetNames.filter { thisTarget in
+            // Clean up target.name. Split on '.' because the target.name is appended with .framework or .app
+            guard let stripped = thisTarget.split(separator: ".").first else { return true }
+            return filterSet.contains(String(stripped))
+        }
+        return Set(filtered)
     }
 }
 

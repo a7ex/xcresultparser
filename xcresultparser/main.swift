@@ -21,14 +21,14 @@ struct xcresultparser: ParsableCommand {
     @Option(name: .shortAndLong, help: "The name of the project root. If present paths and urls are relative to the specified directory.")
     var projectRoot: String?
     
-    @Option(name: .shortAndLong, help: "Specify which targets to calculate coverage from")
-    var targets: [String] = []
+    @Option(name: [.customShort("t"), .customLong("coverage-targets")], help: "Specify which targets to calculate coverage from")
+    var coverageTargets: [String] = []
     
     @Flag(name: .shortAndLong, help: "Whether to print coverage data.")
     var coverage: Int
     
     @Flag(name: .shortAndLong, help: "Whether to print test results.")
-    var notestresult: Int
+    var noTestResult: Int
     
     @Flag(name: .shortAndLong, help: "Quiet. Don't print status output.")
     var quiet: Int
@@ -71,16 +71,14 @@ struct xcresultparser: ParsableCommand {
         guard let resultParser = XCResultFormatter(
             with: URL(fileURLWithPath: xcresultFile),
             formatter: outputFormatter,
-            targets: targets
+            coverageTargets: coverageTargets
         ) else {
             throw ParseError.argumentError
         }
         writeToStdOutLn(resultParser.documentPrefix(title: "XCResults"))
-        if notestresult == 0 {
+        if noTestResult == 0 {
             writeToStdOutLn(resultParser.summary)
-        }
-        writeToStdOutLn(resultParser.divider)
-        if notestresult == 0 {
+            writeToStdOutLn(resultParser.divider)
             writeToStdOutLn(resultParser.testDetails)
         }
         if coverage == 1 {
