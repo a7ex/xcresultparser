@@ -170,7 +170,7 @@ struct JunitXML {
             let testcase = thisTest.xmlNode(classname: group.nameString)
             if thisTest.isFailed {
                 let summary = failureSummaries.first { summary in
-                    return summary.testCaseName == thisTest.identifier.replacingOccurrences(of: "/", with: ".")
+                    return summary.testCaseName == self.assembledIdentifier(thisTest.identifier)
                 }
                 if let summary = summary {
                     testcase.addChild(summary.failureXML(projectRoot: projectRoot))
@@ -188,7 +188,7 @@ struct JunitXML {
         for thisTest in tests {
             let testcase = thisTest.xmlNode(classname: name)
             if thisTest.isFailed {
-                let identifier = thisTest.identifier.replacingOccurrences(of: "/", with: ".")
+                let identifier = self.assembledIdentifier(thisTest.identifier);
                 if let summary = failureSummaries.first(where: { $0.testCaseName == identifier }) {
                     testcase.addChild(summary.failureXML(projectRoot: projectRoot))
                 } else {
@@ -198,6 +198,10 @@ struct JunitXML {
             combined.append(testcase)
         }
         return combined
+    }
+
+    private func assembledIdentifier(_ identifier: String) -> String {
+        return "-[" + identifier.replacingOccurrences(of: "/", with: " ") + "]";
     }
     
     private var failureWithoutSummary: XMLElement {
