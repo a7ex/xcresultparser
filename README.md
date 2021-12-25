@@ -30,6 +30,12 @@ which does the same job, just in a shell script. It has the same problem
 and since it can not spawn it to different threads, it takes about 5x the time.
 
 ## How to get it
+### Using homebrew
+```
+brew tap a7ex/homebrew-formulae
+brew install xcresultparser
+```
+### Download binary
 - Download `xcresultparser.zip` binary from the latest [release](https://github.com/a7ex/xcresultparser/releases/latest)
 - Copy `xcresultparser` to your desktop
 - Open a Terminal window and run this command to give the app permission to execute:
@@ -48,6 +54,12 @@ Or build the tool yourself:
 - Drag `xcresultparser` executable from the Finder window to your desktop
 
 ## How to install it
+### Using homebrew
+```
+brew tap a7ex/homebrew-formulae
+brew install xcresultparser
+```
+### Downloaded binary
 Assuming that the `xcresultparser` app is on your desktop…
 
 Open a Terminal window and run this command:
