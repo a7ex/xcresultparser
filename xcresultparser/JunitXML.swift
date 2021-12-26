@@ -89,8 +89,8 @@ struct JunitXML {
         let testAction = invocationRecord.actions.first { $0.schemeCommandName == "Test" }
         guard let testsId = testAction?.actionResult.testsRef?.id,
               let testPlanRun = resultFile.getTestPlanRunSummaries(id: testsId) else {
-            return xml.xmlString(options: [.nodePrettyPrint, .nodeCompactEmptyElement])
-        }
+                  return xml.xmlString(options: [.nodePrettyPrint, .nodeCompactEmptyElement])
+              }
         
         if testReportFormat != .sonar {
             if let date = testAction?.startedTime {
@@ -169,10 +169,7 @@ struct JunitXML {
         for thisTest in tests {
             let testcase = thisTest.xmlNode(classname: group.nameString)
             if thisTest.isFailed {
-                let summary = failureSummaries.first { summary in
-                    return summary.testCaseName == self.assembledIdentifier(thisTest.identifier)
-                }
-                if let summary = summary {
+                if let summary = thisTest.failureSummary(in: failureSummaries) {
                     testcase.addChild(summary.failureXML(projectRoot: projectRoot))
                 } else {
                     testcase.addChild(failureWithoutSummary)
@@ -188,8 +185,7 @@ struct JunitXML {
         for thisTest in tests {
             let testcase = thisTest.xmlNode(classname: name)
             if thisTest.isFailed {
-                let identifier = self.assembledIdentifier(thisTest.identifier);
-                if let summary = failureSummaries.first(where: { $0.testCaseName == identifier }) {
+                if let summary = thisTest.failureSummary(in: failureSummaries) {
                     testcase.addChild(summary.failureXML(projectRoot: projectRoot))
                 } else {
                     testcase.addChild(failureWithoutSummary)
@@ -198,10 +194,6 @@ struct JunitXML {
             combined.append(testcase)
         }
         return combined
-    }
-
-    private func assembledIdentifier(_ identifier: String) -> String {
-        return "-[" + identifier.replacingOccurrences(of: "/", with: " ") + "]";
     }
     
     private var failureWithoutSummary: XMLElement {
@@ -297,7 +289,7 @@ private extension TestFailureIssueSummary {
             }
         }
         if !value.isEmpty {
-//            failure.addAttribute(name: "name", stringValue: value)
+            //            failure.addAttribute(name: "name", stringValue: value)
             let textNode = XMLNode(kind: .text)
             textNode.objectValue = value
             failure.addChild(textNode)
@@ -316,13 +308,22 @@ private extension TestFailureIssueSummary {
         }
         let relative = parts[parts.count - 1]
         return relative.starts(with: "/") ?
-            String(relative.dropFirst()):
-            relative
+        String(relative.dropFirst()):
+        relative
     }
 }
 
 private extension Bool {
     var intValue: Int {
         return self ? 1: 0
+    }
+}
+
+private extension ActionTestMetadata {
+    func failureSummary(in summaries: [TestFailureIssueSummary]) -> TestFailureIssueSummary? {
+        return summaries.first { summary in
+            return summary.testCaseName == identifier.replacingOccurrences(of: "/", with: ".") ||
+            summary.testCaseName == "-[\(identifier.replacingOccurrences(of: "/", with: " "))]"
+        }
     }
 }
