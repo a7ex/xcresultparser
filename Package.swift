@@ -9,8 +9,12 @@ let package = Package(
     products: [
         .executable(
             name: "xcresultparser",
-            targets: ["xcresultparser"]
+            targets: ["CommandlineTool"]
         ),
+        .library(
+            name: "Xcresultparser",
+            targets: ["Xcresultparser"]
+        )
     ],
     dependencies: [
         .package(
@@ -21,12 +25,17 @@ let package = Package(
         .package(
             name: "XCResultKit",
             url: "https://github.com/davidahouse/XCResultKit.git",
-            .exact("0.9.2")
+            .upToNextMajor(from: "0.9.2")
         ),
     ],
     targets: [
         .executableTarget(
-            name: "xcresultparser",
+            name: "CommandlineTool",
+            dependencies: ["Xcresultparser"],
+            path: "CommandlineTool"
+        ),
+        .target(
+            name: "Xcresultparser",
             dependencies: [
                 .product(
                     name: "ArgumentParser",
@@ -37,7 +46,14 @@ let package = Package(
                     package: "XCResultKit"
                 ),
             ],
-            path: "xcresultparser"
+            path: "Sources"
         ),
+        .testTarget(
+            name: "XcresultparserTests",
+            dependencies: ["Xcresultparser"],
+            resources: [
+                .copy("TestAssets/test.xcresult"),
+            ]
+        )
     ]
 )
