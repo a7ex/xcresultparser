@@ -76,20 +76,23 @@ Error: Missing expected argument '<xcresult-file>'
 
 OVERVIEW: Interpret binary .xcresult files and print summary in different formats: txt, xml, html or colored cli output.
 
-USAGE: xcresultparser [--output-format <output-format>] [--project-root <project-root>] [--coverage ...] [--version ...] [--quiet ...] <xcresult-file>
+USAGE: xcresultparser [--output-format <output-format>] [--project-root <project-root>] [--coverage-targets <coverage-targets> ...] [--coverage ...] [--no-test-result ...] [--quiet ...] <xcresult-file>
 
 ARGUMENTS:
-<xcresult-file>         The path to the .xcresult file. 
+  <xcresult-file>         The path to the .xcresult file.
 
 OPTIONS:
--o, --output-format <output-format>
-The output format. It can be either 'txt', 'cli', 'html' or 'xml'. In case of 'xml' JUnit format for test results and generic format (Sonarqube) for coverage data
-is used. 
--p, --project-root <project-root>
-The name of the project root. If present paths and urls are relative to the specified directory. 
--c, --coverage          Whether to print coverage data.
--q, --quiet             Quiet. Don't print status output. 
--h, --help              Show help information.
+  -o, --output-format <output-format>
+                          The output format. It can be either 'txt', 'cli', 'html' or 'xml'. In case of 'xml' JUnit format for test results and generic format
+                          (Sonarqube) for coverage data is used.
+  -p, --project-root <project-root>
+                          The name of the project root. If present paths and urls are relative to the specified directory.
+  -t, --coverage-targets <coverage-targets>
+                          Specify which targets to calculate coverage from
+  -c, --coverage          Whether to print coverage data.
+  -n, --no-test-result    Whether to print test results.
+  -q, --quiet             Quiet. Don't print status output.
+  -h, --help              Show help information.
 ```
 Now that a copy of `xcresultparser` is in your search path, delete it from your desktop.
 
