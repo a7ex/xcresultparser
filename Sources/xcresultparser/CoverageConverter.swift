@@ -104,7 +104,8 @@ public struct CoverageConverter {
         guard !projectRoot.isEmpty else {
             return path
         }
-        let parts = path.components(separatedBy: "/\(projectRoot)")
+        let projectRootTrimmed = projectRoot.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        let parts = path.components(separatedBy: "/\(projectRootTrimmed)")
         guard parts.count > 1 else {
             return path
         }
