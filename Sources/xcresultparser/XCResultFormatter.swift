@@ -275,6 +275,24 @@ public struct XCResultFormatter {
     }
 }
 
+extension ActionTestMetadata {
+    var isFailed: Bool {
+        return testStatus != "Success"
+    }
+}
+
+extension ActionTestSummaryGroup {
+    var nameString: String {
+        return name ?? "Unnamed"
+    }
+}
+
+extension NumberFormatter {
+    func unwrappedString(for input: Double?) -> String {
+        return string(for: input) ?? ""
+    }
+}
+
 private extension CodeCoverage {
     func targets(filteredBy filter: [String]) -> Set<String> {
         let targetNames = targets.map { $0.name }
@@ -291,12 +309,6 @@ private extension CodeCoverage {
     }
 }
 
-private extension NumberFormatter {
-    func unwrappedString(for input: Double?) -> String {
-        return string(for: input) ?? ""
-    }
-}
-
 private extension ActionTestSummaryGroup {
     var hasFailedTests: Bool {
         for test in subtests {
@@ -310,17 +322,5 @@ private extension ActionTestSummaryGroup {
             }
         }
         return false
-    }
-}
-
-extension ActionTestMetadata {
-    var isFailed: Bool {
-        return testStatus != "Success"
-    }
-}
-
-extension ActionTestSummaryGroup {
-    var nameString: String {
-        return name ?? "Unnamed"
     }
 }

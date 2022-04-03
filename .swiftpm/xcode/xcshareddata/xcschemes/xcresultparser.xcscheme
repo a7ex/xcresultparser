@@ -76,12 +76,12 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-p &quot;/Users/alex/Work/__EPD_Projects/DHLPaket/__XcodeProject/paketapp_modules/DHL-AsymmetricCrypto&quot;"
+            argument = "/Users/alex/xcodebuild_result.xcresult"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "/Users/alex/xcodebuild_result.xcresult"
-            isEnabled = "NO">
+            argument = "-h"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-c"
@@ -93,7 +93,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-v"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

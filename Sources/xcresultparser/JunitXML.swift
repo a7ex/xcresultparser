@@ -45,8 +45,14 @@ public struct JunitXML {
     private let projectRoot: String
     private let invocationRecord: ActionsInvocationRecord
     private let testReportFormat: TestReportFormat
-    
-    
+
+    private var numFormatter: NumberFormatter = {
+        let numFormatter = NumberFormatter()
+        numFormatter.maximumFractionDigits = 4
+        numFormatter.locale = Locale(identifier: "en_US")
+        return numFormatter
+    }()
+
     public init?(with url: URL,
           projectRoot: String = "",
           format: TestReportFormat = .junit) {
@@ -98,7 +104,7 @@ public struct JunitXML {
                 testsuites.addAttribute(name: "timestamp", stringValue: dateFormatter.string(from: date))
                 if let ended = testAction?.endedTime {
                     let duration = ended.timeIntervalSince(date)
-                    testsuites.addAttribute(name: "time", stringValue: String(duration))
+                    testsuites.addAttribute(name: "time", stringValue: numFormatter.unwrappedString(for: duration))
                 }
             }
             if let runDestination = testAction?.runDestination {
@@ -163,7 +169,7 @@ public struct JunitXML {
                 let combined = group.subtestGroups.reduce([XMLElement]()) { rslt, subGroup in
                     return rslt + createTestCases(for: subGroup.nameString, tests: subGroup.subtests, failureSummaries: failureSummaries)
                 }
-                let node = group.testSuiteXML
+                let node = group.testSuiteXML(numFormatter: numFormatter)
                 combined.forEach { node.addChild($0) }
                 return [node]
             }
@@ -176,9 +182,12 @@ public struct JunitXML {
         failureSummaries: [TestFailureIssueSummary],
         testDirectory: String = ""
     ) -> XMLElement {
-        let node = testReportFormat == .sonar ? group.sonarFileXML(projectRoot: projectRoot): group.testSuiteXML
+        let node = testReportFormat == .sonar ?
+        group.sonarFileXML(projectRoot: projectRoot):
+        group.testSuiteXML(numFormatter: numFormatter)
+
         for thisTest in tests {
-            let testcase = thisTest.xmlNode(classname: group.nameString)
+            let testcase = thisTest.xmlNode(classname: group.nameString, numFormatter: numFormatter, format: testReportFormat)
             if thisTest.isFailed {
                 if let summary = thisTest.failureSummary(in: failureSummaries) {
                     testcase.addChild(summary.failureXML(projectRoot: projectRoot))
@@ -194,7 +203,7 @@ public struct JunitXML {
     private func createTestCases(for name: String, tests: [ActionTestMetadata], failureSummaries: [TestFailureIssueSummary]) -> [XMLElement] {
         var combined = [XMLElement]()
         for thisTest in tests {
-            let testcase = thisTest.xmlNode(classname: name)
+            let testcase = thisTest.xmlNode(classname: name, numFormatter: numFormatter, format: testReportFormat)
             if thisTest.isFailed {
                 if let summary = thisTest.failureSummary(in: failureSummaries) {
                     testcase.addChild(summary.failureXML(projectRoot: projectRoot))
@@ -221,13 +230,16 @@ extension XMLElement {
 }
 
 private extension ActionTestMetadata {
-    func xmlNode(classname: String, format: TestReportFormat = .junit) -> XMLElement {
+    func xmlNode(classname: String, numFormatter: NumberFormatter, format: TestReportFormat) -> XMLElement {
         let testcase = XMLElement(name: nodeNames.testcaseName)
         testcase.addAttribute(name: "name", stringValue: name)
         if let time = duration,
            !nodeNames.testcaseDurationName.isEmpty {
             let correctedTime = format == .sonar ? time * 1000: time
-            testcase.addAttribute(name: nodeNames.testcaseDurationName, stringValue: String(correctedTime))
+            testcase.addAttribute(
+                name: nodeNames.testcaseDurationName,
+                stringValue: numFormatter.unwrappedString(for: correctedTime)
+            )
             if !nodeNames.testcaseClassNameName.isEmpty {
                 testcase.addAttribute(name: nodeNames.testcaseClassNameName, stringValue: classname)
             }
@@ -246,13 +258,13 @@ private extension ActionTestSummaryGroup {
         return identifier ?? ""
     }
     
-    var testSuiteXML: XMLElement {
+    func testSuiteXML(numFormatter: NumberFormatter) -> XMLElement {
         let testsuite = XMLElement(name: "testsuite")
         testsuite.addAttribute(name: "name", stringValue: nameString)
         let stats = statistics
         testsuite.addAttribute(name: "tests", stringValue: String(stats.tests))
         testsuite.addAttribute(name: "failures", stringValue: String(stats.failures))
-        testsuite.addAttribute(name: "time", stringValue: String(duration))
+        testsuite.addAttribute(name: "time", stringValue: numFormatter.unwrappedString(for: duration))
         return testsuite
     }
     
