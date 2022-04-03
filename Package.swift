@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "xcresultparser",
+    name: "Xcresultparser",
     platforms: [
         .macOS(.v11),
     ],
@@ -12,8 +12,8 @@ let package = Package(
             targets: ["CommandlineTool"]
         ),
         .library(
-            name: "Xcresultparser",
-            targets: ["Xcresultparser"]
+            name: "XcresultparserLib",
+            targets: ["XcresultparserLib"]
         )
     ],
     dependencies: [
@@ -31,11 +31,11 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "CommandlineTool",
-            dependencies: ["Xcresultparser"],
+            dependencies: ["XcresultparserLib"],
             path: "CommandlineTool"
         ),
         .target(
-            name: "Xcresultparser",
+            name: "XcresultparserLib",
             dependencies: [
                 .product(
                     name: "ArgumentParser",
@@ -50,7 +50,7 @@ let package = Package(
         ),
         .testTarget(
             name: "XcresultparserTests",
-            dependencies: ["Xcresultparser"],
+            dependencies: ["XcresultparserLib"],
             resources: [
                 .copy("TestAssets/test.xcresult"),
             ]

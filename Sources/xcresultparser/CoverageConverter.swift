@@ -123,7 +123,7 @@ public struct CoverageConverter {
         }
         arguments.append("--file-list")
         arguments.append(resultFile.url.path)
-        let filelistData = try execute(program: "/usr/bin/xcrun", with: arguments)
+        let filelistData = try Shell.execute(program: "/usr/bin/xcrun", with: arguments)
         return String(decoding: filelistData, as: UTF8.self).components(separatedBy: "\n")
     }
     
@@ -135,32 +135,8 @@ public struct CoverageConverter {
         arguments.append("--file")
         arguments.append(path)
         arguments.append(resultFile.url.path)
-        let coverageData = try execute(program: "/usr/bin/xcrun", with: arguments)
+        let coverageData = try Shell.execute(program: "/usr/bin/xcrun", with: arguments)
         return String(decoding: coverageData, as: UTF8.self)
-    }
-    
-    private func execute(program: String, with arguments: [String]) throws -> Data {
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: program)
-        task.arguments = arguments
-        let errorPipe = Pipe()
-        task.standardError = errorPipe
-        let outPipe = Pipe()
-        task.standardOutput = outPipe // to capture standard error, use task.standardError = outPipe
-        try task.run()
-        let fileHandle = outPipe.fileHandleForReading
-        let data = fileHandle.readDataToEndOfFile()
-        task.waitUntilExit()
-        let status = task.terminationStatus
-        if status != 0 {
-            throw CLIError.executionError(code: Int(status))
-        } else {
-            return data
-        }
-    }
-    
-    enum CLIError: Error {
-        case executionError(code: Int)
     }
 }
 

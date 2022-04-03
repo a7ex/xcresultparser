@@ -1,5 +1,5 @@
 import XCTest
-@testable import Xcresultparser
+@testable import XcresultparserLib
 
 final class XcresultparserTests: XCTestCase {
     func testTextResultFormatter() throws {

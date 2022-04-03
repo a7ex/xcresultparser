@@ -7,7 +7,7 @@
 
 import Foundation
 import ArgumentParser
-import Xcresultparser
+import XcresultparserLib
 
 private let marketingVersion = "1.0"
 

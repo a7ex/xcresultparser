@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1320"
+   LastUpgradeVersion = "1330"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -76,19 +76,19 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
+            argument = "-p &quot;/Users/alex/Work/__EPD_Projects/DHLPaket/__XcodeProject/paketapp_modules/DHL-AsymmetricCrypto&quot;"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "/Users/alex/xcodebuild_result.xcresult"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-p &quot;Users/miniagent-05/GithubActionRunners/_work/DHL-AsymmetricCrypto/DHL-AsymmetricCrypto&quot;"
-            isEnabled = "YES">
+            argument = "-c"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o xml "
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-c"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

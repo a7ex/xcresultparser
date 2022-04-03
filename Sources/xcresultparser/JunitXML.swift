@@ -150,12 +150,23 @@ public struct JunitXML {
                 createTestSuiteFinally(group, tests: group.subtests, failureSummaries: failureSummaries, testDirectory: testDirectory)
             ]
         } else {
-            let combined = group.subtestGroups.reduce([XMLElement]()) { rslt, subGroup in
-                return rslt + createTestCases(for: subGroup.nameString, tests: subGroup.subtests, failureSummaries: failureSummaries)
+            if testReportFormat == .sonar {
+                var nodes = [XMLElement]()
+                for subGroup in group.subtestGroups {
+                    let node = subGroup.sonarFileXML(projectRoot: projectRoot)
+                    let testcases = createTestCases(for: subGroup.nameString, tests: subGroup.subtests, failureSummaries: failureSummaries)
+                    testcases.forEach { node.addChild($0) }
+                    nodes.append(node)
+                }
+                return nodes
+            } else {
+                let combined = group.subtestGroups.reduce([XMLElement]()) { rslt, subGroup in
+                    return rslt + createTestCases(for: subGroup.nameString, tests: subGroup.subtests, failureSummaries: failureSummaries)
+                }
+                let node = group.testSuiteXML
+                combined.forEach { node.addChild($0) }
+                return [node]
             }
-            let node = testReportFormat == .sonar ? group.sonarFileXML: group.testSuiteXML
-            combined.forEach { node.addChild($0) }
-            return [node]
         }
     }
     
@@ -165,7 +176,7 @@ public struct JunitXML {
         failureSummaries: [TestFailureIssueSummary],
         testDirectory: String = ""
     ) -> XMLElement {
-        let node = testReportFormat == .sonar ? group.sonarFileXML: group.testSuiteXML
+        let node = testReportFormat == .sonar ? group.sonarFileXML(projectRoot: projectRoot): group.testSuiteXML
         for thisTest in tests {
             let testcase = thisTest.xmlNode(classname: group.nameString)
             if thisTest.isFailed {
@@ -245,10 +256,37 @@ private extension ActionTestSummaryGroup {
         return testsuite
     }
     
-    var sonarFileXML: XMLElement {
+    func sonarFileXML(projectRoot: String) -> XMLElement {
         let testsuite = XMLElement(name: "file")
-        testsuite.addAttribute(name: "path", stringValue: identifierString)
+        testsuite.addAttribute(name: "path", stringValue: relativeFilenameGuess(in: projectRoot))
         return testsuite
+    }
+
+    private func relativeFilenameGuess(in projectRoot: String) -> String {
+        guard !projectRoot.isEmpty else {
+            return identifierString
+        }
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: projectRoot, isDirectory: &isDirectory),
+              isDirectory.boolValue == true else {
+            return identifierString
+        }
+        let url = URL(fileURLWithPath: projectRoot)
+        let arguments = ["-rl", "--include", "*.swift", "class \(identifierString)[ |:]", "."]
+        do {
+            let filelistData = try Shell.execute(program: "/usr/bin/grep", with: arguments, at: url)
+            guard let result = String(decoding: filelistData, as: UTF8.self).components(separatedBy: "\n").first,
+                  !result.isEmpty else {
+                return identifierString
+            }
+            if result.hasPrefix("./") {
+                return String(result.dropFirst(2))
+            }
+            return result
+        } catch {
+            print("Error: \(error)")
+            return identifierString
+        }
     }
     
     private var statistics: TestMetrics {
