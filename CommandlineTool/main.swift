@@ -9,7 +9,7 @@ import Foundation
 import ArgumentParser
 import XcresultparserLib
 
-private let marketingVersion = "1.0"
+private let marketingVersion = "1.1"
 
 struct xcresultparser: ParsableCommand {
     static let configuration = CommandConfiguration(
@@ -33,33 +33,44 @@ struct xcresultparser: ParsableCommand {
     
     @Flag(name: .shortAndLong, help: "Quiet. Don't print status output.")
     var quiet: Int
+
+    @Flag(name: .shortAndLong, help: "Show version number.")
+    var version: Int
     
     @Argument(help: "The path to the .xcresult file.")
-    var xcresultFile: String
+    var xcresultFile: String?
     
     mutating func run() throws {
+        guard version != 1 else {
+            print(marketingVersion)
+            return
+        }
+        guard let xcresult = xcresultFile,
+              !xcresult.isEmpty else {
+            throw ParseError.argumentError
+        }
         if format == .xml {
             if coverage == 1 {
-                try outputSonarXML()
+                try outputSonarXML(for: xcresult)
             } else {
-                try outputJUnitXML()
+                try outputJUnitXML(for: xcresult)
             }
         } else {
-            try outputDescription()
+            try outputDescription(for: xcresult)
         }
     }
     
-    private func outputSonarXML() throws {
-        guard let converter = CoverageConverter(with: URL(fileURLWithPath: xcresultFile), projectRoot: projectRoot ?? "") else {
+    private func outputSonarXML(for xcresult: String) throws {
+        guard let converter = CoverageConverter(with: URL(fileURLWithPath: xcresult), projectRoot: projectRoot ?? "") else {
             throw ParseError.argumentError
         }
         let rslt = try converter.xmlString(quiet: quiet == 1)
         writeToStdOut(rslt)
     }
     
-    private func outputJUnitXML() throws {
+    private func outputJUnitXML(for xcresult: String) throws {
         guard let junitXML = JunitXML(
-            with: URL(fileURLWithPath: xcresultFile),
+            with: URL(fileURLWithPath: xcresult),
             projectRoot: projectRoot ?? "",
             format: .sonar
         ) else {
@@ -68,9 +79,9 @@ struct xcresultparser: ParsableCommand {
         writeToStdOut(junitXML.xmlString)
     }
     
-    private func outputDescription() throws {
+    private func outputDescription(for xcresult: String) throws {
         guard let resultParser = XCResultFormatter(
-            with: URL(fileURLWithPath: xcresultFile),
+            with: URL(fileURLWithPath: xcresult),
             formatter: outputFormatter,
             coverageTargets: coverageTargets
         ) else {

@@ -77,11 +77,11 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "-p &quot;/Users/alex/Work/__EPD_Projects/DHLPaket/__XcodeProject/paketapp_modules/DHL-AsymmetricCrypto&quot;"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "/Users/alex/xcodebuild_result.xcresult"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-c"
@@ -89,6 +89,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o xml "
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-v"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
