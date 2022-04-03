@@ -4,7 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Version 1.1 - 2022-04-03
+## Version 1.1.1 - 2022-04-03
+### CHANGES:
+- added -v switch to output version of the tool
+
+## Version 1.1.0 - 2022-04-03
 ### CHANGES:
 (Kind of) Fixed the file paths in test results xml for sonarqube.
 Unfortunately I didn't find the file paths for the tests in the xcresult archive.
