@@ -235,10 +235,15 @@ private extension ActionTestMetadata {
         testcase.addAttribute(name: "name", stringValue: name)
         if let time = duration,
            !nodeNames.testcaseDurationName.isEmpty {
-            let correctedTime = format == .sonar ? time * 1000: time
+            let correctedTime: String
+            if format == .sonar {
+                correctedTime = String(max(1, Int(time * 1000)))
+            } else {
+                correctedTime = numFormatter.unwrappedString(for: time)
+            }
             testcase.addAttribute(
                 name: nodeNames.testcaseDurationName,
-                stringValue: numFormatter.unwrappedString(for: correctedTime)
+                stringValue: correctedTime
             )
             if !nodeNames.testcaseClassNameName.isEmpty {
                 testcase.addAttribute(name: nodeNames.testcaseClassNameName, stringValue: classname)
