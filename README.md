@@ -1,7 +1,7 @@
 # xcresultparser
 
 ## Overview
-Parse the binary xcresult bundle from Xcode builds and testruns
+Parse the binary xcresult bundle from Xcode builds and test runs.
 
 Interpret binary .xcresult files and print summary in different formats:
 - txt
