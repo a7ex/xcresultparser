@@ -135,8 +135,12 @@ Create an xml file in generic code coverage xml format:
 ```
 ./xcresultparser -c -o xml test.xcresult > sonar.xml
 ```
-About paths for the sonarqube scanner. The tools to get the data from the xcresult archive yield absolute path names.
+
+#### About paths for the sonarqube scanner
+The tools to get the data from the xcresult archive yield absolute path names.
 So you must provide an absolute pathname to the *sonar.sources* paramater of the *sonar-scanner* CLI tool and it must of course match the directory, where *xcodebuild* ran the tests and created the *.xcresult* archive.
+
+If you want to use the test results for sonarqube, there is another twist: the .xcresult bundle only lists the test by testclass, but not by file. However sonarqube expects the file paths of the tests. In this case you must provide a --project-root to *xcresultparser*. Only then *xcresultparser* can convert the classnames to file names, by *grep*-ing for "class NameOfClass". If such a file is found in the directory provided in *--project-root*, then the file path can be detrmined and the *sonar-scanner* happily can scan the files for tests.
 
 In cases where the xcresult archive is not created on the same machine and the paths used for *sonar-scanner* differ, the pathnames need to be adjusted.
 In such a case you can use a relative path for the *sonar.sources* paramater of the *sonar-scanner* CLI tool and convert the output of xcresultparser to also return relative path names.
