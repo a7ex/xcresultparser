@@ -135,3 +135,13 @@ Create an xml file in generic code coverage xml format:
 ```
 ./xcresultparser -c -o xml test.xcresult > sonar.xml
 ```
+About paths for the sonarqube scanner. The tools to get the data from the xcresult archive yield absolute path names.
+So you must provide an absolute pathname to the *sonar.sources* paramater of the *sonar-scanner* CLI tool and it must of course match the directory, where *xcodebuild* ran the tests and created the *.xcresult* archive.
+
+In cases where the xcresult archive is not created on the same machine and the paths used for *sonar-scanner* differ, the pathnames need to be adjusted.
+In such a case you can use a relative path for the *sonar.sources* paramater of the *sonar-scanner* CLI tool and convert the output of xcresultparser to also return relative path names.
+The parameter -p or --project-root takes a string in order to find and delete the beginning of the pathnames, so they are relative. The way this is done is let's say pretty naiv… The string provided with --project-root is searched in the absolute path and, if found, the path is chopped up to and including the provided string.
+**Example**:
+./xcresultparser -c -o xml --project-root "work/myApp/" test.xcresult > sonar.xml
+Example path in xcresult: */Users/alex/work/myApp/Sources/myApp/SomeClass.swift* will be converted to: *Sources/myApp/SomeClass.swift*
+Now make sure you call *sonar-scanner* from within the root of your project and use the relative path "Sources" as parameter for *sonar.sources*.
