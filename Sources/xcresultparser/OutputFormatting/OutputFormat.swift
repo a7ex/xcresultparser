@@ -8,7 +8,7 @@
 import Foundation
 
 public enum OutputFormat: String {
-    case txt, cli, html, xml
+    case txt, cli, html, xml, md
     
     public init(string: String?) {
         if let input = string?.lowercased(),

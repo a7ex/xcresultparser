@@ -9,14 +9,14 @@ import Foundation
 import ArgumentParser
 import XcresultparserLib
 
-private let marketingVersion = "1.1.3"
+private let marketingVersion = "1.1.4"
 
 struct xcresultparser: ParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "xcresultparser \(marketingVersion)\nInterpret binary .xcresult files and print summary in different formats: txt, xml, html or colored cli output."
     )
     
-    @Option(name: .shortAndLong, help: "The output format. It can be either 'txt', 'cli', 'html' or 'xml'. In case of 'xml' JUnit format for test results and generic format (Sonarqube) for coverage data is used.")
+    @Option(name: .shortAndLong, help: "The output format. It can be either 'txt', 'cli', 'html', 'md' or 'xml'. In case of 'xml' JUnit format for test results and generic format (Sonarqube) for coverage data is used.")
     var outputFormat: String?
     
     @Option(name: .shortAndLong, help: "The name of the project root. If present paths and urls are relative to the specified directory.")
@@ -24,12 +24,18 @@ struct xcresultparser: ParsableCommand {
     
     @Option(name: [.customShort("t"), .customLong("coverage-targets")], help: "Specify which targets to calculate coverage from")
     var coverageTargets: [String] = []
+
+    @Option(name: .shortAndLong, help: "The fields in the summary. Default is all: errors|warnings|analyzerWarnings|tests|failed|skipped")
+    var summaryFields: String?
     
     @Flag(name: .shortAndLong, help: "Whether to print coverage data.")
     var coverage: Int
     
     @Flag(name: .shortAndLong, help: "Whether to print test results.")
     var noTestResult: Int
+
+    @Flag(name: .shortAndLong, help: "Whether to only print failed tests.")
+    var failedTestsOnly: Int
     
     @Flag(name: .shortAndLong, help: "Quiet. Don't print status output.")
     var quiet: Int
@@ -83,7 +89,9 @@ struct xcresultparser: ParsableCommand {
         guard let resultParser = XCResultFormatter(
             with: URL(fileURLWithPath: xcresult),
             formatter: outputFormatter,
-            coverageTargets: coverageTargets
+            coverageTargets: coverageTargets,
+            failedTestsOnly: (failedTestsOnly == 1),
+            summaryFields: summaryFields ?? "errors|warnings|analyzerWarnings|tests|failed|skipped"
         ) else {
             throw ParseError.argumentError
         }
@@ -114,6 +122,8 @@ struct xcresultparser: ParsableCommand {
         case .xml:
             // outputFormatter is not used in case of .xml
             return TextResultFormatter()
+        case .md:
+            return MDResultFormatter()
         }
     }
 }

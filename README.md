@@ -8,6 +8,7 @@ Interpret binary .xcresult files and print summary in different formats:
 - colored command line output
 - xml
 - html
+- markdown
 
 In case of 'xml' JUnit format for test results and generic format (Sonarqube) for coverage data is used.
 
@@ -74,24 +75,34 @@ You should see the tool respond like this:
 ```
 Error: Missing expected argument '<xcresult-file>'
 
-OVERVIEW: Interpret binary .xcresult files and print summary in different formats: txt, xml, html or colored cli output.
+OVERVIEW: xcresultparser 1.1.4
+Interpret binary .xcresult files and print summary in different formats: txt,
+xml, html or colored cli output.
 
-USAGE: xcresultparser [--output-format <output-format>] [--project-root <project-root>] [--coverage-targets <coverage-targets> ...] [--coverage ...] [--no-test-result ...] [--quiet ...] <xcresult-file>
+USAGE: xcresultparser [--output-format <output-format>] [--project-root <project-root>] [--coverage-targets <coverage-targets> ...] [--summary-fields <summary-fields>] [--coverage ...] [--no-test-result ...] [--failed-tests-only ...] [--quiet ...] [--version ...] [<xcresult-file>]
 
 ARGUMENTS:
   <xcresult-file>         The path to the .xcresult file.
 
 OPTIONS:
   -o, --output-format <output-format>
-                          The output format. It can be either 'txt', 'cli', 'html' or 'xml'. In case of 'xml' JUnit format for test results and generic format
-                          (Sonarqube) for coverage data is used.
+                          The output format. It can be either 'txt', 'cli',
+                          'html', 'md' or 'xml'. In case of 'xml' JUnit format
+                          for test results and generic format (Sonarqube) for
+                          coverage data is used.
   -p, --project-root <project-root>
-                          The name of the project root. If present paths and urls are relative to the specified directory.
+                          The name of the project root. If present paths and
+                          urls are relative to the specified directory.
   -t, --coverage-targets <coverage-targets>
                           Specify which targets to calculate coverage from
+  -s, --summary-fields <summary-fields>
+                          The fields in the summary. Default is all:
+                          errors|warnings|analyzerWarnings|tests|failed|skipped
   -c, --coverage          Whether to print coverage data.
   -n, --no-test-result    Whether to print test results.
+  -f, --failed-tests-only Whether to only print failed tests.
   -q, --quiet             Quiet. Don't print status output.
+  -v, --version           Show version number.
   -h, --help              Show help information.
 ```
 Now that a copy of `xcresultparser` is in your search path, delete it from your desktop.
@@ -134,6 +145,12 @@ Create an xml file in JUnit format:
 Create an xml file in generic code coverage xml format:
 ```
 ./xcresultparser -c -o xml test.xcresult > sonar.xml
+```
+
+### Markdown output
+Simple markdown formatting for test results. (We use it for display in a Teams Webhook)
+```
+./xcresultparser -o md test.xcresult > teamsWebhook.txt
 ```
 
 #### About paths for the sonarqube scanner

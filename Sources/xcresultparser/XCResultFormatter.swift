@@ -9,6 +9,20 @@ import Foundation
 import XCResultKit
 
 public struct XCResultFormatter {
+
+    private enum SummaryField: String {
+        case errors, warnings, analyzerWarnings, tests, failed, skipped
+    }
+    private struct SummaryFields {
+        let enabledFields: Set<SummaryField>
+        init(specifiers: String) {
+            enabledFields = Set(
+                specifiers
+                    .components(separatedBy: "|")
+                    .compactMap { SummaryField(rawValue: $0)}
+            )
+        }
+    }
     
     // MARK: - Properties
     
@@ -17,6 +31,8 @@ public struct XCResultFormatter {
     private let codeCoverage: CodeCoverage?
     private let outputFormatter: XCResultFormatting
     private let coverageTargets: Set<String>
+    private let failedTestsOnly: Bool
+    private let summaryFields: SummaryFields
     
     private var numFormatter: NumberFormatter = {
         let numFormatter = NumberFormatter()
@@ -32,9 +48,12 @@ public struct XCResultFormatter {
     
     // MARK: - Initializer
     
-    public init?(with url: URL,
-          formatter: XCResultFormatting,
-          coverageTargets: [String] = []
+    public init?(
+        with url: URL,
+        formatter: XCResultFormatting,
+        coverageTargets: [String] = [],
+        failedTestsOnly: Bool = false,
+        summaryFields: String = "errors|warnings|analyzerWarnings|tests|failed|skipped"
     ) {
         resultFile = XCResultFile(url: url)
         guard let record = resultFile.getInvocationRecord() else {
@@ -44,6 +63,8 @@ public struct XCResultFormatter {
         outputFormatter = formatter
         codeCoverage = resultFile.getCodeCoverage()
         self.coverageTargets = codeCoverage?.targets(filteredBy: coverageTargets) ?? []
+        self.failedTestsOnly = failedTestsOnly
+        self.summaryFields = SummaryFields(specifiers: summaryFields)
         
         //if let logsId = invocationRecord?.actions.last?.actionResult.logRef?.id {
         //    let testLogs = resultFile.getLogs(id: logsId)
@@ -93,24 +114,36 @@ public struct XCResultFormatter {
         lines.append(
             outputFormatter.testConfiguration("Summary")
         )
-        lines.append(
-            outputFormatter.resultSummaryLine("Number of errors = \(errorCount)", failed: errorCount != 0)
-        )
-        lines.append(
-            outputFormatter.resultSummaryLineWarning("Number of warnings = \(warningCount)", hasWarnings: warningCount != 0)
-        )
-        lines.append(
-            outputFormatter.resultSummaryLineWarning("Number of analyzer warnings = \(analyzerWarningCount)", hasWarnings: analyzerWarningCount != 0)
-        )
-        lines.append(
-            outputFormatter.resultSummaryLine("Number of tests = \(testsCount)", failed: false)
-        )
-        lines.append(
-            outputFormatter.resultSummaryLine("Number of failed tests = \(testsFailedCount)", failed: testsFailedCount != 0)
-        )
-        lines.append(
-            outputFormatter.resultSummaryLine("Number of skipped tests = \(testsSkippedCount)", failed: testsSkippedCount != 0)
-        )
+        if summaryFields.enabledFields.contains(.errors) {
+            lines.append(
+                outputFormatter.resultSummaryLine("Number of errors = \(errorCount)", failed: errorCount != 0)
+            )
+        }
+        if summaryFields.enabledFields.contains(.warnings) {
+            lines.append(
+                outputFormatter.resultSummaryLineWarning("Number of warnings = \(warningCount)", hasWarnings: warningCount != 0)
+            )
+        }
+        if summaryFields.enabledFields.contains(.analyzerWarnings) {
+            lines.append(
+                outputFormatter.resultSummaryLineWarning("Number of analyzer warnings = \(analyzerWarningCount)", hasWarnings: analyzerWarningCount != 0)
+            )
+        }
+        if summaryFields.enabledFields.contains(.tests) {
+            lines.append(
+                outputFormatter.resultSummaryLine("Number of tests = \(testsCount)", failed: false)
+            )
+        }
+        if summaryFields.enabledFields.contains(.failed) {
+            lines.append(
+                outputFormatter.resultSummaryLine("Number of failed tests = \(testsFailedCount)", failed: testsFailedCount != 0)
+            )
+        }
+        if summaryFields.enabledFields.contains(.skipped) {
+            lines.append(
+                outputFormatter.resultSummaryLine("Number of skipped tests = \(testsSkippedCount)", failed: testsSkippedCount != 0)
+            )
+        }
         return lines
     }
     
@@ -142,6 +175,10 @@ public struct XCResultFormatter {
     
     private func createTestSummaryInfo(_ group: ActionTestSummaryGroup, level: Int, failureSummaries: [TestFailureIssueSummary]) -> [String] {
         var lines = [String]()
+        if failedTestsOnly,
+              !group.hasFailedTests {
+            return lines
+        }
         let header = "\(group.nameString) (\(numFormatter.unwrappedString(for: group.duration)))"
         
         switch level {
@@ -169,9 +206,11 @@ public struct XCResultFormatter {
             )
         }
         for thisTest in group.subtests {
-            lines.append(
-                actionTestFileStatusString(for: thisTest, failureSummaries: failureSummaries)
-            )
+            if !failedTestsOnly || thisTest.isFailed {
+                lines.append(
+                    actionTestFileStatusString(for: thisTest, failureSummaries: failureSummaries)
+                )
+            }
         }
         if !outputFormatter.accordionCloseTag.isEmpty {
             lines.append(
@@ -183,7 +222,7 @@ public struct XCResultFormatter {
     
     private func actionTestFileStatusString(for testData: ActionTestMetadata, failureSummaries: [TestFailureIssueSummary]) -> String {
         let duration = numFormatter.unwrappedString(for: testData.duration)
-        let icon = testData.isFailed ? "✖︎": "✓"
+        let icon = testData.isFailed ? outputFormatter.testFailIcon: outputFormatter.testPassIcon
         let testTitle = "\(icon) \(testData.name) (\(duration))"
         let testCaseName = testData.identifier.replacingOccurrences(of: "/", with: ".")
         if let summary = failureSummaries.first(where: { $0.testCaseName == testCaseName }) {

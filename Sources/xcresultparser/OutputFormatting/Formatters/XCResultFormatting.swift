@@ -24,8 +24,19 @@ public protocol XCResultFormatting {
     func testClass(_ item: String, failed: Bool) -> String
     func singleTestItem(_ item: String, failed: Bool) -> String
     func failedTestItem(_ item: String, message: String) -> String
+    var testFailIcon: String { get }
+    var testPassIcon: String { get }
     
     func codeCoverageTargetSummary(_ item: String) -> String
     func codeCoverageFileSummary(_ item: String) -> String
     func codeCoverageFunctionSummary(_ items: [String]) -> String
+}
+
+public extension XCResultFormatting {
+    var testFailIcon: String {
+        return "✖︎"
+    }
+    var testPassIcon: String {
+        return "✓"
+    }
 }
