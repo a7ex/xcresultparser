@@ -79,7 +79,11 @@ public struct XCResultFormatter {
     // MARK: - Public API
     
     public var summary: String {
-        return createSummary().joined(separator: "\n")
+        if outputFormatter is MDResultFormatter {
+            return createSummaryInOneLine()
+        } else {
+            return createSummary().joined(separator: "\n")
+        }
     }
     public var testDetails: String {
         return createTestDetailsString().joined(separator: "\n")
@@ -145,6 +149,38 @@ public struct XCResultFormatter {
             )
         }
         return lines
+    }
+
+    private func createSummaryInOneLine() -> String {
+        let metrics = invocationRecord.metrics
+
+        let analyzerWarningCount = metrics.analyzerWarningCount ?? 0
+        let errorCount = metrics.errorCount ?? 0
+        let testsCount = metrics.testsCount ?? 0
+        let testsFailedCount = metrics.testsFailedCount ?? 0
+        let warningCount = metrics.warningCount ?? 0
+        let testsSkippedCount = metrics.testsSkippedCount ?? 0
+
+        var summary = ""
+        if summaryFields.enabledFields.contains(.errors) {
+            summary += "Errors: \(errorCount)"
+        }
+        if summaryFields.enabledFields.contains(.warnings) {
+            summary += "; Warnings: \(warningCount)"
+        }
+        if summaryFields.enabledFields.contains(.analyzerWarnings) {
+            summary += "; Analizer Warnings: \(analyzerWarningCount)"
+        }
+        if summaryFields.enabledFields.contains(.tests) {
+            summary += "; Tests: \(testsCount)"
+        }
+        if summaryFields.enabledFields.contains(.failed) {
+            summary += "; Failed: \(testsFailedCount)"
+        }
+        if summaryFields.enabledFields.contains(.skipped) {
+            summary += "; Skipped: \(testsSkippedCount)"
+        }
+        return summary
     }
     
     private func createTestDetailsString() -> [String] {

@@ -26,8 +26,5 @@ func writeToStdOutLn(_ str: String) {
 
 func writeToStdOut(_ str: String) {
     let handle = FileHandle.standardOutput
-
-    if let data = "\(str)\n".data(using: String.Encoding.utf8) {
-        handle.write(data)
-    }
+    handle.write(Data("\(str)\n".utf8))
 }

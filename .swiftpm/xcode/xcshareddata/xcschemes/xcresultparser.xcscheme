@@ -80,6 +80,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "-s errors|tests|failed|skipped"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-f"
             isEnabled = "NO">
          </CommandLineArgument>
