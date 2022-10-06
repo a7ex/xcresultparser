@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version 1.1.6 - 2022-10-06
+### CHANGES:
+Fixed crash in coverage XML when output is concurrently modified. (Credits go to Björn Dahlgren)
+
+## Version 1.1.5 - 2022-06-05
+### CHANGES:
+escaped quotes in markdown
+changed formatting in markdown to better suit the needs for teams web hook
+
+## Version 1.1.4 - 2022-06-01
+### CHANGES:
+Added simple markdown output (first implemented for use in Teams Webhook message).
+
 ## Version 1.1.3 - 2022-04-04
 ### CHANGES:
 Changed format of test duration for sonar now from double to long
