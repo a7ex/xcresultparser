@@ -37,6 +37,7 @@ public struct CoverageConverter {
     public func xmlString(quiet: Bool) throws -> String {
         let coverageXML = XMLElement(name: "coverage")
         coverageXML.addAttribute(name: "version", stringValue: "1")
+        let coverageXMLSemaphore = DispatchSemaphore(value: 1)
         let files = try coverageFileList()
         
         // since we need to invoke xccov for each file, it takes pretty much time
@@ -52,7 +53,9 @@ public struct CoverageConverter {
             let op = BlockOperation {
                 do {
                     let coverage = try fileCoverageXML(for: file, relativeTo: projectRoot)
+                    coverageXMLSemaphore.wait()
                     coverageXML.addChild(coverage)
+                    coverageXMLSemaphore.signal()
                 } catch {
                     writeToStdErrorLn(error.localizedDescription)
                 }
