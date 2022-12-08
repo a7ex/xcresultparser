@@ -7,6 +7,7 @@ Interpret binary .xcresult files and print summary in different formats:
 - txt
 - colored command line output
 - xml
+- cobertura
 - html
 - markdown
 
@@ -75,7 +76,7 @@ You should see the tool respond like this:
 ```
 Error: Missing expected argument '<xcresult-file>'
 
-OVERVIEW: xcresultparser 1.1.4
+OVERVIEW: xcresultparser 1.1.5
 Interpret binary .xcresult files and print summary in different formats: txt,
 xml, html or colored cli output.
 
@@ -87,9 +88,10 @@ ARGUMENTS:
 OPTIONS:
   -o, --output-format <output-format>
                           The output format. It can be either 'txt', 'cli',
-                          'html', 'md' or 'xml'. In case of 'xml' JUnit format
-                          for test results and generic format (Sonarqube) for
-                          coverage data is used.
+                          'html', 'md', 'xml', or 'cobertura'. In case of 'xml'
+                          JUnit format for test results and generic format
+                          (Sonarqube) for coverage data is used. In the case of
+                          'cobertura', --coverage must also be passed.
   -p, --project-root <project-root>
                           The name of the project root. If present paths and
                           urls are relative to the specified directory.
@@ -146,6 +148,14 @@ Create an xml file in generic code coverage xml format:
 ```
 ./xcresultparser -c -o xml test.xcresult > sonar.xml
 ```
+
+### Cobertura XML output
+Create xml file in [Cobertura](https://cobertura.github.io/cobertura/) format:
+```
+./xcresultparser -c -o cobertura test.xcresult > cobertura.xml
+```
+
+Note that some data in this file is currently fake as of this time of writing, but should have accurate line coverage information. It should be good enough for importing into tools like [GitLab coverage visualizer](https://docs.gitlab.com/ee/ci/testing/test_coverage_visualization.html).
 
 ### Markdown output
 Simple markdown formatting for test results. (We use it for display in a Teams Webhook)
