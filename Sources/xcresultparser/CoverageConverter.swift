@@ -8,7 +8,7 @@
 import Foundation
 import XCResultKit
 
-/// Convert coverage data in a xcresult archive to xml suited for use in sonarqube
+/// Convert coverage data in a xcresult archive to xml (exact format determined by subclass)
 ///
 /// Unfortunately converting to the coverage xml format suited for e.g. sonarqube is a tedious task.
 /// It requires us to invoke the xccov binary for each single file in the project.
@@ -19,10 +19,10 @@ import XCResultKit
 /// Until now we use [xccov-to-sonarqube-generic.sh]( https://github.com/SonarSource/sonar-scanning-examples/blob/master/swift-coverage/swift-coverage-example/xccov-to-sonarqube-generic.sh)
 /// which does the same job just in a shell script. It has the same problem
 /// and since it can not spawn it to different threads, it takes about 5x the time.
-public struct CoverageConverter {
-    private let resultFile: XCResultFile
-    private let projectRoot: String
-    private let codeCoverage: CodeCoverage
+public class CoverageConverter {
+    internal let resultFile: XCResultFile
+    internal let projectRoot: String
+    internal let codeCoverage: CodeCoverage
     
     public init?(with url: URL,
           projectRoot: String = "") {
@@ -35,43 +35,14 @@ public struct CoverageConverter {
     }
     
     public func xmlString(quiet: Bool) throws -> String {
-        let coverageXML = XMLElement(name: "coverage")
-        coverageXML.addAttribute(name: "version", stringValue: "1")
-        let coverageXMLSemaphore = DispatchSemaphore(value: 1)
-        let files = try coverageFileList()
-        
-        // since we need to invoke xccov for each file, it takes pretty much time
-        // so we invoke it in parallel on 8 threads, that speeds up things considerably
-        let queue = OperationQueue()
-        queue.maxConcurrentOperationCount = 8 //Deadlock if this is = 1
-        queue.qualityOfService = .userInitiated
-        for file in files {
-            guard !file.isEmpty else { continue }
-            if !quiet {
-                writeToStdError("Coverage for: \(file)\n")
-            }
-            let op = BlockOperation {
-                do {
-                    let coverage = try fileCoverageXML(for: file, relativeTo: projectRoot)
-                    coverageXMLSemaphore.wait()
-                    coverageXML.addChild(coverage)
-                    coverageXMLSemaphore.signal()
-                } catch {
-                    writeToStdErrorLn(error.localizedDescription)
-                }
-            }
-            queue.addOperation(op)
-        }
-        // This will block until all our operation have compleated (or been canceled)
-        queue.waitUntilAllOperationsAreFinished()
-        return coverageXML.xmlString(options: [.nodePrettyPrint, .nodeCompactEmptyElement])
+        fatalError("xmlString is not implemented")
     }
 
-    private func writeToStdErrorLn(_ str: String) {
+    internal func writeToStdErrorLn(_ str: String) {
         writeToStdError("\(str)\n")
     }
     
-    private func writeToStdError(_ str: String) {
+    internal func writeToStdError(_ str: String) {
         let handle = FileHandle.standardError
 
         if let data = str.data(using: String.Encoding.utf8) {
@@ -79,31 +50,7 @@ public struct CoverageConverter {
         }
     }
     
-    private func fileCoverageXML(for file: String, relativeTo projectRoot: String) throws -> XMLElement {
-        let coverageData = try coverageForFile(path: file)
-        let fileElement = XMLElement(name: "file")
-        fileElement.addAttribute(name: "path", stringValue: relativePath(for: file, relativeTo: projectRoot))
-        let pattern = #"(\d+):\s*(\d)"#
-        let regex = try NSRegularExpression(pattern: pattern, options: .anchorsMatchLines)
-        let nsrange = NSRange(coverageData.startIndex..<coverageData.endIndex,
-                              in: coverageData)
-        regex.enumerateMatches(in: coverageData, options: [], range: nsrange) { match, flags, stop in
-            guard let match = match else { return }
-            
-            let lineNumber = coverageData.text(in: match.range(at: 1))
-            let coverage = coverageData.text(in: match.range(at: 2))
-            
-            let line = XMLElement(name: "lineToCover")
-            line.addAttribute(name: "lineNumber", stringValue: lineNumber)
-            line.addAttribute(name: "covered", stringValue: (coverage == "0" ? "false": "true"))
-            
-            fileElement.addChild(line)
-            
-        }
-        return fileElement
-    }
-    
-    private func relativePath(for path: String, relativeTo projectRoot: String) -> String {
+    internal func relativePath(for path: String, relativeTo projectRoot: String) -> String {
         guard !projectRoot.isEmpty else {
             return path
         }
@@ -119,7 +66,7 @@ public struct CoverageConverter {
     }
     
     
-    private func coverageFileList() throws -> [String] {
+    internal func coverageFileList() throws -> [String] {
         var arguments = ["xccov", "view"]
         if resultFile.url.pathExtension == "xcresult" {
             arguments.append("--archive")
@@ -130,7 +77,7 @@ public struct CoverageConverter {
         return String(decoding: filelistData, as: UTF8.self).components(separatedBy: "\n")
     }
     
-    private func coverageForFile(path: String) throws -> String {
+    internal func coverageForFile(path: String) throws -> String {
         var arguments = ["xccov", "view"]
         if resultFile.url.pathExtension == "xcresult" {
             arguments.append("--archive")

@@ -105,7 +105,7 @@ Summary
         let projectRoot = ""
         let quiet = 1
 
-        guard let converter = CoverageConverter(with: URL(fileURLWithPath: xcresultFile), projectRoot: projectRoot) else {
+        guard let converter = SonarCoverageConverter(with: URL(fileURLWithPath: xcresultFile), projectRoot: projectRoot) else {
             XCTFail("Unable to create CoverageConverter from \(xcresultFile)")
             return
         }

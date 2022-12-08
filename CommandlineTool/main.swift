@@ -16,7 +16,7 @@ struct xcresultparser: ParsableCommand {
         abstract: "xcresultparser \(marketingVersion)\nInterpret binary .xcresult files and print summary in different formats: txt, xml, html or colored cli output."
     )
     
-    @Option(name: .shortAndLong, help: "The output format. It can be either 'txt', 'cli', 'html', 'md' or 'xml'. In case of 'xml' JUnit format for test results and generic format (Sonarqube) for coverage data is used.")
+    @Option(name: .shortAndLong, help: "The output format. It can be either 'txt', 'cli', 'html', 'md', 'xml', or 'cobertura'. In case of 'xml' JUnit format for test results and generic format (Sonarqube) for coverage data is used. In the case of 'cobertura', --coverage must also be passed.")
     var outputFormat: String?
     
     @Option(name: .shortAndLong, help: "The name of the project root. If present paths and urls are relative to the specified directory.")
@@ -61,13 +61,24 @@ struct xcresultparser: ParsableCommand {
             } else {
                 try outputJUnitXML(for: xcresult)
             }
+        } else if format == .cobertura {
+            if coverage != 1 { throw ParseError.argumentError }
+            try outputCoberturaXML(for: xcresult)
         } else {
             try outputDescription(for: xcresult)
         }
     }
     
     private func outputSonarXML(for xcresult: String) throws {
-        guard let converter = CoverageConverter(with: URL(fileURLWithPath: xcresult), projectRoot: projectRoot ?? "") else {
+        guard let converter = SonarCoverageConverter(with: URL(fileURLWithPath: xcresult), projectRoot: projectRoot ?? "") else {
+            throw ParseError.argumentError
+        }
+        let rslt = try converter.xmlString(quiet: quiet == 1)
+        writeToStdOut(rslt)
+    }
+    
+    private func outputCoberturaXML(for xcresult: String) throws {
+        guard let converter = CoberturaCoverageConverter(with: URL(fileURLWithPath: xcresult), projectRoot: projectRoot ?? "") else {
             throw ParseError.argumentError
         }
         let rslt = try converter.xmlString(quiet: quiet == 1)
@@ -119,6 +130,8 @@ struct xcresultparser: ParsableCommand {
             return HTMLResultFormatter()
         case .txt:
             return TextResultFormatter()
+        case .cobertura:
+            fallthrough
         case .xml:
             // outputFormatter is not used in case of .xml
             return TextResultFormatter()
