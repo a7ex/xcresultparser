@@ -46,11 +46,9 @@ public class SonarCoverageConverter: CoverageConverter {
         let coverageData = try coverageForFile(path: file)
         let fileElement = XMLElement(name: "file")
         fileElement.addAttribute(name: "path", stringValue: relativePath(for: file, relativeTo: projectRoot))
-        let pattern = #"(\d+):\s*(\d)"#
-        let regex = try NSRegularExpression(pattern: pattern, options: .anchorsMatchLines)
         let nsrange = NSRange(coverageData.startIndex..<coverageData.endIndex,
                               in: coverageData)
-        regex.enumerateMatches(in: coverageData, options: [], range: nsrange) { match, flags, stop in
+        coverageRegexp!.enumerateMatches(in: coverageData, options: [], range: nsrange) { match, flags, stop in
             guard let match = match else { return }
             
             let lineNumber = coverageData.text(in: match.range(at: 1))

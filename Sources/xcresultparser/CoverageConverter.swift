@@ -20,9 +20,10 @@ import XCResultKit
 /// which does the same job just in a shell script. It has the same problem
 /// and since it can not spawn it to different threads, it takes about 5x the time.
 public class CoverageConverter {
-    internal let resultFile: XCResultFile
-    internal let projectRoot: String
-    internal let codeCoverage: CodeCoverage
+    let resultFile: XCResultFile
+    let projectRoot: String
+    let codeCoverage: CodeCoverage
+    let coverageRegexp: NSRegularExpression?
     
     public init?(with url: URL,
           projectRoot: String = "") {
@@ -32,17 +33,20 @@ public class CoverageConverter {
         }
         self.projectRoot = projectRoot
         codeCoverage = record
+        
+        let pattern = #"(\d+):\s*(\d)"#
+        coverageRegexp = try? NSRegularExpression(pattern: pattern, options: .anchorsMatchLines)
     }
     
     public func xmlString(quiet: Bool) throws -> String {
         fatalError("xmlString is not implemented")
     }
 
-    internal func writeToStdErrorLn(_ str: String) {
+    func writeToStdErrorLn(_ str: String) {
         writeToStdError("\(str)\n")
     }
     
-    internal func writeToStdError(_ str: String) {
+    func writeToStdError(_ str: String) {
         let handle = FileHandle.standardError
 
         if let data = str.data(using: String.Encoding.utf8) {
@@ -50,7 +54,7 @@ public class CoverageConverter {
         }
     }
     
-    internal func relativePath(for path: String, relativeTo projectRoot: String) -> String {
+    func relativePath(for path: String, relativeTo projectRoot: String) -> String {
         guard !projectRoot.isEmpty else {
             return path
         }
@@ -66,7 +70,7 @@ public class CoverageConverter {
     }
     
     
-    internal func coverageFileList() throws -> [String] {
+    func coverageFileList() throws -> [String] {
         var arguments = ["xccov", "view"]
         if resultFile.url.pathExtension == "xcresult" {
             arguments.append("--archive")
@@ -77,7 +81,7 @@ public class CoverageConverter {
         return String(decoding: filelistData, as: UTF8.self).components(separatedBy: "\n")
     }
     
-    internal func coverageForFile(path: String) throws -> String {
+    func coverageForFile(path: String) throws -> String {
         var arguments = ["xccov", "view"]
         if resultFile.url.pathExtension == "xcresult" {
             arguments.append("--archive")

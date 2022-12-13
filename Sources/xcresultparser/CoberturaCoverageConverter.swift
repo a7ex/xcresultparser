@@ -72,9 +72,9 @@ public class CoberturaCoverageConverter: CoverageConverter {
             }
             let op = BlockOperation { [self] in
                 do {
-                    let file = try fileCoverage(for: file, relativeTo: projectRoot)
+                    let coverage = try fileCoverage(for: file, relativeTo: projectRoot)
                     fileInfoSemaphore.wait()
-                    fileInfo.append(file)
+                    fileInfo.append(coverage)
                     fileInfoSemaphore.signal()
                 } catch {
                     writeToStdErrorLn(error.localizedDescription)
@@ -147,11 +147,9 @@ public class CoberturaCoverageConverter: CoverageConverter {
     private func fileCoverage(for file: String, relativeTo projectRoot: String) throws -> FileInfo {
         let coverageData = try coverageForFile(path: file)
         var file = FileInfo(path: relativePath(for: file, relativeTo: projectRoot), lines: [])
-        let pattern = #"(\d+):\s*(\d)"#
-        let regex = try NSRegularExpression(pattern: pattern, options: .anchorsMatchLines)
         let nsrange = NSRange(coverageData.startIndex..<coverageData.endIndex,
                               in: coverageData)
-        regex.enumerateMatches(in: coverageData, options: [], range: nsrange) { match, flags, stop in
+        coverageRegexp!.enumerateMatches(in: coverageData, options: [], range: nsrange) { match, flags, stop in
             guard let match = match else { return }
             
             let lineNumber = coverageData.text(in: match.range(at: 1))
@@ -182,12 +180,12 @@ public class CoberturaCoverageConverter: CoverageConverter {
 }
 
 struct LineInfo {
-    var lineNumber: String
-    var coverage: Int
+    let lineNumber: String
+    let coverage: Int
 }
 
 struct FileInfo {
-    var path: String
+    let path: String
     var lines: [LineInfo]
 }
 

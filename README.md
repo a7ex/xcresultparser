@@ -91,7 +91,7 @@ OPTIONS:
                           'html', 'md', 'xml', or 'cobertura'. In case of 'xml'
                           JUnit format for test results and generic format
                           (Sonarqube) for coverage data is used. In the case of
-                          'cobertura', --coverage must also be passed.
+                          'cobertura', --coverage is implied.
   -p, --project-root <project-root>
                           The name of the project root. If present paths and
                           urls are relative to the specified directory.
@@ -152,10 +152,12 @@ Create an xml file in generic code coverage xml format:
 ### Cobertura XML output
 Create xml file in [Cobertura](https://cobertura.github.io/cobertura/) format:
 ```
-./xcresultparser -c -o cobertura test.xcresult > cobertura.xml
+./xcresultparser -o cobertura test.xcresult > cobertura.xml
 ```
 
 Note that some data in this file is currently fake as of this time of writing, but should have accurate line coverage information. It should be good enough for importing into tools like [GitLab coverage visualizer](https://docs.gitlab.com/ee/ci/testing/test_coverage_visualization.html).
+
+It may be desirable to also pass --project-root if you wish to alter the filenames and sources in the Cobertura report (see note below) - this is required for GitLab compatbility.
 
 ### Markdown output
 Simple markdown formatting for test results. (We use it for display in a Teams Webhook)
