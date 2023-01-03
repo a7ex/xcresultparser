@@ -7,6 +7,7 @@ Interpret binary .xcresult files and print summary in different formats:
 - txt
 - colored command line output
 - xml
+- junit
 - cobertura
 - html
 - markdown
@@ -88,8 +89,8 @@ ARGUMENTS:
 OPTIONS:
   -o, --output-format <output-format>
                           The output format. It can be either 'txt', 'cli',
-                          'html', 'md', 'xml', or 'cobertura'. In case of 'xml'
-                          JUnit format for test results and generic format
+                          'html', 'md', 'xml', 'junit', or 'cobertura'. In case of 'xml'
+                          generic format (Sonarqube) for test results and generic format
                           (Sonarqube) for coverage data is used. In the case of
                           'cobertura', --coverage is implied.
   -p, --project-root <project-root>
@@ -140,13 +141,18 @@ Create a single html file with test data
 ### Junit output
 Create an xml file in JUnit format:
 ```
-./xcresultparser -o xml test.xcresult > junit.xml
+./xcresultparser -o junit test.xcresult > junit.xml
 ```
 
 ### Sonarqube output
+Create an xml file in generic test exectuion xml format:
+```
+./xcresultparser -o xml test.xcresult > sonarTestExecution.xml
+```
+
 Create an xml file in generic code coverage xml format:
 ```
-./xcresultparser -c -o xml test.xcresult > sonar.xml
+./xcresultparser -c -o xml test.xcresult > sonarCoverage.xml
 ```
 
 ### Cobertura XML output

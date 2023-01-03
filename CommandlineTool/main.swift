@@ -9,14 +9,14 @@ import Foundation
 import ArgumentParser
 import XcresultparserLib
 
-private let marketingVersion = "1.2.0"
+private let marketingVersion = "1.2.1"
 
 struct xcresultparser: ParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "xcresultparser \(marketingVersion)\nInterpret binary .xcresult files and print summary in different formats: txt, xml, html or colored cli output."
     )
     
-    @Option(name: .shortAndLong, help: "The output format. It can be either 'txt', 'cli', 'html', 'md', 'xml', or 'cobertura'. In case of 'xml' JUnit format for test results and generic format (Sonarqube) for coverage data is used. In the case of 'cobertura', --coverage is implied.")
+    @Option(name: .shortAndLong, help: "The output format. It can be either 'txt', 'cli', 'html', 'md', 'xml', 'junit', or 'cobertura'. In case of 'xml' sonar generic format for test results and generic format (Sonarqube) for coverage data is used. In the case of 'cobertura', --coverage is implied.")
     var outputFormat: String?
     
     @Option(name: .shortAndLong, help: "The name of the project root. If present paths and urls are relative to the specified directory.")
@@ -59,8 +59,10 @@ struct xcresultparser: ParsableCommand {
             if coverage == 1 {
                 try outputSonarXML(for: xcresult)
             } else {
-                try outputJUnitXML(for: xcresult)
+                try outputJUnitXML(for: xcresult, with: .sonar)
             }
+        } else if format == .junit {
+            try outputJUnitXML(for: xcresult, with: .junit)
         } else if format == .cobertura {
             coverage = 1
             try outputCoberturaXML(for: xcresult)
@@ -85,11 +87,12 @@ struct xcresultparser: ParsableCommand {
         writeToStdOut(rslt)
     }
     
-    private func outputJUnitXML(for xcresult: String) throws {
+    private func outputJUnitXML(for xcresult: String,
+                                with format: TestReportFormat) throws {
         guard let junitXML = JunitXML(
             with: URL(fileURLWithPath: xcresult),
             projectRoot: projectRoot ?? "",
-            format: .sonar
+            format: format
         ) else {
             throw ParseError.argumentError
         }
@@ -131,6 +134,8 @@ struct xcresultparser: ParsableCommand {
         case .txt:
             return TextResultFormatter()
         case .cobertura:
+            fallthrough
+        case .junit:
             fallthrough
         case .xml:
             // outputFormatter is not used in case of .xml
