@@ -126,6 +126,8 @@ Summary
         }
 
         XCTAssertTrue(junitXML.xmlString.starts(with: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"))
+        let dataXML = try! XMLDocument.init(xmlString: junitXML.xmlString, options: [])
+        XCTAssertEqual(dataXML.rootElement()?.name, "testExecutions")
     }
 
     func testJunitXMLJunit() throws {
@@ -141,6 +143,8 @@ Summary
         }
 
         XCTAssertTrue(junitXML.xmlString.starts(with: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"))
+        let dataXML = try! XMLDocument.init(xmlString: junitXML.xmlString, options: [])
+        XCTAssertEqual(dataXML.rootElement()?.name, "testsuites")
     }
 
     func testOutputFormat() {
