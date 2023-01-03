@@ -16,7 +16,7 @@ struct xcresultparser: ParsableCommand {
         abstract: "xcresultparser \(marketingVersion)\nInterpret binary .xcresult files and print summary in different formats: txt, xml, html or colored cli output."
     )
     
-    @Option(name: .shortAndLong, help: "The output format. It can be either 'txt', 'cli', 'html', 'md', 'xml', or 'cobertura'. In case of 'xml' JUnit format for test results and generic format (Sonarqube) for coverage data is used. In the case of 'cobertura', --coverage is implied.")
+    @Option(name: .shortAndLong, help: "The output format. It can be either 'txt', 'cli', 'html', 'md', 'xml', 'junit', or 'cobertura'. In case of 'xml' sonar generic format for test results and generic format (Sonarqube) for coverage data is used. In the case of 'cobertura', --coverage is implied.")
     var outputFormat: String?
     
     @Option(name: .shortAndLong, help: "The name of the project root. If present paths and urls are relative to the specified directory.")
