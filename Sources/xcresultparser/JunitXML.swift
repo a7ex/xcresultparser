@@ -75,7 +75,9 @@ public struct JunitXML {
     
     func createRootElement() -> XMLElement {
         let element = XMLElement(name: nodeNames.testsuitesName)
-        element.addAttribute(name: "version", stringValue: "1")
+        if testReportFormat == .sonar {
+            element.addAttribute(name: "version", stringValue: "1")
+        }
         return element
     }
     
@@ -100,15 +102,10 @@ public struct JunitXML {
         
         if testReportFormat != .sonar {
             if let date = testAction?.startedTime {
-                let dateFormatter = ISO8601DateFormatter()
-                testsuites.addAttribute(name: "timestamp", stringValue: dateFormatter.string(from: date))
                 if let ended = testAction?.endedTime {
                     let duration = ended.timeIntervalSince(date)
                     testsuites.addAttribute(name: "time", stringValue: numFormatter.unwrappedString(for: duration))
                 }
-            }
-            if let runDestination = testAction?.runDestination {
-                testsuites.addChild(runDestinationXML(runDestination))
             }
         }
         let testPlanRunSummaries = testPlanRun.summaries
