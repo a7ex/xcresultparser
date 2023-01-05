@@ -23,6 +23,7 @@ public class CoverageConverter {
     let resultFile: XCResultFile
     let projectRoot: String
     let codeCoverage: CodeCoverage
+    let invocationRecord: ActionsInvocationRecord
     let coverageRegexp: NSRegularExpression?
     
     public init?(with url: URL,
@@ -33,6 +34,10 @@ public class CoverageConverter {
         }
         self.projectRoot = projectRoot
         codeCoverage = record
+        guard let invocationRecord = resultFile.getInvocationRecord() else {
+            return nil
+        }
+        self.invocationRecord = invocationRecord
         
         let pattern = #"(\d+):\s*(\d)"#
         coverageRegexp = try? NSRegularExpression(pattern: pattern, options: .anchorsMatchLines)
