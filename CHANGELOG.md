@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version 1.2.1 - 2023-01-03
 ### CHANGES:
+Fixes the junit output formatter, set cobertura timestamp to test execution time and improves the entire test suite.
+
+## Version 1.2.1 - 2023-01-03
+### CHANGES:
 Make output test report format for xml output selectable.
 
 ## Version 1.2.0 - 2022-12-15
