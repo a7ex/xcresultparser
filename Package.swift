@@ -54,6 +54,8 @@ let package = Package(
             resources: [
                 .copy("TestAssets/test.xcresult"),
                 .copy("TestAssets/junit.xml"),
+                .copy("TestAssets/sonarTestExecution.xml"),
+                .copy("TestAssets/cobertura.xml"),
             ]
         )
     ]
