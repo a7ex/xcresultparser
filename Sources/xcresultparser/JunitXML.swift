@@ -26,7 +26,7 @@ fileprivate var nodeNames = NodeNames(
     testcaseClassNameName: "classname"
 )
 
-public struct JunitXML {
+public struct JunitXML : XmlSerializable {
     
     struct TestrunProperty {
         let name: String

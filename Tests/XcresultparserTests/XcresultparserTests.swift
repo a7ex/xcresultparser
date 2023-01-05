@@ -125,10 +125,7 @@ Summary
             XCTFail("Unable to create JunitXML from \(xcresultFile)")
             return
         }
-
-        XCTAssertTrue(junitXML.xmlString.starts(with: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"))
-        let dataXML = try! XMLDocument.init(xmlString: junitXML.xmlString, options: [])
-        XCTAssertEqual(dataXML.rootElement()?.name, "testExecutions")
+        assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecution", actual: junitXML)
     }
 
     func testJunitXMLJunit() throws {
@@ -142,14 +139,7 @@ Summary
             XCTFail("Unable to create JunitXML from \(xcresultFile)")
             return
         }
-        
-        let expectedResultFile =  Bundle.module.url(forResource: "junit", withExtension: "xml")!
-
-        let actualJunitXMLDocument = try! XMLDocument.init(xmlString: junitXML.xmlString, options: [])
-        let expectedJunitXMLDocument = try! XMLDocument.init(contentsOf: expectedResultFile, options: [])
-        
-        XCTAssertTrue(junitXML.xmlString.starts(with: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"))
-        XCTAssertEqual(expectedJunitXMLDocument, actualJunitXMLDocument)
+        assertXmlTestReportsAreEqual(expectedFileName: "junit", actual: junitXML)
     }
 
     func testOutputFormat() {
@@ -170,5 +160,17 @@ Summary
 
         sut = OutputFormat(string: "xyz")
         XCTAssertEqual(OutputFormat.cli, sut)
+    }
+    
+    // MARK: helper functions
+    
+    func assertXmlTestReportsAreEqual(expectedFileName: String, actual: XmlSerializable) {
+        
+        let expectedResultFile =  Bundle.module.url(forResource: expectedFileName, withExtension: "xml")!
+
+        let actualXMLDocument = try! XMLDocument.init(data: Data("\(actual.xmlString)\n".utf8), options: [])
+        let expectedXMLDocument = try! XMLDocument.init(contentsOf: expectedResultFile, options: [])
+
+        XCTAssertEqual(actualXMLDocument.xmlString, expectedXMLDocument.xmlString)
     }
 }

@@ -31,7 +31,12 @@
 import Foundation
 import XCResultKit
 
-public class CoberturaCoverageConverter: CoverageConverter {
+public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
+
+    public var xmlString: String {
+        return try! xmlString(quiet: true)
+    }
+
     public override func xmlString(quiet: Bool) throws -> String {
         guard
             let dtdUrl = URL(string: "http://cobertura.sourceforge.net/xml/coverage-04.dtd"),
