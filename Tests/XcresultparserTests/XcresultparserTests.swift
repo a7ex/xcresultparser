@@ -112,6 +112,22 @@ Summary
         }
         let rslt = try converter.xmlString(quiet: quiet == 1)
         XCTAssertTrue(rslt.starts(with: "<coverage version=\"1\">"))
+
+        // Runs are non deterministic a simple compare is not doable for tests
+        //assertXmlTestReportsAreEqual(expectedFileName: "sonarCoverage", actual: converter)
+    }
+
+    func testCoberturaConverter() throws {
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
+        let projectRoot = ""
+        
+        guard let converter = CoberturaCoverageConverter(with: xcresultFile,
+                                                     projectRoot: projectRoot) else {
+            XCTFail("Unable to create CoverageConverter from \(xcresultFile)")
+            return
+        }
+        
+        assertXmlTestReportsAreEqual(expectedFileName: "cobertura", actual: converter)
     }
 
     func testJunitXMLSonar() throws {
