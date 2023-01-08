@@ -127,7 +127,7 @@ Summary
             return
         }
         
-        assertXmlTestReportsAreEqual(expectedFileName: "cobertura", actual: converter)
+        try assertXmlTestReportsAreEqual(expectedFileName: "cobertura", actual: converter)
     }
 
     func testJunitXMLSonar() throws {
@@ -141,7 +141,7 @@ Summary
             XCTFail("Unable to create JunitXML from \(xcresultFile)")
             return
         }
-        assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecution", actual: junitXML)
+        try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecution", actual: junitXML)
     }
 
     func testJunitXMLJunit() throws {
@@ -155,7 +155,7 @@ Summary
             XCTFail("Unable to create JunitXML from \(xcresultFile)")
             return
         }
-        assertXmlTestReportsAreEqual(expectedFileName: "junit", actual: junitXML)
+        try assertXmlTestReportsAreEqual(expectedFileName: "junit", actual: junitXML)
     }
 
     func testOutputFormat() {
@@ -180,12 +180,12 @@ Summary
     
     // MARK: helper functions
     
-    func assertXmlTestReportsAreEqual(expectedFileName: String, actual: XmlSerializable) {
+    func assertXmlTestReportsAreEqual(expectedFileName: String, actual: XmlSerializable) throws {
         
         let expectedResultFile =  Bundle.module.url(forResource: expectedFileName, withExtension: "xml")!
 
-        let actualXMLDocument = try! XMLDocument.init(data: Data("\(actual.xmlString)\n".utf8), options: [])
-        let expectedXMLDocument = try! XMLDocument.init(contentsOf: expectedResultFile, options: [])
+        let actualXMLDocument = try XMLDocument.init(data: Data("\(actual.xmlString)\n".utf8), options: [])
+        let expectedXMLDocument = try XMLDocument.init(contentsOf: expectedResultFile, options: [])
 
         XCTAssertEqual(actualXMLDocument.xmlString, expectedXMLDocument.xmlString)
     }

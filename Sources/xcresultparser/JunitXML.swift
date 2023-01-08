@@ -26,7 +26,7 @@ fileprivate var nodeNames = NodeNames(
     testcaseClassNameName: "classname"
 )
 
-public struct JunitXML : XmlSerializable {
+public struct JunitXML: XmlSerializable {
     
     struct TestrunProperty {
         let name: String
@@ -101,11 +101,9 @@ public struct JunitXML : XmlSerializable {
               }
         
         if testReportFormat != .sonar {
-            if let date = testAction?.startedTime {
-                if let ended = testAction?.endedTime {
-                    let duration = ended.timeIntervalSince(date)
-                    testsuites.addAttribute(name: "time", stringValue: numFormatter.unwrappedString(for: duration))
-                }
+            if let date = testAction?.startedTime, let ended = testAction?.endedTime {
+                let duration = ended.timeIntervalSince(date)
+                testsuites.addAttribute(name: "time", stringValue: numFormatter.unwrappedString(for: duration))   
             }
         }
         let testPlanRunSummaries = testPlanRun.summaries
@@ -122,7 +120,9 @@ public struct JunitXML : XmlSerializable {
         }
         return xml.xmlString(options: [.nodePrettyPrint, .nodeCompactEmptyElement])
     }
-    
+
+    // The XMLElement produced by this function is not allowed in the junit XML format and thus unused. 
+    // It is kept in case it serves another format.
     private func runDestinationXML(_ destination: ActionRunDestinationRecord) -> XMLElement {
         let properties = XMLElement(name: "properties")
         if !destination.displayName.isEmpty {

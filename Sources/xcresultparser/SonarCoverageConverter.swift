@@ -11,7 +11,11 @@ import XCResultKit
 public class SonarCoverageConverter: CoverageConverter, XmlSerializable {
 
     public var xmlString: String {
-        return try! xmlString(quiet: true)
+        do {
+            return try xmlString(quiet: true)
+        } catch {
+            return "Error creating coverage xml: \(error.localizedDescription)"
+        }
     }
 
     public override func xmlString(quiet: Bool) throws -> String {

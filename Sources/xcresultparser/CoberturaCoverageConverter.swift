@@ -34,7 +34,11 @@ import XCResultKit
 public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
 
     public var xmlString: String {
-        return try! xmlString(quiet: true)
+        do {
+            return try xmlString(quiet: true)
+        } catch {
+            return "Error creating coverage xml: \(error.localizedDescription)"
+        }
     }
 
     public override func xmlString(quiet: Bool) throws -> String {
@@ -169,13 +173,13 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
     func makeRootElement() -> XMLElement {
         // TODO some of these values are B.S. - figure out how to calculate, or better to omit if we don't know?
         let testAction = invocationRecord.actions.first { $0.schemeCommandName == "Test" }
-        let timeStamp = testAction?.startedTime.timeIntervalSince1970
+        let timeStamp = (testAction?.startedTime.timeIntervalSince1970) ?? Date().timeIntervalSince1970
         let rootElement = XMLElement(name: "coverage")
         rootElement.addAttribute(XMLNode.nodeAttribute(withName: "line-rate", stringValue: "\(codeCoverage.lineCoverage)"))
         rootElement.addAttribute(XMLNode.nodeAttribute(withName: "branch-rate", stringValue: "1.0"))
         rootElement.addAttribute(XMLNode.nodeAttribute(withName: "lines-covered", stringValue: "\(codeCoverage.coveredLines)"))
         rootElement.addAttribute(XMLNode.nodeAttribute(withName: "lines-valid", stringValue: "\(codeCoverage.executableLines)"))
-        rootElement.addAttribute(XMLNode.nodeAttribute(withName: "timestamp", stringValue: "\(timeStamp ?? Date().timeIntervalSince1970)"))
+        rootElement.addAttribute(XMLNode.nodeAttribute(withName: "timestamp", stringValue: "\(timeStamp)"))
         rootElement.addAttribute(XMLNode.nodeAttribute(withName: "version", stringValue: "diff_coverage 0.1"))
         rootElement.addAttribute(XMLNode.nodeAttribute(withName: "complexity", stringValue: "0.0"))
         rootElement.addAttribute(XMLNode.nodeAttribute(withName: "branches-valid", stringValue: "1.0"))
