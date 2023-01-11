@@ -26,7 +26,7 @@ fileprivate var nodeNames = NodeNames(
     testcaseClassNameName: "classname"
 )
 
-public struct JunitXML {
+public struct JunitXML: XmlSerializable {
     
     struct TestrunProperty {
         let name: String
@@ -75,7 +75,9 @@ public struct JunitXML {
     
     func createRootElement() -> XMLElement {
         let element = XMLElement(name: nodeNames.testsuitesName)
-        element.addAttribute(name: "version", stringValue: "1")
+        if testReportFormat == .sonar {
+            element.addAttribute(name: "version", stringValue: "1")
+        }
         return element
     }
     
@@ -99,16 +101,9 @@ public struct JunitXML {
               }
         
         if testReportFormat != .sonar {
-            if let date = testAction?.startedTime {
-                let dateFormatter = ISO8601DateFormatter()
-                testsuites.addAttribute(name: "timestamp", stringValue: dateFormatter.string(from: date))
-                if let ended = testAction?.endedTime {
-                    let duration = ended.timeIntervalSince(date)
-                    testsuites.addAttribute(name: "time", stringValue: numFormatter.unwrappedString(for: duration))
-                }
-            }
-            if let runDestination = testAction?.runDestination {
-                testsuites.addChild(runDestinationXML(runDestination))
+            if let date = testAction?.startedTime, let ended = testAction?.endedTime {
+                let duration = ended.timeIntervalSince(date)
+                testsuites.addAttribute(name: "time", stringValue: numFormatter.unwrappedString(for: duration))   
             }
         }
         let testPlanRunSummaries = testPlanRun.summaries
@@ -125,7 +120,9 @@ public struct JunitXML {
         }
         return xml.xmlString(options: [.nodePrettyPrint, .nodeCompactEmptyElement])
     }
-    
+
+    // The XMLElement produced by this function is not allowed in the junit XML format and thus unused. 
+    // It is kept in case it serves another format.
     private func runDestinationXML(_ destination: ActionRunDestinationRecord) -> XMLElement {
         let properties = XMLElement(name: "properties")
         if !destination.displayName.isEmpty {

@@ -8,7 +8,16 @@
 import Foundation
 import XCResultKit
 
-public class SonarCoverageConverter: CoverageConverter {
+public class SonarCoverageConverter: CoverageConverter, XmlSerializable {
+
+    public var xmlString: String {
+        do {
+            return try xmlString(quiet: true)
+        } catch {
+            return "Error creating coverage xml: \(error.localizedDescription)"
+        }
+    }
+
     public override func xmlString(quiet: Bool) throws -> String {
         let coverageXML = XMLElement(name: "coverage")
         coverageXML.addAttribute(name: "version", stringValue: "1")

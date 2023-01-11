@@ -3,10 +3,10 @@ import XCTest
 
 final class XcresultparserTests: XCTestCase {
     func testTextResultFormatter() throws {
-        let xcresultFile = Bundle.module.path(forResource: "test", ofType: "xcresult")!
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
 
         guard let resultParser = XCResultFormatter(
-            with: URL(fileURLWithPath: xcresultFile),
+            with: xcresultFile,
             formatter: TextResultFormatter(),
             coverageTargets: []
         ) else {
@@ -18,9 +18,9 @@ final class XcresultparserTests: XCTestCase {
         let expectedSummary = """
 Summary
   Number of errors = 0
-  Number of warnings = 2
+  Number of warnings = 3
   Number of analyzer warnings = 0
-  Number of tests = 1
+  Number of tests = 7
   Number of failed tests = 1
   Number of skipped tests = 0
 """
@@ -33,10 +33,10 @@ Summary
     }
 
     func testCLIResultFormatter() throws {
-        let xcresultFile = Bundle.module.path(forResource: "test", ofType: "xcresult")!
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
 
         guard let resultParser = XCResultFormatter(
-            with: URL(fileURLWithPath: xcresultFile),
+            with: xcresultFile,
             formatter: CLIResultFormatter(),
             coverageTargets: []
         ) else {
@@ -48,9 +48,9 @@ Summary
         let expectedSummary = """
 \u{001B}[1mSummary\u{001B}[0m
   Number of errors = 0\u{001B}[0m
-\u{001B}[33m  Number of warnings = 2\u{001B}[0m
+\u{001B}[33m  Number of warnings = 3\u{001B}[0m
   Number of analyzer warnings = 0\u{001B}[0m
-  Number of tests = 1\u{001B}[0m
+  Number of tests = 7\u{001B}[0m
 \u{001B}[31m  Number of failed tests = 1\u{001B}[0m
   Number of skipped tests = 0\u{001B}[0m
 """
@@ -65,10 +65,10 @@ Summary
     }
 
     func testHTMLResultFormatter() throws {
-        let xcresultFile = Bundle.module.path(forResource: "test", ofType: "xcresult")!
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
 
         guard let resultParser = XCResultFormatter(
-            with: URL(fileURLWithPath: xcresultFile),
+            with: xcresultFile,
             formatter: HTMLResultFormatter(),
             coverageTargets: []
         ) else {
@@ -87,9 +87,9 @@ Summary
         let expectedSummary = """
 <h2>Summary</h2>
 <p class="resultSummaryLineSuccess">Number of errors = 0</p>
-<p class="resultSummaryLineWarning">Number of warnings = 2</p>
+<p class="resultSummaryLineWarning">Number of warnings = 3</p>
 <p class="resultSummaryLineSuccess">Number of analyzer warnings = 0</p>
-<p class="resultSummaryLineSuccess">Number of tests = 1</p>
+<p class="resultSummaryLineSuccess">Number of tests = 7</p>
 <p class="resultSummaryLineFailed">Number of failed tests = 1</p>
 <p class="resultSummaryLineSuccess">Number of skipped tests = 0</p>
 """
@@ -101,50 +101,61 @@ Summary
     }
 
     func testCoverageConverter() throws {
-        let xcresultFile = Bundle.module.path(forResource: "test", ofType: "xcresult")!
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         let projectRoot = ""
         let quiet = 1
 
-        guard let converter = SonarCoverageConverter(with: URL(fileURLWithPath: xcresultFile), projectRoot: projectRoot) else {
+        guard let converter = SonarCoverageConverter(with: xcresultFile,
+                                                     projectRoot: projectRoot) else {
             XCTFail("Unable to create CoverageConverter from \(xcresultFile)")
             return
         }
         let rslt = try converter.xmlString(quiet: quiet == 1)
         XCTAssertTrue(rslt.starts(with: "<coverage version=\"1\">"))
+
+        // Runs are non deterministic a simple compare is not doable for tests
+        //assertXmlTestReportsAreEqual(expectedFileName: "sonarCoverage", actual: converter)
+    }
+
+    func testCoberturaConverter() throws {
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
+        let projectRoot = ""
+        
+        guard let converter = CoberturaCoverageConverter(with: xcresultFile,
+                                                     projectRoot: projectRoot) else {
+            XCTFail("Unable to create CoverageConverter from \(xcresultFile)")
+            return
+        }
+        
+        try assertXmlTestReportsAreEqual(expectedFileName: "cobertura", actual: converter)
     }
 
     func testJunitXMLSonar() throws {
-        let xcresultFile = Bundle.module.path(forResource: "test", ofType: "xcresult")!
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         let projectRoot = ""
         guard let junitXML = JunitXML(
-            with: URL(fileURLWithPath: xcresultFile),
+            with: xcresultFile,
             projectRoot: projectRoot,
             format: .sonar
         ) else {
             XCTFail("Unable to create JunitXML from \(xcresultFile)")
             return
         }
-
-        XCTAssertTrue(junitXML.xmlString.starts(with: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"))
-        let dataXML = try! XMLDocument.init(xmlString: junitXML.xmlString, options: [])
-        XCTAssertEqual(dataXML.rootElement()?.name, "testExecutions")
+        try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecution", actual: junitXML)
     }
 
     func testJunitXMLJunit() throws {
-        let xcresultFile = Bundle.module.path(forResource: "test", ofType: "xcresult")!
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         let projectRoot = ""
         guard let junitXML = JunitXML(
-            with: URL(fileURLWithPath: xcresultFile),
+            with: xcresultFile,
             projectRoot: projectRoot,
             format: .junit
         ) else {
             XCTFail("Unable to create JunitXML from \(xcresultFile)")
             return
         }
-
-        XCTAssertTrue(junitXML.xmlString.starts(with: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"))
-        let dataXML = try! XMLDocument.init(xmlString: junitXML.xmlString, options: [])
-        XCTAssertEqual(dataXML.rootElement()?.name, "testsuites")
+        try assertXmlTestReportsAreEqual(expectedFileName: "junit", actual: junitXML)
     }
 
     func testOutputFormat() {
@@ -165,5 +176,17 @@ Summary
 
         sut = OutputFormat(string: "xyz")
         XCTAssertEqual(OutputFormat.cli, sut)
+    }
+    
+    // MARK: helper functions
+    
+    func assertXmlTestReportsAreEqual(expectedFileName: String, actual: XmlSerializable) throws {
+        
+        let expectedResultFile =  Bundle.module.url(forResource: expectedFileName, withExtension: "xml")!
+
+        let actualXMLDocument = try XMLDocument.init(data: Data("\(actual.xmlString)\n".utf8), options: [])
+        let expectedXMLDocument = try XMLDocument.init(contentsOf: expectedResultFile, options: [])
+
+        XCTAssertEqual(actualXMLDocument.xmlString, expectedXMLDocument.xmlString)
     }
 }

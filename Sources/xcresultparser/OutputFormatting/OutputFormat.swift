@@ -19,3 +19,7 @@ public enum OutputFormat: String {
         }
     }
 }
+
+protocol XmlSerializable {
+    var xmlString: String { get }
+}

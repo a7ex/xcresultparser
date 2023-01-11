@@ -31,7 +31,16 @@
 import Foundation
 import XCResultKit
 
-public class CoberturaCoverageConverter: CoverageConverter {
+public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
+
+    public var xmlString: String {
+        do {
+            return try xmlString(quiet: true)
+        } catch {
+            return "Error creating coverage xml: \(error.localizedDescription)"
+        }
+    }
+
     public override func xmlString(quiet: Bool) throws -> String {
         guard
             let dtdUrl = URL(string: "http://cobertura.sourceforge.net/xml/coverage-04.dtd"),
@@ -163,7 +172,8 @@ public class CoberturaCoverageConverter: CoverageConverter {
     
     func makeRootElement() -> XMLElement {
         // TODO some of these values are B.S. - figure out how to calculate, or better to omit if we don't know?
-        let timeStamp = Date().timeIntervalSince1970
+        let testAction = invocationRecord.actions.first { $0.schemeCommandName == "Test" }
+        let timeStamp = (testAction?.startedTime.timeIntervalSince1970) ?? Date().timeIntervalSince1970
         let rootElement = XMLElement(name: "coverage")
         rootElement.addAttribute(XMLNode.nodeAttribute(withName: "line-rate", stringValue: "\(codeCoverage.lineCoverage)"))
         rootElement.addAttribute(XMLNode.nodeAttribute(withName: "branch-rate", stringValue: "1.0"))
