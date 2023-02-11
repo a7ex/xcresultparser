@@ -66,7 +66,6 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
         rootElement.addChild(packagesElement)
 
         let fileInfoSemaphore = DispatchSemaphore(value: 1)
-        let files = try coverageFileList()
         var fileInfo: [FileInfo] = []
         
         // since we need to invoke xccov for each file, it takes pretty much time
@@ -74,22 +73,29 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
         let queue = OperationQueue()
         queue.maxConcurrentOperationCount = 8 //Deadlock if this is = 1
         queue.qualityOfService = .userInitiated
-        for file in files {
-            guard !file.isEmpty else { continue }
-            if !quiet {
-                writeToStdError("Coverage for: \(file)\n")
+
+        for target in codeCoverage.targets {
+            if !coverageTargets.isEmpty {
+                guard coverageTargets.contains(target.name) else { continue }
             }
-            let op = BlockOperation { [self] in
-                do {
-                    let coverage = try fileCoverage(for: file, relativeTo: projectRoot)
-                    fileInfoSemaphore.wait()
-                    fileInfo.append(coverage)
-                    fileInfoSemaphore.signal()
-                } catch {
-                    writeToStdErrorLn(error.localizedDescription)
+            for codeCovFile in target.files {
+                let file = codeCovFile.path
+                guard !file.isEmpty else { continue }
+                if !quiet {
+                    writeToStdError("Coverage for: \(file)\n")
                 }
+                let op = BlockOperation { [self] in
+                    do {
+                        let coverage = try fileCoverage(for: file, relativeTo: projectRoot)
+                        fileInfoSemaphore.wait()
+                        fileInfo.append(coverage)
+                        fileInfoSemaphore.signal()
+                    } catch {
+                        writeToStdErrorLn(error.localizedDescription)
+                    }
+                }
+                queue.addOperation(op)
             }
-            queue.addOperation(op)
         }
         // This will block until all our operation have compleated (or been canceled)
         queue.waitUntilAllOperationsAreFinished()

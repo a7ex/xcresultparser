@@ -368,7 +368,7 @@ extension NumberFormatter {
     }
 }
 
-private extension CodeCoverage {
+extension CodeCoverage {
     func targets(filteredBy filter: [String]) -> Set<String> {
         let targetNames = targets.map { $0.name }
         guard !filter.isEmpty else {

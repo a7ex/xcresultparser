@@ -9,7 +9,7 @@ import Foundation
 import ArgumentParser
 import XcresultparserLib
 
-private let marketingVersion = "1.2.2"
+private let marketingVersion = "1.3"
 
 struct xcresultparser: ParsableCommand {
     static let configuration = CommandConfiguration(
@@ -22,7 +22,7 @@ struct xcresultparser: ParsableCommand {
     @Option(name: .shortAndLong, help: "The name of the project root. If present paths and urls are relative to the specified directory.")
     var projectRoot: String?
     
-    @Option(name: [.customShort("t"), .customLong("coverage-targets")], help: "Specify which targets to calculate coverage from")
+    @Option(name: [.customShort("t"), .customLong("coverage-targets")], help: "Specify which targets to calculate coverage from. You can use more than one -t option to specify a list of targets.")
     var coverageTargets: [String] = []
 
     @Option(name: .shortAndLong, help: "The fields in the summary. Default is all: errors|warnings|analyzerWarnings|tests|failed|skipped")
@@ -40,6 +40,9 @@ struct xcresultparser: ParsableCommand {
     @Flag(name: .shortAndLong, help: "Quiet. Don't print status output.")
     var quiet: Int
 
+    @Flag(name: [.customShort("i"), .customLong("target-info")], help: "Just print the targets contained in the xcresult.")
+    var printTargets: Int
+
     @Flag(name: .shortAndLong, help: "Show version number.")
     var version: Int
     
@@ -54,6 +57,10 @@ struct xcresultparser: ParsableCommand {
         guard let xcresult = xcresultFile,
               !xcresult.isEmpty else {
             throw ParseError.argumentError
+        }
+        guard printTargets != 1 else {
+            try outputTargetNames(for: xcresult)
+            return
         }
         if format == .xml {
             if coverage == 1 {
@@ -72,7 +79,11 @@ struct xcresultparser: ParsableCommand {
     }
     
     private func outputSonarXML(for xcresult: String) throws {
-        guard let converter = SonarCoverageConverter(with: URL(fileURLWithPath: xcresult), projectRoot: projectRoot ?? "") else {
+        guard let converter = SonarCoverageConverter(
+            with: URL(fileURLWithPath: xcresult),
+            projectRoot: projectRoot ?? "",
+            coverageTargets: coverageTargets
+        ) else {
             throw ParseError.argumentError
         }
         let rslt = try converter.xmlString(quiet: quiet == 1)
@@ -80,11 +91,26 @@ struct xcresultparser: ParsableCommand {
     }
     
     private func outputCoberturaXML(for xcresult: String) throws {
-        guard let converter = CoberturaCoverageConverter(with: URL(fileURLWithPath: xcresult), projectRoot: projectRoot ?? "") else {
+        guard let converter = CoberturaCoverageConverter(
+            with: URL(fileURLWithPath: xcresult),
+            projectRoot: projectRoot ?? "",
+            coverageTargets: coverageTargets
+        ) else {
             throw ParseError.argumentError
         }
         let rslt = try converter.xmlString(quiet: quiet == 1)
         writeToStdOut(rslt)
+    }
+
+    private func outputTargetNames(for xcresult: String) throws {
+        guard let converter = SonarCoverageConverter(
+            with: URL(fileURLWithPath: xcresult),
+            projectRoot: projectRoot ?? "",
+            coverageTargets: coverageTargets
+        ) else {
+            throw ParseError.argumentError
+        }
+        writeToStdOut(converter.targetsInfo)
     }
     
     private func outputJUnitXML(for xcresult: String,

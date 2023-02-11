@@ -77,11 +77,11 @@ You should see the tool respond like this:
 ```
 Error: Missing expected argument '<xcresult-file>'
 
-OVERVIEW: xcresultparser 1.1.5
+OVERVIEW: xcresultparser 1.3
 Interpret binary .xcresult files and print summary in different formats: txt,
 xml, html or colored cli output.
 
-USAGE: xcresultparser [--output-format <output-format>] [--project-root <project-root>] [--coverage-targets <coverage-targets> ...] [--summary-fields <summary-fields>] [--coverage ...] [--no-test-result ...] [--failed-tests-only ...] [--quiet ...] [--version ...] [<xcresult-file>]
+USAGE: xcresultparser [--output-format <output-format>] [--project-root <project-root>] [--coverage-targets <coverage-targets> ...] [--summary-fields <summary-fields>] [--coverage ...] [--no-test-result ...] [--failed-tests-only ...] [--quiet ...] [--target-info ...] [--version ...] [<xcresult-file>]
 
 ARGUMENTS:
   <xcresult-file>         The path to the .xcresult file.
@@ -89,15 +89,17 @@ ARGUMENTS:
 OPTIONS:
   -o, --output-format <output-format>
                           The output format. It can be either 'txt', 'cli',
-                          'html', 'md', 'xml', 'junit', or 'cobertura'. In case of 'xml'
-                          generic format (Sonarqube) for test results and generic format
-                          (Sonarqube) for coverage data is used. In the case of
-                          'cobertura', --coverage is implied.
+                          'html', 'md', 'xml', 'junit', or 'cobertura'. In case
+                          of 'xml' sonar generic format for test results and
+                          generic format (Sonarqube) for coverage data is used.
+                          In the case of 'cobertura', --coverage is implied.
   -p, --project-root <project-root>
                           The name of the project root. If present paths and
                           urls are relative to the specified directory.
   -t, --coverage-targets <coverage-targets>
-                          Specify which targets to calculate coverage from
+                          Specify which targets to calculate coverage from. You
+                          can use more than one -t option to specify a list of
+                          targets.
   -s, --summary-fields <summary-fields>
                           The fields in the summary. Default is all:
                           errors|warnings|analyzerWarnings|tests|failed|skipped
@@ -105,6 +107,7 @@ OPTIONS:
   -n, --no-test-result    Whether to print test results.
   -f, --failed-tests-only Whether to only print failed tests.
   -q, --quiet             Quiet. Don't print status output.
+  -i, --target-info       Just print the targets contained in the xcresult.
   -v, --version           Show version number.
   -h, --help              Show help information.
 ```
@@ -150,9 +153,14 @@ Create an xml file in generic test exectuion xml format:
 ./xcresultparser -o xml test.xcresult > sonarTestExecution.xml
 ```
 
-Create an xml file in generic code coverage xml format:
+Create an xml file in generic code coverage xml format for all targets:
 ```
 ./xcresultparser -c -o xml test.xcresult > sonarCoverage.xml
+```
+
+Create an xml file in generic code coverage xml format, but only for two of the targets "foo" and "baz":
+```
+./xcresultparser -c -o xml test.xcresult -t foo -t baz > sonarCoverage.xml
 ```
 
 ### Cobertura XML output

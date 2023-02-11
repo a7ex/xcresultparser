@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version 1.3 - 2023-02-11
+### CHANGES:
+Added support for the targets filter for the coverage functions as well
+Added new method to just list all target names contained in the xcresult archive
+
 ## Version 1.2.2 - 2023-01-08
 ### CHANGES:
 Fixes the junit output formatter, set cobertura timestamp to test execution time and improves the entire test suite.

@@ -25,9 +25,13 @@ public class CoverageConverter {
     let codeCoverage: CodeCoverage
     let invocationRecord: ActionsInvocationRecord
     let coverageRegexp: NSRegularExpression?
+    let coverageTargets: Set<String>
     
-    public init?(with url: URL,
-          projectRoot: String = "") {
+    public init?(
+        with url: URL,
+        projectRoot: String = "",
+        coverageTargets: [String] = []
+    ) {
         resultFile = XCResultFile(url: url)
         guard let record = resultFile.getCodeCoverage() else {
             return nil
@@ -38,6 +42,8 @@ public class CoverageConverter {
             return nil
         }
         self.invocationRecord = invocationRecord
+
+        self.coverageTargets = record.targets(filteredBy: coverageTargets)
         
         let pattern = #"(\d+):\s*(\d)"#
         coverageRegexp = try? NSRegularExpression(pattern: pattern, options: .anchorsMatchLines)
@@ -45,6 +51,12 @@ public class CoverageConverter {
     
     public func xmlString(quiet: Bool) throws -> String {
         fatalError("xmlString is not implemented")
+    }
+
+    public var targetsInfo: String {
+        return codeCoverage.targets.reduce("") {rslt, item in
+            return "\(rslt)\n\(item.name)"
+        }
     }
 
     func writeToStdErrorLn(_ str: String) {
@@ -74,18 +86,6 @@ public class CoverageConverter {
             relative
     }
     
-    
-    func coverageFileList() throws -> [String] {
-        var arguments = ["xccov", "view"]
-        if resultFile.url.pathExtension == "xcresult" {
-            arguments.append("--archive")
-        }
-        arguments.append("--file-list")
-        arguments.append(resultFile.url.path)
-        let filelistData = try Shell.execute(program: "/usr/bin/xcrun", with: arguments)
-        return String(decoding: filelistData, as: UTF8.self).components(separatedBy: "\n")
-    }
-    
     func coverageForFile(path: String) throws -> String {
         var arguments = ["xccov", "view"]
         if resultFile.url.pathExtension == "xcresult" {
@@ -96,6 +96,20 @@ public class CoverageConverter {
         arguments.append(resultFile.url.path)
         let coverageData = try Shell.execute(program: "/usr/bin/xcrun", with: arguments)
         return String(decoding: coverageData, as: UTF8.self)
+    }
+
+    // This method was replaced by going through all files in all targets
+    // That allows us to filter by targets easier
+    // It is not used at the moment, but is left here just to cover this xccov function
+    func coverageFileList() throws -> [String] {
+        var arguments = ["xccov", "view"]
+        if resultFile.url.pathExtension == "xcresult" {
+            arguments.append("--archive")
+        }
+        arguments.append("--file-list")
+        arguments.append(resultFile.url.path)
+        let filelistData = try Shell.execute(program: "/usr/bin/xcrun", with: arguments)
+        return String(decoding: filelistData, as: UTF8.self).components(separatedBy: "\n")
     }
 }
 
