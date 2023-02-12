@@ -180,13 +180,13 @@ Summary
     
     // MARK: helper functions
     
-    func assertXmlTestReportsAreEqual(expectedFileName: String, actual: XmlSerializable) throws {
+    func assertXmlTestReportsAreEqual(expectedFileName: String, actual: XmlSerializable, file: StaticString = #file, line: UInt = #line) throws {
         
         let expectedResultFile =  Bundle.module.url(forResource: expectedFileName, withExtension: "xml")!
 
         let actualXMLDocument = try XMLDocument.init(data: Data("\(actual.xmlString)\n".utf8), options: [])
         let expectedXMLDocument = try XMLDocument.init(contentsOf: expectedResultFile, options: [])
 
-        XCTAssertEqual(actualXMLDocument.xmlString, expectedXMLDocument.xmlString)
+        XCTAssertEqual(actualXMLDocument.xmlString, expectedXMLDocument.xmlString, file: file, line: line)
     }
 }

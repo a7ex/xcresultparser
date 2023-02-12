@@ -74,12 +74,15 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
         queue.maxConcurrentOperationCount = 8 //Deadlock if this is = 1
         queue.qualityOfService = .userInitiated
 
+        var processedFiles = [String]()
         for target in codeCoverage.targets {
             if !coverageTargets.isEmpty {
                 guard coverageTargets.contains(target.name) else { continue }
             }
             for codeCovFile in target.files {
                 let file = codeCovFile.path
+                guard !processedFiles.contains(file) else { continue }
+                processedFiles.append(file)
                 guard !file.isEmpty else { continue }
                 if !quiet {
                     writeToStdError("Coverage for: \(file)\n")
