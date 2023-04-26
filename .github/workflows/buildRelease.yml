@@ -8,12 +8,12 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Build
-      run: swift build -c release --disable-sandbox --arch arm64 --arch x86_64
+      run: swift build -c release --arch arm64 --arch x86_64
 
     - name: Create release artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: xcresultparser
         path: .build/apple/Products/Release/xcresultparser
