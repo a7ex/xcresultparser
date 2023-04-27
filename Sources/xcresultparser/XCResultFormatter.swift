@@ -198,9 +198,22 @@ public struct XCResultFormatter {
                 outputFormatter.testConfiguration(thisSummary.name)
             )
             for thisTestableSummary in thisSummary.testableSummaries {
-                for thisTest in thisTestableSummary.tests {
-                    lines = lines + createTestSummaryInfo(thisTest, level: 0, failureSummaries: failureSummaries)
+                if let targetName = thisTestableSummary.targetName {
+                    lines.append(
+                        outputFormatter.testConfiguration(targetName)
+                    )
                 }
+
+                if failedTestsOnly,
+                   outputFormatter is CLIResultFormatter,
+                   thisTestableSummary.tests.allSatisfy({ $0.hasNoFailedTests }) {
+                    lines.append("No test failures")
+                } else {
+                    for thisTest in thisTestableSummary.tests {
+                        lines = lines + createTestSummaryInfo(thisTest, level: 0, failureSummaries: failureSummaries)
+                    }
+                }
+
                 lines.append(
                     outputFormatter.divider
                 )
@@ -397,5 +410,9 @@ private extension ActionTestSummaryGroup {
             }
         }
         return false
+    }
+
+    var hasNoFailedTests: Bool {
+        return !hasFailedTests
     }
 }
