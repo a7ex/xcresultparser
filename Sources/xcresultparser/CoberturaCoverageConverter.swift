@@ -42,12 +42,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
     }
 
     public override func xmlString(quiet: Bool) throws -> String {
-        guard
-            let dtdUrl = URL(string: "http://cobertura.sourceforge.net/xml/coverage-04.dtd"),
-            let dtd = try? XMLDTD(contentsOf: dtdUrl) else {
-                fatalError("DTD could not be constructed")
-        }
-
+        let dtd = readDTD()
         dtd.name = "coverage"
         dtd.systemID = "http://cobertura.sourceforge.net/xml/coverage-04.dtd"
 
@@ -160,6 +155,18 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
         }
 
         return doc.xmlString(options: [.nodePrettyPrint, .nodeCompactEmptyElement])
+    }
+
+    private func readDTD() -> XMLDTD {
+        if let dtdUrl = URL(string: "http://cobertura.sourceforge.net/xml/coverage-04.dtd"),
+           let dtd = try? XMLDTD(contentsOf: dtdUrl) {
+            return dtd
+        }
+        if let dtdUrl = Bundle.module.url(forResource: "coverage-04", withExtension: "dtd"),
+           let dtd = try? XMLDTD(contentsOf: dtdUrl) {
+            return dtd
+        }
+        fatalError("DTD could not be constructed")
     }
     
     private func fileCoverage(for file: String, relativeTo projectRoot: String) throws -> FileInfo {

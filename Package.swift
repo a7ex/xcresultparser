@@ -20,12 +20,12 @@ let package = Package(
         .package(
             name: "swift-argument-parser",
             url: "https://github.com/apple/swift-argument-parser.git",
-            .upToNextMajor(from: "0.4.3")
+            .upToNextMajor(from: "1.2.2")
         ),
         .package(
             name: "XCResultKit",
             url: "https://github.com/davidahouse/XCResultKit.git",
-            .upToNextMajor(from: "0.9.2")
+            .upToNextMajor(from: "1.0.2")
         ),
     ],
     targets: [
@@ -46,7 +46,10 @@ let package = Package(
                     package: "XCResultKit"
                 ),
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .copy("xcresultparser/Resources/coverage-04.dtd")
+            ]
         ),
         .testTarget(
             name: "XcresultparserTests",

@@ -9,7 +9,7 @@ import Foundation
 import ArgumentParser
 import XcresultparserLib
 
-private let marketingVersion = "1.4.1"
+private let marketingVersion = "1.4.2"
 
 struct xcresultparser: ParsableCommand {
     static let configuration = CommandConfiguration(
@@ -18,25 +18,25 @@ struct xcresultparser: ParsableCommand {
     
     @Option(name: .shortAndLong, help: "The output format. It can be either 'txt', 'cli', 'html', 'md', 'xml', 'junit', or 'cobertura'. In case of 'xml' sonar generic format for test results and generic format (Sonarqube) for coverage data is used. In the case of 'cobertura', --coverage is implied.")
     var outputFormat: String?
-    
+
     @Option(name: .shortAndLong, help: "The name of the project root. If present paths and urls are relative to the specified directory.")
     var projectRoot: String?
-    
+
     @Option(name: [.customShort("t"), .customLong("coverage-targets")], help: "Specify which targets to calculate coverage from. You can use more than one -t option to specify a list of targets.")
     var coverageTargets: [String] = []
 
     @Option(name: .shortAndLong, help: "The fields in the summary. Default is all: errors|warnings|analyzerWarnings|tests|failed|skipped")
     var summaryFields: String?
-    
+
     @Flag(name: .shortAndLong, help: "Whether to print coverage data.")
     var coverage: Int
-    
+
     @Flag(name: .shortAndLong, help: "Whether to print test results.")
     var noTestResult: Int
 
     @Flag(name: .shortAndLong, help: "Whether to only print failed tests.")
     var failedTestsOnly: Int
-    
+
     @Flag(name: .shortAndLong, help: "Quiet. Don't print status output.")
     var quiet: Int
 

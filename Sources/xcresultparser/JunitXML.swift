@@ -229,7 +229,7 @@ extension XMLElement {
 private extension ActionTestMetadata {
     func xmlNode(classname: String, numFormatter: NumberFormatter, format: TestReportFormat) -> XMLElement {
         let testcase = XMLElement(name: nodeNames.testcaseName)
-        testcase.addAttribute(name: "name", stringValue: name)
+        testcase.addAttribute(name: "name", stringValue: name ?? "No-name")
         if let time = duration,
            !nodeNames.testcaseDurationName.isEmpty {
             let correctedTime: String
@@ -374,8 +374,8 @@ private extension Bool {
 private extension ActionTestMetadata {
     func failureSummary(in summaries: [TestFailureIssueSummary]) -> TestFailureIssueSummary? {
         return summaries.first { summary in
-            return summary.testCaseName == identifier.replacingOccurrences(of: "/", with: ".") ||
-            summary.testCaseName == "-[\(identifier.replacingOccurrences(of: "/", with: " "))]"
+            return summary.testCaseName == identifier?.replacingOccurrences(of: "/", with: ".") ||
+            summary.testCaseName == "-[\(identifier?.replacingOccurrences(of: "/", with: " ") ?? "")]"
         }
     }
 }

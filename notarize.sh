@@ -1,5 +1,6 @@
-# First (if not already done) create a profile and store it in the keychain for later use with notary tool
 #!/bin/sh
+
+# First (if not already done) create a profile and store it in the keychain for later use with notary tool
 
 usage()
 {
@@ -10,10 +11,10 @@ usage()
     echo "$0 [-t <teamId>] [-n <productName>] [-p profileName]"
 	echo ""
     echo "DESCRIPTION:"
-	echo " -- Compile the app for M1 and Intel (fat) and notorize the resulting binary with Apple"
+	echo " -- Compile the app for M1 and Intel (fat) and notarize the resulting binary with Apple"
 	echo ""
     echo "  The options are as follows:"
-	echo "    -t | --teamId             Your Apple Developer Team Id (go to developer.apple.com, log in and scrol down.)"
+	echo "    -t | --teamId             Your Apple Developer Team Id (go to developer.apple.com, log in and scroll down.)"
     echo "    -n | --productName        The name of the product, so it can be found in the .build folder."
 	echo "    -p | --profileName        The name of the credentials profile, which is stored in the keychain."
 	echo "                              To create such a profile use: `xcrun notarytool store-credentials`"

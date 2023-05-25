@@ -80,7 +80,15 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "/Users/alex/Downloads/coverage.xcresult"
+            argument = "--target-info"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o txt"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o html"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument

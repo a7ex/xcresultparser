@@ -6,8 +6,8 @@
         "repositoryURL": "https://github.com/apple/swift-argument-parser.git",
         "state": {
           "branch": null,
-          "revision": "6b2aa2748a7881eebb9f84fb10c01293e15b52ca",
-          "version": "0.5.0"
+          "revision": "fee6933f37fde9a5e12a1e4aeaa93fe60116ff2a",
+          "version": "1.2.2"
         }
       },
       {
@@ -15,8 +15,8 @@
         "repositoryURL": "https://github.com/davidahouse/XCResultKit.git",
         "state": {
           "branch": null,
-          "revision": "2fe24c2675432c4b8c8d7ab0364e2760190b6fea",
-          "version": "0.9.3"
+          "revision": "612053960665fd1f16309c1ae4a8bf4efa64b8c5",
+          "version": "1.0.2"
         }
       }
     ]

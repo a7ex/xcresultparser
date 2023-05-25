@@ -195,7 +195,7 @@ public struct XCResultFormatter {
         
         for thisSummary in testPlanRunSummaries {
             lines.append(
-                outputFormatter.testConfiguration(thisSummary.name)
+                outputFormatter.testConfiguration(thisSummary.name ?? "No-name")
             )
             for thisTestableSummary in thisSummary.testableSummaries {
                 if let targetName = thisTestableSummary.targetName {
@@ -272,8 +272,8 @@ public struct XCResultFormatter {
     private func actionTestFileStatusString(for testData: ActionTestMetadata, failureSummaries: [TestFailureIssueSummary]) -> String {
         let duration = numFormatter.unwrappedString(for: testData.duration)
         let icon = testData.isFailed ? outputFormatter.testFailIcon: outputFormatter.testPassIcon
-        let testTitle = "\(icon) \(testData.name) (\(duration))"
-        let testCaseName = testData.identifier.replacingOccurrences(of: "/", with: ".")
+        let testTitle = "\(icon) \(testData.name ?? "Missing-Name") (\(duration))"
+        let testCaseName = testData.identifier?.replacingOccurrences(of: "/", with: ".") ?? "No-identifier"
         if let summary = failureSummaries.first(where: { $0.testCaseName == testCaseName }) {
             return actionTestFailureStatusString(with: testTitle, and: summary)
         } else {
