@@ -34,7 +34,7 @@ while [ "$1" != "" ]; do
                             	productName="$1"
                         		;;
         -p | --profileName ) 	shift
-                            	productName="$1"
+                            	profileName="$1"
                         		;;
         -h | --help )       	usage
                         		exit
@@ -68,7 +68,7 @@ codesign --sign "$teamId" -o runtime "product/$productName"
 zip -r "product/${productName}.zip" "product/$productName"
 
 # upload to notary
-xcrun notarytool submit "product/${productName}.zip" -p "$keychainProfileName"
+xcrun notarytool submit "product/${productName}.zip" -p "$profileName"
 
 # ------------------------- Sample Output
 # Conducting pre-submission checks for xcresultparser.zip and initiating connection to the Apple notary service...
