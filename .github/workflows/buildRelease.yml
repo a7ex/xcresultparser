@@ -20,12 +20,14 @@ jobs:
 
     - name: Get release ID
       id: get_release_id
-      run: echo ::set-output name=id::$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.event.release.tag_name }} | jq -r '.id')
+      run: |
+        id=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.event.release.tag_name }} | jq -r '.id')
+        echo "RELEASE_ID=$id" >> $GITHUB_ENV
 
     - name: Upload release asset
       uses: actions/upload-release-asset@v1
       with:
-        upload_url: https://uploads.github.com/repos/${{ github.repository }}/releases/${{ steps.get_release_id.outputs.id }}/assets?name=xcresultparser
+        upload_url: https://uploads.github.com/repos/${{ github.repository }}/releases/${{ env.RELEASE_ID }}/assets?name=xcresultparser
         asset_path: .build/apple/Products/Release/xcresultparser
         asset_name: xcresultparser
         asset_content_type: application/octet-stream
