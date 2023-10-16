@@ -199,6 +199,7 @@ public struct XCResultFormatter {
         }
         let testPlanRunSummaries = testPlanRun.summaries
         let failureSummaries = invocationRecord.issues.testFailureSummaries
+        let runDestination = testAction.runDestination.displayName
         
         for thisSummary in testPlanRunSummaries {
             lines.append(
@@ -206,8 +207,9 @@ public struct XCResultFormatter {
             )
             for thisTestableSummary in thisSummary.testableSummaries {
                 if let targetName = thisTestableSummary.targetName {
+                    let targetConfig = "\(targetName) on '\(runDestination)'"
                     lines.append(
-                        outputFormatter.testConfiguration(targetName)
+                        outputFormatter.testConfiguration(targetConfig)
                     )
                 }
 
