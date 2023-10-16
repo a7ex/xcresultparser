@@ -185,8 +185,7 @@ public struct XCResultFormatter {
     
     private func createTestDetailsString() -> [String] {
         var lines = [String]()
-        let testAction = invocationRecord.actions.first { $0.schemeCommandName == "Test" }
-        if let testAction = testAction {
+        for testAction in invocationRecord.actions where testAction.schemeCommandName == "Test" {
             lines.append(contentsOf: createTestDetailsString(forAction: testAction))
         }
         return lines
