@@ -186,7 +186,15 @@ public struct XCResultFormatter {
     private func createTestDetailsString() -> [String] {
         var lines = [String]()
         let testAction = invocationRecord.actions.first { $0.schemeCommandName == "Test" }
-        guard let testsId = testAction?.actionResult.testsRef?.id,
+        if let testAction = testAction {
+            lines.append(contentsOf: createTestDetailsString(forAction: testAction))
+        }
+        return lines
+    }
+    
+    private func createTestDetailsString(forAction testAction: ActionRecord) -> [String] {
+        var lines = [String]()
+        guard let testsId = testAction.actionResult.testsRef?.id,
               let testPlanRun = resultFile.getTestPlanRunSummaries(id: testsId) else {
             return lines
         }
