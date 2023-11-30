@@ -280,7 +280,7 @@ public struct XCResultFormatter {
     
     private func actionTestFileStatusString(for testData: ActionTestMetadata, failureSummaries: [TestFailureIssueSummary]) -> String {
         let duration = numFormatter.unwrappedString(for: testData.duration)
-        let icon = testData.isFailed ? outputFormatter.testFailIcon: outputFormatter.testPassIcon
+        let icon = actionTestFileStatusStringIcon(testData: testData)
         let testTitle = "\(icon) \(testData.name ?? "Missing-Name") (\(duration))"
         let testCaseName = testData.identifier?.replacingOccurrences(of: "/", with: ".") ?? "No-identifier"
         if let summary = failureSummaries.first(where: { $0.testCaseName == testCaseName }) {
@@ -289,7 +289,19 @@ public struct XCResultFormatter {
             return outputFormatter.singleTestItem(testTitle, failed: testData.isFailed)
         }
     }
-    
+
+    private func actionTestFileStatusStringIcon(testData: ActionTestMetadata) -> String {
+        if testData.isSuccessful {
+            return outputFormatter.testPassIcon
+        }
+
+        if testData.isSkipped {
+            return outputFormatter.testSkipIcon
+        }
+
+        return outputFormatter.testFailIcon
+    }
+
     private func actionTestFailureStatusString(with header: String, and failure: TestFailureIssueSummary) -> String {
         return outputFormatter.failedTestItem(header, message: failure.message)
     }
@@ -374,7 +386,15 @@ public struct XCResultFormatter {
 
 extension ActionTestMetadata {
     var isFailed: Bool {
-        return testStatus != "Success"
+        return isSuccessful == false && isSkipped == false
+    }
+
+    var isSuccessful: Bool {
+        return testStatus == "Success" || testStatus == "Expected Failure"
+    }
+
+    var isSkipped: Bool {
+        return testStatus == "Skipped"
     }
 }
 
