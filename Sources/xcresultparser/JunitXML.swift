@@ -207,6 +207,8 @@ public struct JunitXML: XmlSerializable {
                 } else {
                     testcase.addChild(failureWithoutSummary)
                 }
+            } else if thisTest.isSkipped {
+                testcase.addChild(skippedWithoutSummary)
             }
             combined.append(testcase)
         }
@@ -215,6 +217,10 @@ public struct JunitXML: XmlSerializable {
     
     private var failureWithoutSummary: XMLElement {
         return XMLElement(name: "failure")
+    }
+
+    private var skippedWithoutSummary: XMLElement {
+        return XMLElement(name: "skipped")
     }
 }
 
