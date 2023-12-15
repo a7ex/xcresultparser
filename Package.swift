@@ -56,7 +56,9 @@ let package = Package(
             dependencies: ["XcresultparserLib"],
             resources: [
                 .copy("TestAssets/test.xcresult"),
+                .copy("TestAssets/test_merged.xcresult"),
                 .copy("TestAssets/junit.xml"),
+                .copy("TestAssets/junit_merged.xml"),
                 .copy("TestAssets/sonarTestExecution.xml"),
                 .copy("TestAssets/cobertura.xml"),
             ]

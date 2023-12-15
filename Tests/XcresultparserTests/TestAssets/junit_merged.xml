@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="7" failures="1" time="18.02">
+  <testsuite name="XcresultparserTests.xctest" tests="7" failures="1" time="4.3274">
+    <testcase name="testCLIResultFormatter()" time="0.3073" classname="XcresultparserTests"/>
+    <testcase name="testCoverageConverter()" time="2.818" classname="XcresultparserTests">
+      <failure message="short">failed - Unable to create CoverageConverter from /Users/fhaeser/Library/Developer/Xcode/DerivedData/xcresultparser-ebyquorsyljyyuchjpndxzpxmxvo/Build/Products/Debug/XcresultparserTests.xctest/Contents/Resources/Xcresultparser_XcresultparserTests.bundle/Contents/Resources/test.xcresult (/Users/fhaeser/code/xcresultparser/Tests/XcresultparserTests/XcresultparserTests.swift:108)</failure>
+    </testcase>
+    <testcase name="testHTMLResultFormatter()" time="0.3317" classname="XcresultparserTests"/>
+    <testcase name="testJunitXMLJunit()" time="0.2559" classname="XcresultparserTests"/>
+    <testcase name="testJunitXMLSonar()" time="0.2664" classname="XcresultparserTests"/>
+    <testcase name="testOutputFormat()" time="0.0008" classname="XcresultparserTests"/>
+    <testcase name="testTextResultFormatter()" time="0.3451" classname="XcresultparserTests"/>
+  </testsuite>
+  <testsuite name="XcresultparserTests.xctest" tests="7" failures="1" time="4.3274">
+    <testcase name="testCLIResultFormatter()" time="0.3073" classname="XcresultparserTests"/>
+    <testcase name="testCoverageConverter()" time="2.818" classname="XcresultparserTests">
+      <failure message="short">failed - Unable to create CoverageConverter from /Users/fhaeser/Library/Developer/Xcode/DerivedData/xcresultparser-ebyquorsyljyyuchjpndxzpxmxvo/Build/Products/Debug/XcresultparserTests.xctest/Contents/Resources/Xcresultparser_XcresultparserTests.bundle/Contents/Resources/test.xcresult (/Users/fhaeser/code/xcresultparser/Tests/XcresultparserTests/XcresultparserTests.swift:108)</failure>
+    </testcase>
+    <testcase name="testHTMLResultFormatter()" time="0.3317" classname="XcresultparserTests"/>
+    <testcase name="testJunitXMLJunit()" time="0.2559" classname="XcresultparserTests"/>
+    <testcase name="testJunitXMLSonar()" time="0.2664" classname="XcresultparserTests"/>
+    <testcase name="testOutputFormat()" time="0.0008" classname="XcresultparserTests"/>
+    <testcase name="testTextResultFormatter()" time="0.3451" classname="XcresultparserTests"/>
+  </testsuite>
+</testsuites>
