@@ -27,20 +27,20 @@ fileprivate var nodeNames = NodeNames(
 )
 
 public struct JunitXML: XmlSerializable {
-    
+
     struct TestrunProperty {
         let name: String
         let value: String
-        
+
         var xmlNode: XMLElement {
             let prop = XMLElement(name: "property")
             prop.addAttribute(name: name, stringValue: value)
             return prop
         }
     }
-    
+
     // MARK: - Properties
-    
+
     private let resultFile: XCResultFile
     private let projectRoot: String
     private let invocationRecord: ActionsInvocationRecord
@@ -72,7 +72,7 @@ public struct JunitXML: XmlSerializable {
             )
         }
     }
-    
+
     func createRootElement() -> XMLElement {
         let element = XMLElement(name: nodeNames.testsuitesName)
         if testReportFormat == .sonar {
@@ -80,12 +80,12 @@ public struct JunitXML: XmlSerializable {
         }
         return element
     }
-    
+
     public var xmlString: String {
         let testsuites = createRootElement()
         let xml = XMLDocument(rootElement: testsuites)
         xml.characterEncoding = "UTF-8"
-        
+
         if testReportFormat != .sonar {
             let metrics = invocationRecord.metrics
             let testsCount = metrics.testsCount ?? 0
@@ -93,35 +93,48 @@ public struct JunitXML: XmlSerializable {
             let testsFailedCount = metrics.testsFailedCount ?? 0
             testsuites.addAttribute(name: "failures", stringValue: String(testsFailedCount))
         }
-        
-        let testAction = invocationRecord.actions.first { $0.schemeCommandName == "Test" }
-        guard let testsId = testAction?.actionResult.testsRef?.id,
-              let testPlanRun = resultFile.getTestPlanRunSummaries(id: testsId) else {
-                  return xml.xmlString(options: [.nodePrettyPrint, .nodeCompactEmptyElement])
-              }
-        
-        if testReportFormat != .sonar {
-            if let date = testAction?.startedTime, let ended = testAction?.endedTime {
-                let duration = ended.timeIntervalSince(date)
-                testsuites.addAttribute(name: "time", stringValue: numFormatter.unwrappedString(for: duration))   
-            }
+
+        let testActions = invocationRecord.actions.filter({ $0.schemeCommandName == "Test" })
+        guard !testActions.isEmpty else {
+            return xml.xmlString(options: [.nodePrettyPrint, .nodeCompactEmptyElement])
         }
-        let testPlanRunSummaries = testPlanRun.summaries
-        let failureSummaries = invocationRecord.issues.testFailureSummaries
-        
-        for thisSummary in testPlanRunSummaries {
-            for thisTestableSummary in thisSummary.testableSummaries {
-                for group in thisTestableSummary.tests {
-                    for testsuite in createTestSuite(group, failureSummaries: failureSummaries) {
-                        testsuites.addChild(testsuite)
+
+        var overallTestSuiteDuration = 0.0
+        for testAction in testActions {
+            guard let testsId = testAction.actionResult.testsRef?.id,
+                  let testPlanRun = resultFile.getTestPlanRunSummaries(id: testsId) else {
+                    continue
+                  }
+
+            let testPlanRunSummaries = testPlanRun.summaries
+            let failureSummaries = invocationRecord.issues.testFailureSummaries
+
+            if testReportFormat != .sonar {
+                let startDate = testAction.startedTime
+                let endDate = testAction.endedTime
+                let duration = endDate.timeIntervalSince(startDate)
+                overallTestSuiteDuration += duration
+            }
+
+            for thisSummary in testPlanRunSummaries {
+                for thisTestableSummary in thisSummary.testableSummaries {
+                    for group in thisTestableSummary.tests {
+                        for testsuite in createTestSuite(group, failureSummaries: failureSummaries) {
+                            testsuites.addChild(testsuite)
+                        }
                     }
                 }
             }
         }
+
+        if testReportFormat != .sonar {
+            testsuites.addAttribute(name: "time", stringValue: numFormatter.unwrappedString(for: overallTestSuiteDuration))
+        }
+
         return xml.xmlString(options: [.nodePrettyPrint, .nodeCompactEmptyElement])
     }
 
-    // The XMLElement produced by this function is not allowed in the junit XML format and thus unused. 
+    // The XMLElement produced by this function is not allowed in the junit XML format and thus unused.
     // It is kept in case it serves another format.
     private func runDestinationXML(_ destination: ActionRunDestinationRecord) -> XMLElement {
         let properties = XMLElement(name: "properties")
@@ -137,7 +150,7 @@ public struct JunitXML: XmlSerializable {
         }
         return properties
     }
-    
+
     private func createTestSuite(
         _ group: ActionTestSummaryGroup,
         failureSummaries: [TestFailureIssueSummary],
@@ -172,7 +185,7 @@ public struct JunitXML: XmlSerializable {
             }
         }
     }
-    
+
     private func createTestSuiteFinally(
         _ group: ActionTestSummaryGroup,
         tests: [ActionTestMetadata],
@@ -196,7 +209,7 @@ public struct JunitXML: XmlSerializable {
         }
         return node
     }
-    
+
     private func createTestCases(for name: String, tests: [ActionTestMetadata], failureSummaries: [TestFailureIssueSummary]) -> [XMLElement] {
         var combined = [XMLElement]()
         for thisTest in tests {
@@ -214,7 +227,7 @@ public struct JunitXML: XmlSerializable {
         }
         return combined
     }
-    
+
     private var failureWithoutSummary: XMLElement {
         return XMLElement(name: "failure")
     }
@@ -261,11 +274,11 @@ private extension ActionTestSummaryGroup {
         let tests: Int
         let failures: Int
     }
-    
+
     var identifierString: String {
         return identifier ?? ""
     }
-    
+
     func testSuiteXML(numFormatter: NumberFormatter) -> XMLElement {
         let testsuite = XMLElement(name: "testsuite")
         testsuite.addAttribute(name: "name", stringValue: nameString)
@@ -275,7 +288,7 @@ private extension ActionTestSummaryGroup {
         testsuite.addAttribute(name: "time", stringValue: numFormatter.unwrappedString(for: duration))
         return testsuite
     }
-    
+
     func sonarFileXML(projectRoot: String) -> XMLElement {
         let testsuite = XMLElement(name: "file")
         testsuite.addAttribute(name: "path", stringValue: relativeFilenameGuess(in: projectRoot))
@@ -308,11 +321,11 @@ private extension ActionTestSummaryGroup {
             return identifierString
         }
     }
-    
+
     private var statistics: TestMetrics {
         return TestMetrics(tests: numberOfTests, failures: numberOfFailures)
     }
-    
+
     private var numberOfTests: Int {
         return subtests.count + subtestGroups.reduce(0) { result, group in
             return result + group.numberOfTests
@@ -355,7 +368,7 @@ private extension TestFailureIssueSummary {
         }
         return failure
     }
-    
+
     private func relativePart(of url: URL, relativeTo projectRoot: String) -> String {
         guard !projectRoot.isEmpty else {
             return url.path

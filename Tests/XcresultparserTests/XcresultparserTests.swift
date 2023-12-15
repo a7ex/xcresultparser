@@ -120,13 +120,13 @@ Summary
     func testCoberturaConverter() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         let projectRoot = ""
-        
+
         guard let converter = CoberturaCoverageConverter(with: xcresultFile,
                                                      projectRoot: projectRoot) else {
             XCTFail("Unable to create CoverageConverter from \(xcresultFile)")
             return
         }
-        
+
         try assertXmlTestReportsAreEqual(expectedFileName: "cobertura", actual: converter)
     }
 
@@ -158,6 +158,20 @@ Summary
         try assertXmlTestReportsAreEqual(expectedFileName: "junit", actual: junitXML)
     }
 
+    func testJunitXMLMergedJunit() throws {
+        let xcresultFile = Bundle.module.url(forResource: "test_merged", withExtension: "xcresult")!
+        let projectRoot = ""
+        guard let junitXML = JunitXML(
+            with: xcresultFile,
+            projectRoot: projectRoot,
+            format: .junit
+        ) else {
+            XCTFail("Unable to create JunitXML from \(xcresultFile)")
+            return
+        }
+        try assertXmlTestReportsAreEqual(expectedFileName: "junit_merged", actual: junitXML)
+    }
+
     func testOutputFormat() {
         var sut = OutputFormat(string: "txt")
         XCTAssertEqual(OutputFormat.txt, sut)
@@ -177,11 +191,11 @@ Summary
         sut = OutputFormat(string: "xyz")
         XCTAssertEqual(OutputFormat.cli, sut)
     }
-    
+
     // MARK: helper functions
-    
+
     func assertXmlTestReportsAreEqual(expectedFileName: String, actual: XmlSerializable, file: StaticString = #file, line: UInt = #line) throws {
-        
+
         let expectedResultFile =  Bundle.module.url(forResource: expectedFileName, withExtension: "xml")!
 
         let actualXMLDocument = try XMLDocument.init(data: Data("\(actual.xmlString)\n".utf8), options: [])
