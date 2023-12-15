@@ -126,6 +126,18 @@ However, if all you need is to output the contents of the xcresult bundle to the
 ./xcresultparser -o cli test.xcresult
 ```
 
+You can also merge two xcresult files with:
+```
+xcrun xcresulttool merge Result1.xcresult Result2.xcresult --output-path=Result_merged.xcresult
+```
+
+With xcresultparser >= 1.5.2 you can now call:
+xcresultparser Result_merged.xcresult --output-format=junit
+
+It iterates through all available test actions
+It creates a test suite for each test action
+It sets the overall test time of the testsuites to the sum of all test suite times.
+
 ## Examples
 ### Colored CLI output
 Print the test results in color to the command line:
