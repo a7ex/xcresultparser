@@ -36,14 +36,14 @@ enum JSONParseError: Error {
 }
 
 // Subrange information struct
-struct Subrange: Codable {
+struct Subrange: Decodable {
     let column: Int
     let executionCount: Int
     let length: Int
 }
 
 // LineDetail information struct
-struct LineDetail: Codable {
+struct LineDetail: Decodable {
     let isExecutable: Bool
     let line: Int
     let executionCount: Int?
@@ -51,7 +51,7 @@ struct LineDetail: Codable {
 }
 
 // FileCoverage information struct
-struct FileCoverage: Codable {
+struct FileCoverage: Decodable {
     let files: [String: [LineDetail]]
 
     // Custom initializer to handle the top-level dictionary
@@ -65,17 +65,6 @@ struct FileCoverage: Codable {
             filesDict[keyString] = lineDetails
         }
         self.files = filesDict
-    }
-
-    // Custom encoding method to handle the top-level dictionary
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        for (key, value) in files {
-            guard let codingKey = CodingKeys(stringValue: key) else {
-                continue
-            }
-            try container.encode(value, forKey: codingKey)
-        }
     }
 
     private struct CodingKeys: CodingKey {
@@ -151,15 +140,15 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
 
                 for lineData in value {
                     let lineNum = lineData.line
-                    var covered = lineData.executionCount
-                    if covered != nil {
-                        // If the line coverage count is a MAX_INT, just set it to 1
-                        if covered == Int.max {
-                            covered = 1
-                        }
-                        let line = LineInfo(lineNumber: String(lineNum), coverage: covered!)
-                        fileLines.append(line)
+                    guard var covered = lineData.executionCount else {
+                        continue
                     }
+                    // If the line coverage count is a MAX_INT, just set it to 1
+                    if covered == Int.max {
+                        covered = 1
+                    }
+                    let line = LineInfo(lineNumber: String(lineNum), coverage: covered)
+                    fileLines.append(line)
                 }
 
                 let fileInfoInst = FileInfo(path: self.relativePath(for: fileName, relativeTo: self.projectRoot), lines: fileLines)
