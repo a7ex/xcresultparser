@@ -45,7 +45,7 @@ public class CoverageConverter {
 
         self.coverageTargets = record.targets(filteredBy: coverageTargets)
         
-        let pattern = #"(\d+):\s*(\d)"#
+        let pattern = #"(\d+):\s*(\d+)"#
         coverageRegexp = try? NSRegularExpression(pattern: pattern, options: .anchorsMatchLines)
     }
     
