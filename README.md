@@ -16,21 +16,31 @@ In case of 'xml' JUnit format for test results and generic format (Sonarqube) fo
 
 You can also specify the name of the project root. Paths and urls are then relative to the specified directory. (used for urls in xml output)
 
-This tool can read test result data and code coverage data from an .xcarchive using the developer tools included in `Xcode 11`. Namely here: xcresulttool and xccov to get json data from .xcresult bundles.
+This tool can read test result data and code coverage data from an .xcarchive using the developer tools included in `Xcode 13`. Namely here: xcresulttool and xccov to get json data from .xcresult bundles.
 
 Parsing the JSON is done using the great [XCResultKit](https://github.com/davidahouse/XCResultKit) package.
 
 ## Converting code coverage data
-Unfortunately converting to the coverage xml format suited for e.g. sonarqube is a tedious task.
-It requires us to invoke the xccov binary for each single file in the project.
+~~Unfortunately converting to the coverage xml format suited for e.g. sonarqube is a tedious task.
+It requires us to invoke the xccov binary for each single file in the project.~~
 
-First we get a list of source files with coverage data from the archive, using xccov --file-list
+~~First we get a list of source files with coverage data from the archive, using xccov --file-list
 and then we need to invoke xccov for each single file. That takes a considerable amount of time.
-So at least we can spread it over different threads, so that it executes in parallel and is overall faster.
+So at least we can spread it over different threads, so that it executes in parallel and is overall faster.~
 
-Until now we used [xccov-to-sonarqube-generic.sh]( https://github.com/SonarSource/sonar-scanning-examples/blob/master/swift-coverage/swift-coverage-example/xccov-to-sonarqube-generic.sh)
+~~Until now we used [xccov-to-sonarqube-generic.sh]( https://github.com/SonarSource/sonar-scanning-examples/blob/master/swift-coverage/swift-coverage-example/xccov-to-sonarqube-generic.sh)
 which does the same job, just in a shell script. It has the same problem
-and since it can not spawn it to different threads, it takes about 5x the time.
+and since it can not spawn it to different threads, it takes about 5x the time.~~
+
+It used to be like described above up until Xcode 13. Xcode 13 brought a new version of the xccov commandline tool, which now can output the entire cioverage data at once. No more tedious task of calling ionto xccov for each single swift file!
+Therefore the shell script [xccov-to-sonarqube-generic.sh](https://github.com/SonarSource/sonar-scanning-examples/blob/master/swift-coverage/swift-coverage-example/xccov-to-sonarqube-generic.sh) provided by sonar does the job in the same time as xcresultparser. That renders the initial purpose of this tool useless. However, xcresultparser meanwhile can do a few more things, than only converting coverage data from a xcresult bundle to xml suited for sonarqube.
+
+It my still be useful for you, if you want to just display the contents of the xcresult bundle (the tests) in a terminal, as html or as markdown for your build chain.
+
+It can also be used for cobertura, thanks to the collaboration of Thibault Wittemberg and maxwell-legrand.
+
+Furthermore it can extract testdata from the xcresult bundle in junit format, also suited for sonarqube.
+
 
 ## How to get it
 ### Using homebrew
@@ -46,8 +56,6 @@ brew install xcresultparser
 ```
 chmod +x ~/Desktop/xcresultparser
 ```
-**IMPORTANT NOTE:** This binary is not notarized/certified by Apple yet. So you must go to SystemSettings:Security and explicitely allow the app to execute, after the first attempt to launch it in the terminal, in case you want to take the risk. I will try to notarize it asap and get rid of this 'Important note'.
-
 
 Or build the tool yourself:
 

@@ -21,63 +21,26 @@ public class SonarCoverageConverter: CoverageConverter, XmlSerializable {
     public override func xmlString(quiet: Bool) throws -> String {
         let coverageXML = XMLElement(name: "coverage")
         coverageXML.addAttribute(name: "version", stringValue: "1")
-        let coverageXMLSemaphore = DispatchSemaphore(value: 1)
         
-        // since we need to invoke xccov for each file, it takes pretty much time
-        // so we invoke it in parallel on 8 threads, that speeds up things considerably
-        let queue = OperationQueue()
-        queue.maxConcurrentOperationCount = 8 //Deadlock if this is = 1
-        queue.qualityOfService = .userInitiated
-
-        var processedFiles = [String]()
-        for target in codeCoverage.targets {
-            if !coverageTargets.isEmpty {
-                guard coverageTargets.contains(target.name) else { continue }
-            }
-            for codeCovFile in target.files {
-                let file = codeCovFile.path
-                guard !processedFiles.contains(file) else { continue }
-                processedFiles.append(file)
-                guard !file.isEmpty else { continue }
-                if !quiet {
-                    writeToStdError("Coverage for: \(file)\n")
-                }
-                let op = BlockOperation { [self] in
-                    do {
-                        let coverage = try fileCoverageXML(for: file, relativeTo: projectRoot)
-                        coverageXMLSemaphore.wait()
-                        coverageXML.addChild(coverage)
-                        coverageXMLSemaphore.signal()
-                    } catch {
-                        writeToStdErrorLn(error.localizedDescription)
-                    }
-                }
-                queue.addOperation(op)
-            }
+        // Get the xccov results as a JSON.
+        let coverageJson = try getCoverageDataAsJSON()
+        for (file, lineData) in coverageJson.files {
+            let coverage = try fileCoverageXML(for: file, coverageData: lineData, relativeTo: projectRoot)
+            coverageXML.addChild(coverage)
         }
-        // This will block until all our operation have compleated (or been canceled)
-        queue.waitUntilAllOperationsAreFinished()
+        
         return coverageXML.xmlString(options: [.nodePrettyPrint, .nodeCompactEmptyElement])
     }
     
-    private func fileCoverageXML(for file: String, relativeTo projectRoot: String) throws -> XMLElement {
-        let coverageData = try coverageForFile(path: file)
+    private func fileCoverageXML(for file: String, coverageData: [LineDetail], relativeTo projectRoot: String) throws -> XMLElement {
         let fileElement = XMLElement(name: "file")
         fileElement.addAttribute(name: "path", stringValue: relativePath(for: file, relativeTo: projectRoot))
-        let nsrange = NSRange(coverageData.startIndex..<coverageData.endIndex,
-                              in: coverageData)
-        coverageRegexp!.enumerateMatches(in: coverageData, options: [], range: nsrange) { match, flags, stop in
-            guard let match = match else { return }
-            
-            let lineNumber = coverageData.text(in: match.range(at: 1))
-            let coverage = coverageData.text(in: match.range(at: 2))
-            
+        for lineData in coverageData where lineData.isExecutable {
             let line = XMLElement(name: "lineToCover")
-            line.addAttribute(name: "lineNumber", stringValue: lineNumber)
-            line.addAttribute(name: "covered", stringValue: (coverage == "0" ? "false": "true"))
-            
+            line.addAttribute(name: "lineNumber", stringValue: String(lineData.line))
+            let executionCount = lineData.executionCount ?? 0
+            line.addAttribute(name: "covered", stringValue: (executionCount == 0 ? "false": "true"))
             fileElement.addChild(line)
-            
         }
         return fileElement
     }

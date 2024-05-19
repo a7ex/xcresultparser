@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version 1.6.0 - 2024-05-19
+### CHANGES:
+Updated the tool for Xcode 15 xccov tool. ATTENTION: use version 1.5.2 of this tool, if you are still using Xcode 14. Coverage won't work otherwise.
+The big change is that now we can get all the coverage data at once from xccov command line. No tedious getting coverage data for each single file.
+That defeats the original purpose of this tool to generate coverage data faster than the shel script, which was provided by sonar. Now this tool is not much faster at that task, as the shell script.
+But meanwhile xcresultparser offers more than only converting coverage data to xml. The Readme has you covered on this.
+
 ## Version 1.5.2 - 2023-12-15
 ### CHANGES:
 Add support for multiple testsuites in junit xml
