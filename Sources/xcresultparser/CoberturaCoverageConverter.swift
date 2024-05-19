@@ -31,6 +31,57 @@
 import Foundation
 import XCResultKit
 
+enum JSONParseError: Error {
+    case convertError(code: Int, message: String)
+}
+
+// Subrange information struct
+struct Subrange: Decodable {
+    let column: Int
+    let executionCount: Int
+    let length: Int
+}
+
+// LineDetail information struct
+struct LineDetail: Decodable {
+    let isExecutable: Bool
+    let line: Int
+    let executionCount: Int?
+    let subranges: [Subrange]?
+}
+
+// FileCoverage information struct
+struct FileCoverage: Decodable {
+    let files: [String: [LineDetail]]
+
+    // Custom initializer to handle the top-level dictionary
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        var filesDict = [String: [LineDetail]]()
+
+        for key in container.allKeys {
+            let keyString = key.stringValue
+            let lineDetails = try container.decode([LineDetail].self, forKey: key)
+            filesDict[keyString] = lineDetails
+        }
+        self.files = filesDict
+    }
+
+    private struct CodingKeys: CodingKey {
+        var stringValue: String
+        var intValue: Int?
+
+        init?(stringValue: String) {
+            self.stringValue = stringValue
+            self.intValue = nil
+        }
+
+        init?(intValue: Int) {
+            return nil
+        }
+    }
+}
+
 public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
 
     public var xmlString: String {
@@ -60,44 +111,55 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
         let packagesElement = XMLElement(name: "packages")
         rootElement.addChild(packagesElement)
 
+        // Get the xccov results as a JSON.
+        var arguments = ["xccov", "view"]
+        if resultFile.url.pathExtension == "xcresult" {
+            arguments.append("--archive")
+        }
+        arguments.append("--json")
+        arguments.append(resultFile.url.path)
+        let coverageData = try Shell.execute(program: "/usr/bin/xcrun", with: arguments)
+        let resultsString = String(decoding: coverageData, as: UTF8.self)
+        guard let jsonData = resultsString.data(using: String.Encoding.utf8) else {
+            writeToStdError("Failed to convert to Data")
+            throw JSONParseError.convertError(code: 0, message: "Failed to convert to Data object")
+        }
+        guard let coverageJson = try? JSONDecoder().decode(FileCoverage.self, from: jsonData) else {
+            writeToStdError("Failed to convert to JSON")
+            throw JSONParseError.convertError(code: 0, message: "Failed to convert to JSON Object")
+        }
+
         let fileInfoSemaphore = DispatchSemaphore(value: 1)
         var fileInfo: [FileInfo] = []
-        
-        // since we need to invoke xccov for each file, it takes pretty much time
-        // so we invoke it in parallel on 8 threads, that speeds up things considerably
         let queue = OperationQueue()
-        queue.maxConcurrentOperationCount = 8 //Deadlock if this is = 1
+        queue.maxConcurrentOperationCount = ProcessInfo.processInfo.processorCount //Deadlock if this is = 1
         queue.qualityOfService = .userInitiated
+        for (fileName, value) in coverageJson.files {
+            let op = BlockOperation {
+                var fileLines = [LineInfo]() // This will store information about each line.
 
-        var processedFiles = [String]()
-        for target in codeCoverage.targets {
-            if !coverageTargets.isEmpty {
-                guard coverageTargets.contains(target.name) else { continue }
-            }
-            for codeCovFile in target.files {
-                let file = codeCovFile.path
-                guard !processedFiles.contains(file) else { continue }
-                processedFiles.append(file)
-                guard !file.isEmpty else { continue }
-                if !quiet {
-                    writeToStdError("Coverage for: \(file)\n")
-                }
-                let op = BlockOperation { [self] in
-                    do {
-                        let coverage = try fileCoverage(for: file, relativeTo: projectRoot)
-                        fileInfoSemaphore.wait()
-                        fileInfo.append(coverage)
-                        fileInfoSemaphore.signal()
-                    } catch {
-                        writeToStdErrorLn(error.localizedDescription)
+                for lineData in value {
+                    let lineNum = lineData.line
+                    guard var covered = lineData.executionCount else {
+                        continue
                     }
+                    // If the line coverage count is a MAX_INT, just set it to 1
+                    if covered == Int.max {
+                        covered = 1
+                    }
+                    let line = LineInfo(lineNumber: String(lineNum), coverage: covered)
+                    fileLines.append(line)
                 }
-                queue.addOperation(op)
+
+                let fileInfoInst = FileInfo(path: self.relativePath(for: fileName, relativeTo: self.projectRoot), lines: fileLines)
+                fileInfoSemaphore.wait()
+                fileInfo.append(fileInfoInst)
+                fileInfoSemaphore.signal()
             }
+            queue.addOperation(op)
         }
         // This will block until all our operation have compleated (or been canceled)
         queue.waitUntilAllOperationsAreFinished()
-        
         // Sort files to avoid duplicated packages
         fileInfo.sort { $0.path > $1.path }
         
