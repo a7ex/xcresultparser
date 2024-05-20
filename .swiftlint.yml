@@ -1,0 +1,72 @@
+disabled_rules:
+  - identifier_name # Disables names that start with an underscore
+  # - line_length
+  - nesting
+  - redundant_discardable_let # False positives for e.g. let _: URL =
+  #### disabled for work
+  - cyclomatic_complexity
+  # - todo
+  - orphaned_doc_comment
+  - inclusive_language
+  - statement_position
+opt_in_rules:
+  #### all should be enabled.
+  - attributes
+  #- closure_end_indentation
+  - closure_spacing
+  #- conditional_returns_on_newline
+  - empty_count
+  - explicit_init
+  - fatal_error_message
+  - first_where
+  - force_unwrapping
+  - implicitly_unwrapped_optional
+  #- number_separator
+  #- object_literal
+  - overridden_super_call
+  - private_outlet
+  - prohibited_super_call
+  - redundant_nil_coalescing
+  - switch_case_on_newline
+trailing_whitespace:
+  ignores_empty_lines: true
+identifier_name:
+  min_length:
+    warning: 2
+    error: 2
+  excluded:
+    - x
+    - y
+    - z
+vertical_whitespace:
+  max_empty_lines: 2
+
+# for legal projects its nearly not possible to fix the following rules instantly
+# so we show it as warning
+# cyclomatic_complexity: 10
+
+function_body_length: 100
+
+# only fir fixing
+force_cast: warning
+force_try: warning
+
+function_body_length:
+  warning: 60
+  error: 10000
+  
+type_body_length:
+  warning: 300
+  error: 1000
+
+file_length:
+  warning: 600
+  error: 2000
+  
+line_length:
+  warning: 120
+  error: 300
+  ignores_function_declarations: false
+  ignores_comments: false
+  ignores_interpolated_strings: false
+  ignores_urls: false

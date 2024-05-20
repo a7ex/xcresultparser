@@ -11,12 +11,12 @@ public protocol XCResultFormatting {
     func documentPrefix(title: String) -> String
     var documentSuffix: String { get }
     var divider: String { get }
-    
+
     var accordionOpenTag: String { get }
     var accordionCloseTag: String { get }
     var tableOpenTag: String { get }
     var tableCloseTag: String { get }
-    
+
     func resultSummaryLine(_ item: String, failed: Bool) -> String
     func resultSummaryLineWarning(_ item: String, hasWarnings: Bool) -> String
     func testConfiguration(_ item: String) -> String
@@ -37,9 +37,11 @@ public extension XCResultFormatting {
     var testFailIcon: String {
         return "✖︎"
     }
+
     var testPassIcon: String {
         return "✓"
     }
+
     var testSkipIcon: String {
         return "-"
     }

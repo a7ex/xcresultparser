@@ -20,7 +20,7 @@ struct FileCoverage: Decodable {
             let lineDetails = try container.decode([LineDetail].self, forKey: key)
             filesDict[keyString] = lineDetails
         }
-        self.files = filesDict
+        files = filesDict
     }
 
     private struct CodingKeys: CodingKey {
@@ -29,7 +29,7 @@ struct FileCoverage: Decodable {
 
         init?(stringValue: String) {
             self.stringValue = stringValue
-            self.intValue = nil
+            intValue = nil
         }
 
         init?(intValue: Int) {

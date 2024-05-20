@@ -36,7 +36,6 @@ enum JSONParseError: Error {
 }
 
 public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
-
     public var xmlString: String {
         do {
             return try xmlString(quiet: true)
@@ -45,12 +44,12 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
         }
     }
 
-    public override func xmlString(quiet: Bool) throws -> String {
+    override public func xmlString(quiet: Bool) throws -> String {
         let dtd = readDTD()
         dtd.name = "coverage"
         dtd.systemID = "http://cobertura.sourceforge.net/xml/coverage-04.dtd"
 
-        let rootElement = self.makeRootElement()
+        let rootElement = makeRootElement()
 
         let doc = XMLDocument(rootElement: rootElement)
         doc.version = "1.0"
@@ -70,7 +69,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
         var fileInfo: [FileInfo] = []
         for (fileName, value) in coverageJson.files {
             var fileLines = [LineInfo]() // This will store information about each line.
-            
+
             for lineData in value {
                 let lineNum = lineData.line
                 guard var covered = lineData.executionCount else {
@@ -83,22 +82,22 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
                 let line = LineInfo(lineNumber: String(lineNum), coverage: covered)
                 fileLines.append(line)
             }
-            
-            let fileInfoInst = FileInfo(path: self.relativePath(for: fileName, relativeTo: self.projectRoot), lines: fileLines)
+
+            let fileInfoInst = FileInfo(path: relativePath(for: fileName, relativeTo: projectRoot), lines: fileLines)
             fileInfo.append(fileInfoInst)
         }
         // Sort files to avoid duplicated packages
         fileInfo.sort { $0.path > $1.path }
-        
+
         var currentPackage = ""
         var currentPackageElement: XMLElement!
         var isNewPackage = false
 
         var currentClassesElement = XMLElement()
-        
-        fileInfo.forEach { file in
+
+        for file in fileInfo {
             let pathComponents = file.path.split(separator: "/")
-            let packageName = pathComponents[0..<pathComponents.count - 1].joined(separator: ".")
+            let packageName = pathComponents[0 ..< pathComponents.count - 1].joined(separator: ".")
 
             isNewPackage = currentPackage != packageName
 
@@ -119,10 +118,12 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
             }
 
             let classElement = XMLElement(name: "class")
-            classElement.addAttribute(XMLNode.nodeAttribute(withName: "name",
-                                                            stringValue: "\(packageName).\((file.path as NSString).deletingPathExtension)"))
+            classElement.addAttribute(XMLNode.nodeAttribute(
+                withName: "name",
+                stringValue: "\(packageName).\((file.path as NSString).deletingPathExtension)"
+            ))
             classElement.addAttribute(XMLNode.nodeAttribute(withName: "filename", stringValue: "\(file.path)"))
-            
+
             let fileLineCoverage = Float(file.lines.filter { $0.coverage > 0 }.count) / Float(file.lines.count)
             classElement.addAttribute(XMLNode.nodeAttribute(withName: "line-rate", stringValue: "\(fileLineCoverage)"))
             classElement.addAttribute(XMLNode.nodeAttribute(withName: "branch-rate", stringValue: "1.0"))
@@ -157,16 +158,22 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
         }
         fatalError("DTD could not be constructed")
     }
-    
+
     private func makeRootElement() -> XMLElement {
-        // TODO some of these values are B.S. - figure out how to calculate, or better to omit if we don't know?
+        // TODO: some of these values are B.S. - figure out how to calculate, or better to omit if we don't know?
         let testAction = invocationRecord.actions.first { $0.schemeCommandName == "Test" }
         let timeStamp = (testAction?.startedTime.timeIntervalSince1970) ?? Date().timeIntervalSince1970
         let rootElement = XMLElement(name: "coverage")
-        rootElement.addAttribute(XMLNode.nodeAttribute(withName: "line-rate", stringValue: "\(codeCoverage.lineCoverage)"))
+        rootElement.addAttribute(
+            XMLNode.nodeAttribute(withName: "line-rate", stringValue: "\(codeCoverage.lineCoverage)")
+        )
         rootElement.addAttribute(XMLNode.nodeAttribute(withName: "branch-rate", stringValue: "1.0"))
-        rootElement.addAttribute(XMLNode.nodeAttribute(withName: "lines-covered", stringValue: "\(codeCoverage.coveredLines)"))
-        rootElement.addAttribute(XMLNode.nodeAttribute(withName: "lines-valid", stringValue: "\(codeCoverage.executableLines)"))
+        rootElement.addAttribute(
+            XMLNode.nodeAttribute(withName: "lines-covered", stringValue: "\(codeCoverage.coveredLines)")
+        )
+        rootElement.addAttribute(
+            XMLNode.nodeAttribute(withName: "lines-valid", stringValue: "\(codeCoverage.executableLines)")
+        )
         rootElement.addAttribute(XMLNode.nodeAttribute(withName: "timestamp", stringValue: "\(timeStamp)"))
         rootElement.addAttribute(XMLNode.nodeAttribute(withName: "version", stringValue: "diff_coverage 0.1"))
         rootElement.addAttribute(XMLNode.nodeAttribute(withName: "complexity", stringValue: "0.0"))

@@ -1,5 +1,5 @@
-import XCTest
 @testable import XcresultparserLib
+import XCTest
 
 final class XcresultparserTests: XCTestCase {
     func testTextResultFormatter() throws {
@@ -16,14 +16,14 @@ final class XcresultparserTests: XCTestCase {
         XCTAssertEqual("", resultParser.documentPrefix(title: "XCResults"))
 
         let expectedSummary = """
-Summary
-  Number of errors = 0
-  Number of warnings = 3
-  Number of analyzer warnings = 0
-  Number of tests = 7
-  Number of failed tests = 1
-  Number of skipped tests = 0
-"""
+        Summary
+          Number of errors = 0
+          Number of warnings = 3
+          Number of analyzer warnings = 0
+          Number of tests = 7
+          Number of failed tests = 1
+          Number of skipped tests = 0
+        """
         XCTAssertEqual(expectedSummary, resultParser.summary)
         XCTAssertEqual("---------------------\n", resultParser.divider)
         XCTAssertTrue(resultParser.testDetails.starts(with: "Test Scheme Action"))
@@ -46,14 +46,14 @@ Summary
         XCTAssertEqual("", resultParser.documentPrefix(title: "XCResults"))
 
         let expectedSummary = """
-\u{001B}[1mSummary\u{001B}[0m
-  Number of errors = 0\u{001B}[0m
-\u{001B}[33m  Number of warnings = 3\u{001B}[0m
-  Number of analyzer warnings = 0\u{001B}[0m
-  Number of tests = 7\u{001B}[0m
-\u{001B}[31m  Number of failed tests = 1\u{001B}[0m
-  Number of skipped tests = 0\u{001B}[0m
-"""
+        \u{001B}[1mSummary\u{001B}[0m
+          Number of errors = 0\u{001B}[0m
+        \u{001B}[33m  Number of warnings = 3\u{001B}[0m
+          Number of analyzer warnings = 0\u{001B}[0m
+          Number of tests = 7\u{001B}[0m
+        \u{001B}[31m  Number of failed tests = 1\u{001B}[0m
+          Number of skipped tests = 0\u{001B}[0m
+        """
         XCTAssertEqual(expectedSummary, resultParser.summary)
         XCTAssertEqual("-----------------\n", resultParser.divider)
 
@@ -85,14 +85,14 @@ Summary
         XCTAssertTrue(resultParser.documentPrefix(title: "XCResults").starts(with: documentPrefix))
 
         let expectedSummary = """
-<h2>Summary</h2>
-<p class="resultSummaryLineSuccess">Number of errors = 0</p>
-<p class="resultSummaryLineWarning">Number of warnings = 3</p>
-<p class="resultSummaryLineSuccess">Number of analyzer warnings = 0</p>
-<p class="resultSummaryLineSuccess">Number of tests = 7</p>
-<p class="resultSummaryLineFailed">Number of failed tests = 1</p>
-<p class="resultSummaryLineSuccess">Number of skipped tests = 0</p>
-"""
+        <h2>Summary</h2>
+        <p class="resultSummaryLineSuccess">Number of errors = 0</p>
+        <p class="resultSummaryLineWarning">Number of warnings = 3</p>
+        <p class="resultSummaryLineSuccess">Number of analyzer warnings = 0</p>
+        <p class="resultSummaryLineSuccess">Number of tests = 7</p>
+        <p class="resultSummaryLineFailed">Number of failed tests = 1</p>
+        <p class="resultSummaryLineSuccess">Number of skipped tests = 0</p>
+        """
         XCTAssertEqual(expectedSummary, resultParser.summary)
         XCTAssertEqual("<hr>", resultParser.divider)
         XCTAssertTrue(resultParser.testDetails.starts(with: "<h2>Test Scheme Action</h2>"))
@@ -105,8 +105,10 @@ Summary
         let projectRoot = ""
         let quiet = 1
 
-        guard let converter = SonarCoverageConverter(with: xcresultFile,
-                                                     projectRoot: projectRoot) else {
+        guard let converter = SonarCoverageConverter(
+            with: xcresultFile,
+            projectRoot: projectRoot
+        ) else {
             XCTFail("Unable to create CoverageConverter from \(xcresultFile)")
             return
         }
@@ -114,15 +116,17 @@ Summary
         XCTAssertTrue(rslt.starts(with: "<coverage version=\"1\">"))
 
         // Runs are non deterministic a simple compare is not doable for tests
-        //assertXmlTestReportsAreEqual(expectedFileName: "sonarCoverage", actual: converter)
+        // assertXmlTestReportsAreEqual(expectedFileName: "sonarCoverage", actual: converter)
     }
 
     func testCoberturaConverter() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         let projectRoot = ""
 
-        guard let converter = CoberturaCoverageConverter(with: xcresultFile,
-                                                     projectRoot: projectRoot) else {
+        guard let converter = CoberturaCoverageConverter(
+            with: xcresultFile,
+            projectRoot: projectRoot
+        ) else {
             XCTFail("Unable to create CoverageConverter from \(xcresultFile)")
             return
         }
@@ -195,11 +199,10 @@ Summary
     // MARK: helper functions
 
     func assertXmlTestReportsAreEqual(expectedFileName: String, actual: XmlSerializable, file: StaticString = #file, line: UInt = #line) throws {
+        let expectedResultFile = Bundle.module.url(forResource: expectedFileName, withExtension: "xml")!
 
-        let expectedResultFile =  Bundle.module.url(forResource: expectedFileName, withExtension: "xml")!
-
-        let actualXMLDocument = try XMLDocument.init(data: Data("\(actual.xmlString)\n".utf8), options: [])
-        let expectedXMLDocument = try XMLDocument.init(contentsOf: expectedResultFile, options: [])
+        let actualXMLDocument = try XMLDocument(data: Data("\(actual.xmlString)\n".utf8), options: [])
+        let expectedXMLDocument = try XMLDocument(contentsOf: expectedResultFile, options: [])
 
         XCTAssertEqual(actualXMLDocument.xmlString, expectedXMLDocument.xmlString, file: file, line: line)
     }

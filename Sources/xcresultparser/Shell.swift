@@ -1,13 +1,13 @@
 //
 //  Shell.swift
-//  
+//
 //
 //  Created by Alex da Franca on 03.04.22.
 //
 
 import Foundation
 
-struct Shell {
+enum Shell {
     static func execute(
         program: String,
         with arguments: [String],
