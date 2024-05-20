@@ -19,7 +19,7 @@ struct NodeNames {
     let testcaseClassNameName: String
 }
 
-fileprivate var nodeNames = NodeNames(
+private var nodeNames = NodeNames(
     testsuitesName: "testsuites",
     testcaseName: "testcase",
     testcaseDurationName: "time",
@@ -27,7 +27,6 @@ fileprivate var nodeNames = NodeNames(
 )
 
 public struct JunitXML: XmlSerializable {
-
     struct TestrunProperty {
         let name: String
         let value: String
@@ -53,9 +52,11 @@ public struct JunitXML: XmlSerializable {
         return numFormatter
     }()
 
-    public init?(with url: URL,
-          projectRoot: String = "",
-          format: TestReportFormat = .junit) {
+    public init?(
+        with url: URL,
+        projectRoot: String = "",
+        format: TestReportFormat = .junit
+    ) {
         resultFile = XCResultFile(url: url)
         guard let record = resultFile.getInvocationRecord() else {
             return nil
@@ -94,7 +95,7 @@ public struct JunitXML: XmlSerializable {
             testsuites.addAttribute(name: "failures", stringValue: String(testsFailedCount))
         }
 
-        let testActions = invocationRecord.actions.filter({ $0.schemeCommandName == "Test" })
+        let testActions = invocationRecord.actions.filter { $0.schemeCommandName == "Test" }
         guard !testActions.isEmpty else {
             return xml.xmlString(options: [.nodePrettyPrint, .nodeCompactEmptyElement])
         }
@@ -103,8 +104,8 @@ public struct JunitXML: XmlSerializable {
         for testAction in testActions {
             guard let testsId = testAction.actionResult.testsRef?.id,
                   let testPlanRun = resultFile.getTestPlanRunSummaries(id: testsId) else {
-                    continue
-                  }
+                continue
+            }
 
             let testPlanRunSummaries = testPlanRun.summaries
             let failureSummaries = invocationRecord.issues.testFailureSummaries
@@ -128,7 +129,9 @@ public struct JunitXML: XmlSerializable {
         }
 
         if testReportFormat != .sonar {
-            testsuites.addAttribute(name: "time", stringValue: numFormatter.unwrappedString(for: overallTestSuiteDuration))
+            testsuites.addAttribute(
+                name: "time", stringValue: numFormatter.unwrappedString(for: overallTestSuiteDuration)
+            )
         }
 
         return xml.xmlString(options: [.nodePrettyPrint, .nodeCompactEmptyElement])
@@ -158,26 +161,34 @@ public struct JunitXML: XmlSerializable {
     ) -> [XMLElement] {
         guard group.identifierString.hasSuffix(".xctest") || group.subtestGroups.isEmpty else {
             return group.subtestGroups.reduce([XMLElement]()) { rslt, subGroup in
-                return rslt + createTestSuite(subGroup, failureSummaries: failureSummaries, testDirectory: subGroup.identifierString)
+                return rslt + createTestSuite(
+                    subGroup, failureSummaries: failureSummaries, testDirectory: subGroup.identifierString
+                )
             }
         }
         if group.subtestGroups.isEmpty {
             return [
-                createTestSuiteFinally(group, tests: group.subtests, failureSummaries: failureSummaries, testDirectory: testDirectory)
+                createTestSuiteFinally(
+                    group, tests: group.subtests, failureSummaries: failureSummaries, testDirectory: testDirectory
+                )
             ]
         } else {
             if testReportFormat == .sonar {
                 var nodes = [XMLElement]()
                 for subGroup in group.subtestGroups {
                     let node = subGroup.sonarFileXML(projectRoot: projectRoot)
-                    let testcases = createTestCases(for: subGroup.nameString, tests: subGroup.subtests, failureSummaries: failureSummaries)
+                    let testcases = createTestCases(
+                        for: subGroup.nameString, tests: subGroup.subtests, failureSummaries: failureSummaries
+                    )
                     testcases.forEach { node.addChild($0) }
                     nodes.append(node)
                 }
                 return nodes
             } else {
                 let combined = group.subtestGroups.reduce([XMLElement]()) { rslt, subGroup in
-                    return rslt + createTestCases(for: subGroup.nameString, tests: subGroup.subtests, failureSummaries: failureSummaries)
+                    return rslt + createTestCases(
+                        for: subGroup.nameString, tests: subGroup.subtests, failureSummaries: failureSummaries
+                    )
                 }
                 let node = group.testSuiteXML(numFormatter: numFormatter)
                 combined.forEach { node.addChild($0) }
@@ -193,11 +204,13 @@ public struct JunitXML: XmlSerializable {
         testDirectory: String = ""
     ) -> XMLElement {
         let node = testReportFormat == .sonar ?
-        group.sonarFileXML(projectRoot: projectRoot):
-        group.testSuiteXML(numFormatter: numFormatter)
+            group.sonarFileXML(projectRoot: projectRoot) :
+            group.testSuiteXML(numFormatter: numFormatter)
 
         for thisTest in tests {
-            let testcase = thisTest.xmlNode(classname: group.nameString, numFormatter: numFormatter, format: testReportFormat)
+            let testcase = thisTest.xmlNode(
+                classname: group.nameString, numFormatter: numFormatter, format: testReportFormat
+            )
             if thisTest.isFailed {
                 if let summary = thisTest.failureSummary(in: failureSummaries) {
                     testcase.addChild(summary.failureXML(projectRoot: projectRoot))
@@ -210,7 +223,9 @@ public struct JunitXML: XmlSerializable {
         return node
     }
 
-    private func createTestCases(for name: String, tests: [ActionTestMetadata], failureSummaries: [TestFailureIssueSummary]) -> [XMLElement] {
+    private func createTestCases(
+        for name: String, tests: [ActionTestMetadata], failureSummaries: [TestFailureIssueSummary]
+    ) -> [XMLElement] {
         var combined = [XMLElement]()
         for thisTest in tests {
             let testcase = thisTest.xmlNode(classname: name, numFormatter: numFormatter, format: testReportFormat)
@@ -331,6 +346,7 @@ private extension ActionTestSummaryGroup {
             return result + group.numberOfTests
         }
     }
+
     private var numberOfFailures: Int {
         let num = subtestGroups.reduce(0) { result, group in
             return result + group.numberOfFailures
@@ -349,7 +365,8 @@ private extension TestFailureIssueSummary {
             if let url = URL(string: loc) {
                 let relative = relativePart(of: url, relativeTo: projectRoot)
                 if let comps = URLComponents(url: url, resolvingAgainstBaseURL: false),
-                   let line = comps.fragment?.components(separatedBy: "&").first(where: { $0.starts(with: "StartingLineNumber") }),
+                   let line = comps.fragment?.components(separatedBy: "&").first(
+                       where: { $0.starts(with: "StartingLineNumber") }),
                    let num = line.components(separatedBy: "=").last {
                     value += " (\(relative):\(num))"
                 } else {
@@ -379,14 +396,14 @@ private extension TestFailureIssueSummary {
         }
         let relative = parts[parts.count - 1]
         return relative.starts(with: "/") ?
-        String(relative.dropFirst()):
-        relative
+            String(relative.dropFirst()) :
+            relative
     }
 }
 
 private extension Bool {
     var intValue: Int {
-        return self ? 1: 0
+        return self ? 1 : 0
     }
 }
 
@@ -394,7 +411,7 @@ private extension ActionTestMetadata {
     func failureSummary(in summaries: [TestFailureIssueSummary]) -> TestFailureIssueSummary? {
         return summaries.first { summary in
             return summary.testCaseName == identifier?.replacingOccurrences(of: "/", with: ".") ||
-            summary.testCaseName == "-[\(identifier?.replacingOccurrences(of: "/", with: " ") ?? "")]"
+                summary.testCaseName == "-[\(identifier?.replacingOccurrences(of: "/", with: " ") ?? "")]"
         }
     }
 }

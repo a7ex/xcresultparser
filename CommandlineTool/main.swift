@@ -5,17 +5,17 @@
 //  Created by Alex da Franca on 11.06.21.
 //
 
-import Foundation
 import ArgumentParser
+import Foundation
 import XcresultparserLib
 
-private let marketingVersion = "1.5.2"
+private let marketingVersion = "1.6.0"
 
 struct xcresultparser: ParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "xcresultparser \(marketingVersion)\nInterpret binary .xcresult files and print summary in different formats: txt, xml, html or colored cli output."
     )
-    
+
     @Option(name: .shortAndLong, help: "The output format. It can be either 'txt', 'cli', 'html', 'md', 'xml', 'junit', or 'cobertura'. In case of 'xml' sonar generic format for test results and generic format (Sonarqube) for coverage data is used. In the case of 'cobertura', --coverage is implied.")
     var outputFormat: String?
 
@@ -45,10 +45,10 @@ struct xcresultparser: ParsableCommand {
 
     @Flag(name: .shortAndLong, help: "Show version number.")
     var version: Int
-    
+
     @Argument(help: "The path to the .xcresult file.")
     var xcresultFile: String?
-    
+
     mutating func run() throws {
         guard version != 1 else {
             print(marketingVersion)
@@ -77,7 +77,7 @@ struct xcresultparser: ParsableCommand {
             try outputDescription(for: xcresult)
         }
     }
-    
+
     private func outputSonarXML(for xcresult: String) throws {
         guard let converter = SonarCoverageConverter(
             with: URL(fileURLWithPath: xcresult),
@@ -89,7 +89,7 @@ struct xcresultparser: ParsableCommand {
         let rslt = try converter.xmlString(quiet: quiet == 1)
         writeToStdOut(rslt)
     }
-    
+
     private func outputCoberturaXML(for xcresult: String) throws {
         guard let converter = CoberturaCoverageConverter(
             with: URL(fileURLWithPath: xcresult),
@@ -112,9 +112,11 @@ struct xcresultparser: ParsableCommand {
         }
         writeToStdOut(converter.targetsInfo)
     }
-    
-    private func outputJUnitXML(for xcresult: String,
-                                with format: TestReportFormat) throws {
+
+    private func outputJUnitXML(
+        for xcresult: String,
+        with format: TestReportFormat
+    ) throws {
         guard let junitXML = JunitXML(
             with: URL(fileURLWithPath: xcresult),
             projectRoot: projectRoot ?? "",
@@ -124,13 +126,13 @@ struct xcresultparser: ParsableCommand {
         }
         writeToStdOut(junitXML.xmlString)
     }
-    
+
     private func outputDescription(for xcresult: String) throws {
         guard let resultParser = XCResultFormatter(
             with: URL(fileURLWithPath: xcresult),
             formatter: outputFormatter,
             coverageTargets: coverageTargets,
-            failedTestsOnly: (failedTestsOnly == 1),
+            failedTestsOnly: failedTestsOnly == 1,
             summaryFields: summaryFields ?? "errors|warnings|analyzerWarnings|tests|failed|skipped"
         ) else {
             throw ParseError.argumentError
@@ -146,11 +148,11 @@ struct xcresultparser: ParsableCommand {
         }
         writeToStdOutLn(resultParser.documentSuffix)
     }
-    
+
     private var format: OutputFormat {
         return OutputFormat(string: outputFormat)
     }
-    
+
     private var outputFormatter: XCResultFormatting {
         switch format {
         case .cli:
@@ -177,4 +179,3 @@ enum ParseError: Error {
 }
 
 xcresultparser.main()
-

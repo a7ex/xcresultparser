@@ -8,16 +8,16 @@
 import Foundation
 
 struct CLIFormat {
-    let reset  = "\u{001B}[0m"
-    
-    let red    = "\u{001B}[31m"
-    let green  = "\u{001B}[32m"
+    let reset = "\u{001B}[0m"
+
+    let red = "\u{001B}[31m"
+    let green = "\u{001B}[32m"
     let yellow = "\u{001B}[33m"
-    
-    let bold   = "\u{001B}[1m"
+
+    let bold = "\u{001B}[1m"
     let italic = "\u{001B}[3m"
     let underline = "\u{001B}[4m"
-    
+
     // // Colors:
     // // Foreground color
     //    Black    30
@@ -37,7 +37,7 @@ struct CLIFormat {
     //    magenta  45
     //    cyan     46
     //    white    47
-    
+
     // // Format:
     //    Normal     0 (Default Terminal colors)
     //    Bold       1
@@ -45,5 +45,4 @@ struct CLIFormat {
     //    Italic     3
     //    Underline  4
     //    Flash      5
-    
 }
