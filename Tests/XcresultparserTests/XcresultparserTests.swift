@@ -130,7 +130,8 @@ final class XcresultparserTests: XCTestCase {
             XCTFail("Unable to create CoverageConverter from \(xcresultFile)")
             return
         }
-
+//        let url = URL(fileURLWithPath: "/Users/alex/Desktop/vergleich.xml")
+//        try converter.xmlString.write(to: url, atomically: true, encoding: .utf8)
         try assertXmlTestReportsAreEqual(expectedFileName: "cobertura", actual: converter)
     }
 

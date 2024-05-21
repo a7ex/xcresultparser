@@ -28,7 +28,6 @@ public class CoverageConverter {
     let projectRoot: String
     let codeCoverage: CodeCoverage
     let invocationRecord: ActionsInvocationRecord
-    let coverageRegexp: NSRegularExpression?
     let coverageTargets: Set<String>
 
     public init?(
@@ -46,11 +45,7 @@ public class CoverageConverter {
             return nil
         }
         self.invocationRecord = invocationRecord
-
         self.coverageTargets = record.targets(filteredBy: coverageTargets)
-
-        let pattern = #"(\d+):\s*(\d+)"#
-        coverageRegexp = try? NSRegularExpression(pattern: pattern, options: .anchorsMatchLines)
     }
 
     public func xmlString(quiet: Bool) throws -> String {
