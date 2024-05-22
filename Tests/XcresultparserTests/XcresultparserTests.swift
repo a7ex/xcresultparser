@@ -176,6 +176,36 @@ final class XcresultparserTests: XCTestCase {
         }
         try assertXmlTestReportsAreEqual(expectedFileName: "junit_merged", actual: junitXML)
     }
+    
+    func testCleanCodeWarnings() throws {
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
+        guard let converter = IssuesJSON(with: xcresultFile) else {
+            XCTFail("Unable to create warnings json from \(xcresultFile)")
+            return
+        }
+        let rslt = try converter.jsonString(format: .warnings, quiet: true)
+        let result = try JSONDecoder().decode([Issue].self, from: Data(rslt.utf8))
+        
+        let expectedFile = Bundle.module.url(forResource: "warnings", withExtension: "json")!
+        let expectedData = try Data(contentsOf: expectedFile)
+        let expectedObject = try JSONDecoder().decode([Issue].self, from: expectedData)
+        
+        XCTAssertEqual(result.count, expectedObject.count)
+        let first = try XCTUnwrap(result.first)
+        let last = try XCTUnwrap(result.last)
+        XCTAssertNotNil(expectedObject.first(where: { $0.checkName == first.checkName && $0.location == first.location }))
+        XCTAssertNotNil(expectedObject.first(where: { $0.checkName == last.checkName && $0.location == last.location }))
+    }
+    
+    func testCleanCodeErrors() throws {
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
+        guard let converter = IssuesJSON(with: xcresultFile) else {
+            XCTFail("Unable to create warnings json from \(xcresultFile)")
+            return
+        }
+        let rslt = try converter.jsonString(format: .errors, quiet: true)
+        XCTAssertEqual("[\n\n]", rslt)
+    }
 
     func testOutputFormat() {
         var sut = OutputFormat(string: "txt")
@@ -186,9 +216,24 @@ final class XcresultparserTests: XCTestCase {
 
         sut = OutputFormat(string: "html")
         XCTAssertEqual(OutputFormat.html, sut)
-
+        
         sut = OutputFormat(string: "cli")
         XCTAssertEqual(OutputFormat.cli, sut)
+        
+        sut = OutputFormat(string: "cobertura")
+        XCTAssertEqual(OutputFormat.cobertura, sut)
+        
+        sut = OutputFormat(string: "junit")
+        XCTAssertEqual(OutputFormat.junit, sut)
+        
+        sut = OutputFormat(string: "md")
+        XCTAssertEqual(OutputFormat.md, sut)
+        
+        sut = OutputFormat(string: "warnings")
+        XCTAssertEqual(OutputFormat.warnings, sut)
+        
+        sut = OutputFormat(string: "errors")
+        XCTAssertEqual(OutputFormat.errors, sut)
 
         sut = OutputFormat(string: "")
         XCTAssertEqual(OutputFormat.cli, sut)

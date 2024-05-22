@@ -11,6 +11,8 @@ Interpret binary .xcresult files and print summary in different formats:
 - cobertura
 - html
 - markdown
+- warnings
+- errors
 
 In case of 'xml' JUnit format for test results and generic format (Sonarqube) for coverage data is used.
 
@@ -85,7 +87,7 @@ You should see the tool respond like this:
 ```
 Error: Missing expected argument '<xcresult-file>'
 
-OVERVIEW: xcresultparser 1.3
+OVERVIEW: xcresultparser 1.6.0
 Interpret binary .xcresult files and print summary in different formats: txt,
 xml, html or colored cli output.
 
@@ -97,10 +99,11 @@ ARGUMENTS:
 OPTIONS:
   -o, --output-format <output-format>
                           The output format. It can be either 'txt', 'cli',
-                          'html', 'md', 'xml', 'junit', or 'cobertura'. In case
-                          of 'xml' sonar generic format for test results and
-                          generic format (Sonarqube) for coverage data is used.
-                          In the case of 'cobertura', --coverage is implied.
+                          'html', 'md', 'xml', 'junit', 'cobertura', 'warnings'
+                          and 'errors'. In case of 'xml' sonar generic format
+                          for test results and generic format (Sonarqube) for
+                          coverage data is used. In the case of 'cobertura',
+                          --coverage is implied.
   -p, --project-root <project-root>
                           The name of the project root. If present paths and
                           urls are relative to the specified directory.
@@ -197,6 +200,18 @@ It may be desirable to also pass --project-root if you wish to alter the filenam
 Simple markdown formatting for test results. (We use it for display in a Teams Webhook)
 ```
 ./xcresultparser -o md test.xcresult > teamsWebhook.txt
+```
+
+### Code Climate output
+JSON output for Code Climate checks
+```
+./xcresultparser -o warnings test.xcresult > climate.json
+```
+
+### Error output
+JSON output describing errors
+```
+./xcresultparser -o errors test.xcresult > errors.json
 ```
 
 #### About paths for the sonarqube scanner

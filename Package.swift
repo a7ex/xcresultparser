@@ -61,6 +61,7 @@ let package = Package(
                 .copy("TestAssets/junit_merged.xml"),
                 .copy("TestAssets/sonarTestExecution.xml"),
                 .copy("TestAssets/cobertura.xml"),
+                .copy("TestAssets/warnings.json"),
             ]
         )
     ]

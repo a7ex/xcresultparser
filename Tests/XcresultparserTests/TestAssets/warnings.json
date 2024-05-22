@@ -1,0 +1,95 @@
+[
+  {
+    "description" : "No-usage - Initialization of immutable value 'expectedSummary' was never used; consider replacing with assignment to '_' or removing it",
+    "categories" : [
+
+    ],
+    "type" : "issue",
+    "location" : {
+      "lines" : {
+        "end" : 17,
+        "begin" : 17
+      },
+      "positions" : {
+        "end" : {
+          "column" : 12,
+          "line" : 17
+        },
+        "begin" : {
+          "column" : 12,
+          "line" : 17
+        }
+      },
+      "path" : "\/Users\/fhaeser\/code\/xcresultparser\/Tests\/XcresultparserTests\/XcresultparserTests.swift"
+    },
+    "engine_name" : "",
+    "content" : {
+      "body" : "No-usage - Initialization of immutable value 'expectedSummary' was never used; consider replacing with assignment to '_' or removing it"
+    },
+    "severity" : "minor",
+    "check_name" : "2365629d946fc0fe1fdea2b4cab49c70",
+    "fingerprint" : "127d796599edc2d1c51b78ef0d32f1f0"
+  },
+  {
+    "categories" : [
+
+    ],
+    "type" : "issue",
+    "fingerprint" : "127d796599edc2d1c51b78ef0d32f1f0",
+    "content" : {
+      "body" : "No-usage - Initialization of immutable value 'expectedSummary' was never used; consider replacing with assignment to '_' or removing it"
+    },
+    "location" : {
+      "lines" : {
+        "end" : 47,
+        "begin" : 47
+      },
+      "positions" : {
+        "begin" : {
+          "line" : 47,
+          "column" : 12
+        },
+        "end" : {
+          "line" : 47,
+          "column" : 12
+        }
+      },
+      "path" : "\/Users\/fhaeser\/code\/xcresultparser\/Tests\/XcresultparserTests\/XcresultparserTests.swift"
+    },
+    "check_name" : "2365629d946fc0fe1fdea2b4cab49c70",
+    "engine_name" : "",
+    "description" : "No-usage - Initialization of immutable value 'expectedSummary' was never used; consider replacing with assignment to '_' or removing it",
+    "severity" : "minor"
+  },
+  {
+    "categories" : [
+
+    ],
+    "description" : "No-usage - Initialization of immutable value 'expectedSummary' was never used; consider replacing with assignment to '_' or removing it",
+    "type" : "issue",
+    "fingerprint" : "127d796599edc2d1c51b78ef0d32f1f0",
+    "severity" : "minor",
+    "check_name" : "2365629d946fc0fe1fdea2b4cab49c70",
+    "location" : {
+      "path" : "\/Users\/fhaeser\/code\/xcresultparser\/Tests\/XcresultparserTests\/XcresultparserTests.swift",
+      "lines" : {
+        "begin" : 86,
+        "end" : 86
+      },
+      "positions" : {
+        "end" : {
+          "column" : 12,
+          "line" : 86
+        },
+        "begin" : {
+          "line" : 86,
+          "column" : 12
+        }
+      }
+    },
+    "content" : {
+      "body" : "No-usage - Initialization of immutable value 'expectedSummary' was never used; consider replacing with assignment to '_' or removing it"
+    },
+    "engine_name" : ""
+  }
+]
