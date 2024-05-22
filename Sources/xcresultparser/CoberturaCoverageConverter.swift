@@ -75,9 +75,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
                 guard let covered = lineData.executionCount else {
                     continue
                 }
-                // If the line coverage count is a MAX_INT, just cap it at MAX_INT
-                let coveredAsInt = covered > Double(Int.max) ? Int.max : Int(covered)
-                let line = LineInfo(lineNumber: String(lineNum), coverage: coveredAsInt)
+                let line = LineInfo(lineNumber: String(lineNum), coverage: covered)
                 fileLines.append(line)
             }
 
@@ -184,7 +182,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
 
 private struct LineInfo {
     let lineNumber: String
-    let coverage: Int
+    let coverage: UInt64
 }
 
 private struct FileInfo {

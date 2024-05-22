@@ -9,6 +9,6 @@ import Foundation
 // Subrange information struct
 struct Subrange: Decodable {
     let column: Int
-    let executionCount: Double
+    let executionCount: UInt64
     let length: Int
 }
