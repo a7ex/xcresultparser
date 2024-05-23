@@ -34,17 +34,17 @@ struct Issue: Codable {
 }
 
 extension Issue {
-    init(issueSummary: IssueSummary, severity: IssueSeverity, checkName: String) {
+    init(issueSummary: IssueSummary, severity: IssueSeverity, checkName: String, projectRoot: String = "") {
         let issueLocationInfo = IssueLocationInfo(with: issueSummary.documentLocationInCreatingWorkspace)
-        description = "\(issueSummary.issueType) - \(issueSummary.message)"
+        description = "\(issueSummary.issueType) • \(issueSummary.message)"
         self.checkName = checkName
-        fingerprint = "\(issueSummary.issueType) - \(issueSummary.message)".md5()
         self.severity = severity
-        engineName = issueSummary.producingTarget ?? ""
-        location = IssueLocation(issueLocationInfo: issueLocationInfo)
+        engineName = "Xcode Result Bundle Tool"
+        location = IssueLocation(issueLocationInfo: issueLocationInfo, projectRoot: projectRoot)
+        fingerprint = "\(issueSummary.issueType)-\(issueSummary.message)-\(location.fingerprint)".md5()
         type = .issue
         categories = []
-        content = IssueContent(body: "\(issueSummary.issueType) - \(issueSummary.message)")
+        content = IssueContent(body: "\(issueSummary.issueType) • \(issueSummary.message)")
     }
 }
 

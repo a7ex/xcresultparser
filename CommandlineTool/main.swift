@@ -16,7 +16,7 @@ struct xcresultparser: ParsableCommand {
         abstract: "xcresultparser \(marketingVersion)\nInterpret binary .xcresult files and print summary in different formats: txt, xml, html or colored cli output."
     )
 
-    @Option(name: .shortAndLong, help: "The output format. It can be either 'txt', 'cli', 'html', 'md', 'xml', 'junit', 'cobertura', 'warnings' and 'errors'. In case of 'xml' sonar generic format for test results and generic format (Sonarqube) for coverage data is used. In the case of 'cobertura', --coverage is implied.")
+    @Option(name: .shortAndLong, help: "The output format. It can be either 'txt', 'cli', 'html', 'md', 'xml', 'junit', 'cobertura', 'warnings', 'errors' and 'warnings-and-errors'. In case of 'xml' sonar generic format for test results and generic format (Sonarqube) for coverage data is used. In the case of 'cobertura', --coverage is implied.")
     var outputFormat: String?
 
     @Option(name: .shortAndLong, help: "The name of the project root. If present paths and urls are relative to the specified directory.")
@@ -76,7 +76,7 @@ struct xcresultparser: ParsableCommand {
             try outputCoberturaXML(for: xcresult)
         case .cli, .md, .txt, .html:
             try outputDescription(for: xcresult)
-        case .warnings, .errors:
+        case .warnings, .errors, .warningsAndErrors:
             try outputIssuesJSON(for: xcresult, format: format)
         }
     }
@@ -106,7 +106,7 @@ struct xcresultparser: ParsableCommand {
     }
     
     private func outputIssuesJSON(for xcresult: String, format: OutputFormat) throws {
-        guard let converter = IssuesJSON(with: URL(fileURLWithPath: xcresult)) else {
+        guard let converter = IssuesJSON(with: URL(fileURLWithPath: xcresult), projectRoot: projectRoot ?? "") else {
             throw ParseError.argumentError
         }
         let rslt = try converter.jsonString(format: format, quiet: quiet == 1)
@@ -172,7 +172,7 @@ struct xcresultparser: ParsableCommand {
             return HTMLResultFormatter()
         case .txt:
             return TextResultFormatter()
-        case .cobertura, .junit, .xml, .warnings, .errors:
+        case .cobertura, .junit, .xml, .warnings, .errors, .warningsAndErrors:
             // outputFormatter is not used in case of .xml
             return TextResultFormatter()
         case .md:

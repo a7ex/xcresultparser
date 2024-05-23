@@ -79,7 +79,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
                 fileLines.append(line)
             }
 
-            let fileInfoInst = FileInfo(path: relativePath(for: fileName, relativeTo: projectRoot), lines: fileLines)
+            let fileInfoInst = FileInfo(path: fileName.relativePath(relativeTo: projectRoot), lines: fileLines)
             fileInfo.append(fileInfoInst)
         }
         // Sort files to avoid duplicated packages

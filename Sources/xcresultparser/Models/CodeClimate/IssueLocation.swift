@@ -24,7 +24,7 @@ extension IssueLocation {
 }
 
 extension IssueLocation {
-    init(issueLocationInfo: IssueLocationInfo?) {
+    init(issueLocationInfo: IssueLocationInfo?, projectRoot: String = "") {
         guard let issueLocationInfo else {
             path = ""
             lines = IssueLocationData(begin: 0, end: 0)
@@ -34,11 +34,17 @@ extension IssueLocation {
             )
             return
         }
-        path = issueLocationInfo.filePath
+        path = issueLocationInfo.filePath.relativePath(relativeTo: projectRoot)
         lines = IssueLocationData(begin: issueLocationInfo.startLine, end: issueLocationInfo.endLine)
         positions = IssuePositionData(
             begin: PositionData(line: issueLocationInfo.startLine, column: issueLocationInfo.startColumn),
             end: PositionData(line: issueLocationInfo.endLine, column: issueLocationInfo.endColumn)
         )
+    }
+}
+
+extension IssueLocation {
+    var fingerprint: String {
+        return "\(path)-\(positions.begin.line)-\(positions.begin.column)"
     }
 }

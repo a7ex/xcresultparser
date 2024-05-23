@@ -21,9 +21,7 @@ struct IssueLocationInfo {
               let url = URL(string: documentLocation.url) else {
             return nil
         }
-//        guard documentLocation.concreteTypeName == "DVTTextDocumentLocation" else {
-//            fatalError("I want to know, when that happens. concreteTypeName is \(documentLocation.concreteTypeName)")
-//        }
+        // documentLocation.concreteTypeName: "DVTTextDocumentLocation"
         filePath = url.path
         guard let fragment = url.fragment else {
             startLine = 0

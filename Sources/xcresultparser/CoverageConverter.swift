@@ -70,21 +70,6 @@ public class CoverageConverter {
         }
     }
 
-    func relativePath(for path: String, relativeTo projectRoot: String) -> String {
-        guard !projectRoot.isEmpty else {
-            return path
-        }
-        let projectRootTrimmed = projectRoot.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        let parts = path.components(separatedBy: "/\(projectRootTrimmed)")
-        guard parts.count > 1 else {
-            return path
-        }
-        let relative = parts[parts.count - 1]
-        return relative.starts(with: "/") ?
-            String(relative.dropFirst()) :
-            relative
-    }
-
     // Use the xccov commandline tool to get results as JSON.
     func getCoverageDataAsJSON() throws -> FileCoverage {
         var arguments = ["xccov", "view"]
@@ -131,10 +116,3 @@ public class CoverageConverter {
     }
 }
 
-extension String {
-    func text(in range: NSRange) -> String {
-        let idx1 = index(startIndex, offsetBy: range.location)
-        let idx2 = index(idx1, offsetBy: range.length)
-        return String(self[idx1 ..< idx2])
-    }
-}

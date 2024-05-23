@@ -197,6 +197,20 @@ final class XcresultparserTests: XCTestCase {
         XCTAssertNotNil(expectedObject.first(where: { $0.checkName == last.checkName && $0.location == last.location }))
     }
     
+    func testCleanCodeWarningsWithRelativePath() throws {
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
+        guard let converter = IssuesJSON(with: xcresultFile, projectRoot: "xcresultparser/") else {
+            XCTFail("Unable to create warnings json from \(xcresultFile)")
+            return
+        }
+        let rslt = try converter.jsonString(format: .warnings, quiet: true)
+        let result = try JSONDecoder().decode([Issue].self, from: Data(rslt.utf8))
+            .sorted { lhs, rhs in
+                lhs.location.path > rhs.location.path
+            }
+        XCTAssertEqual("Tests/XcresultparserTests/XcresultparserTests.swift", result.first?.location.path)
+    }
+    
     func testCleanCodeErrors() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         guard let converter = IssuesJSON(with: xcresultFile) else {
@@ -234,6 +248,9 @@ final class XcresultparserTests: XCTestCase {
         
         sut = OutputFormat(string: "errors")
         XCTAssertEqual(OutputFormat.errors, sut)
+        
+        sut = OutputFormat(string: "warnings-and-errors")
+        XCTAssertEqual(OutputFormat.warningsAndErrors, sut)
 
         sut = OutputFormat(string: "")
         XCTAssertEqual(OutputFormat.cli, sut)
