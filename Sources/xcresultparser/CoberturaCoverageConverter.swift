@@ -72,18 +72,14 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
 
             for lineData in value {
                 let lineNum = lineData.line
-                guard var covered = lineData.executionCount else {
+                guard let covered = lineData.executionCount else {
                     continue
-                }
-                // If the line coverage count is a MAX_INT, just set it to 1
-                if covered == Int.max {
-                    covered = 1
                 }
                 let line = LineInfo(lineNumber: String(lineNum), coverage: covered)
                 fileLines.append(line)
             }
 
-            let fileInfoInst = FileInfo(path: relativePath(for: fileName, relativeTo: projectRoot), lines: fileLines)
+            let fileInfoInst = FileInfo(path: fileName.relativePath(relativeTo: projectRoot), lines: fileLines)
             fileInfo.append(fileInfoInst)
         }
         // Sort files to avoid duplicated packages
@@ -186,7 +182,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
 
 private struct LineInfo {
     let lineNumber: String
-    let coverage: Int
+    let coverage: UInt64
 }
 
 private struct FileInfo {

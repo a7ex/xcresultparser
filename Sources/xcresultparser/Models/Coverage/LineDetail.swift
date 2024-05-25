@@ -10,6 +10,6 @@ import Foundation
 struct LineDetail: Decodable {
     let isExecutable: Bool
     let line: Int
-    let executionCount: Int?
+    let executionCount: UInt64?
     let subranges: [Subrange]?
 }

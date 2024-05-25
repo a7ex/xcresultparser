@@ -28,7 +28,6 @@ public class CoverageConverter {
     let projectRoot: String
     let codeCoverage: CodeCoverage
     let invocationRecord: ActionsInvocationRecord
-    let coverageRegexp: NSRegularExpression?
     let coverageTargets: Set<String>
 
     public init?(
@@ -46,11 +45,7 @@ public class CoverageConverter {
             return nil
         }
         self.invocationRecord = invocationRecord
-
         self.coverageTargets = record.targets(filteredBy: coverageTargets)
-
-        let pattern = #"(\d+):\s*(\d+)"#
-        coverageRegexp = try? NSRegularExpression(pattern: pattern, options: .anchorsMatchLines)
     }
 
     public func xmlString(quiet: Bool) throws -> String {
@@ -73,21 +68,6 @@ public class CoverageConverter {
         if let data = str.data(using: String.Encoding.utf8) {
             handle.write(data)
         }
-    }
-
-    func relativePath(for path: String, relativeTo projectRoot: String) -> String {
-        guard !projectRoot.isEmpty else {
-            return path
-        }
-        let projectRootTrimmed = projectRoot.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        let parts = path.components(separatedBy: "/\(projectRootTrimmed)")
-        guard parts.count > 1 else {
-            return path
-        }
-        let relative = parts[parts.count - 1]
-        return relative.starts(with: "/") ?
-            String(relative.dropFirst()) :
-            relative
     }
 
     // Use the xccov commandline tool to get results as JSON.
@@ -136,10 +116,3 @@ public class CoverageConverter {
     }
 }
 
-extension String {
-    func text(in range: NSRange) -> String {
-        let idx1 = index(startIndex, offsetBy: range.location)
-        let idx2 = index(idx1, offsetBy: range.length)
-        return String(self[idx1 ..< idx2])
-    }
-}

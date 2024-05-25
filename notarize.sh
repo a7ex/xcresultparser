@@ -59,6 +59,9 @@ fi
 swift build -c release --arch arm64 --arch x86_64
 
 # move the result from the .build folder to the product folder
+if [ ! -d product ]; then
+    mkdir product
+fi
 cp ".build/apple/Products/Release/$productName" "product/$productName"
 
 # Now codesign the app with hardening (-o)

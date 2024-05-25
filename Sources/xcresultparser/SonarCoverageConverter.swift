@@ -37,7 +37,7 @@ public class SonarCoverageConverter: CoverageConverter, XmlSerializable {
         relativeTo projectRoot: String
     ) throws -> XMLElement {
         let fileElement = XMLElement(name: "file")
-        fileElement.addAttribute(name: "path", stringValue: relativePath(for: file, relativeTo: projectRoot))
+        fileElement.addAttribute(name: "path", stringValue: file.relativePath(relativeTo: projectRoot))
         for lineData in coverageData where lineData.isExecutable {
             let line = XMLElement(name: "lineToCover")
             line.addAttribute(name: "lineNumber", stringValue: String(lineData.line))
