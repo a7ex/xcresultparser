@@ -34,8 +34,8 @@ So at least we can spread it over different threads, so that it executes in para
 which does the same job, just in a shell script. It has the same problem
 and since it can not spawn it to different threads, it takes about 5x the time.~~
 
-It used to be like described above up until Xcode 13. Xcode 13 brought a new version of the xccov commandline tool, which now can output the entire cioverage data at once. No more tedious task of calling ionto xccov for each single swift file!
-Therefore the shell script [xccov-to-sonarqube-generic.sh](https://github.com/SonarSource/sonar-scanning-examples/blob/master/swift-coverage/swift-coverage-example/xccov-to-sonarqube-generic.sh) provided by sonar does the job in the same time as xcresultparser. That renders the initial purpose of this tool useless. However, xcresultparser meanwhile can do a few more things, than only converting coverage data from a xcresult bundle to xml suited for sonarqube.
+It used to be like described above up until Xcode 13. Xcode 13 brought a new version of the xccov commandline tool, which now can output the entire coverage data at once. No more tedious task of calling into xccov for each single swift file!
+Therefore the shell script [xccov-to-sonarqube-generic.sh](https://github.com/SonarSource/sonar-scanning-examples/blob/master/swift-coverage/swift-coverage-example/xccov-to-sonarqube-generic.sh) provided by sonar does the job in the same time as xcresultparser. That renders the initial purpose of this tool useless. However, xcresultparser meanwhile can do a few more tricks, than only converting coverage data from a xcresult bundle to xml suited for sonarqube.
 
 It my still be useful for you, if you want to just display the contents of the xcresult bundle (the tests) in a terminal, as html or as markdown for your build chain.
 
