@@ -28,7 +28,7 @@ It requires us to invoke the xccov binary for each single file in the project.~~
 
 ~~First we get a list of source files with coverage data from the archive, using xccov --file-list
 and then we need to invoke xccov for each single file. That takes a considerable amount of time.
-So at least we can spread it over different threads, so that it executes in parallel and is overall faster.~
+So at least we can spread it over different threads, so that it executes in parallel and is overall faster.~~
 
 ~~Until now we used [xccov-to-sonarqube-generic.sh]( https://github.com/SonarSource/sonar-scanning-examples/blob/master/swift-coverage/swift-coverage-example/xccov-to-sonarqube-generic.sh)
 which does the same job, just in a shell script. It has the same problem
