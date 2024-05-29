@@ -131,11 +131,11 @@ You're ready to go! 🎉
 The tool doesn't create any file. It justs outputs its results to standard out. It is up to you to write the output to a file, using redirection.
 For example, if you want to write the text output into a file named `output.txt` on your desktop:
 ```
-./xcresultparser -o txt test.xcresult > ~/Desktop/output.txt
+xcresultparser -o txt test.xcresult > ~/Desktop/output.txt
 ```
 However, if all you need is to output the contents of the xcresult bundle to the terminal:
 ```
-./xcresultparser -o cli test.xcresult
+xcresultparser -o cli test.xcresult
 ```
 
 You can also merge two xcresult files with:
@@ -154,43 +154,43 @@ It sets the overall test time of the testsuites to the sum of all test suite tim
 ### Colored CLI output
 Print the test results in color to the command line:
 ```
-./xcresultparser -o cli test.xcresult
+xcresultparser -o cli test.xcresult
 ```
 ![Colored command line output](images/cliColor.png)
 
 ### HTML output
 Create a single html file with test data
 ```
-./xcresultparser -o html test.xcresult > testResult.html
+xcresultparser -o html test.xcresult > testResult.html
 ```
 ![Interactive single page HTML file](images/testResultHTML.png)
 
 ### Junit output
 Create an xml file in JUnit format:
 ```
-./xcresultparser -o junit test.xcresult > junit.xml
+xcresultparser -o junit test.xcresult > junit.xml
 ```
 
 ### Sonarqube output
 Create an xml file in generic test exectuion xml format:
 ```
-./xcresultparser -o xml test.xcresult > sonarTestExecution.xml
+xcresultparser -o xml test.xcresult > sonarTestExecution.xml
 ```
 
 Create an xml file in generic code coverage xml format for all targets:
 ```
-./xcresultparser -c -o xml test.xcresult > sonarCoverage.xml
+xcresultparser -c -o xml test.xcresult > sonarCoverage.xml
 ```
 
 Create an xml file in generic code coverage xml format, but only for two of the targets "foo" and "baz":
 ```
-./xcresultparser -c -o xml test.xcresult -t foo -t baz > sonarCoverage.xml
+xcresultparser -c -o xml test.xcresult -t foo -t baz > sonarCoverage.xml
 ```
 
 ### Cobertura XML output
 Create xml file in [Cobertura](https://cobertura.github.io/cobertura/) format:
 ```
-./xcresultparser -o cobertura test.xcresult > cobertura.xml
+xcresultparser -o cobertura test.xcresult > cobertura.xml
 ```
 
 Note that some data in this file is currently fake as of this time of writing, but should have accurate line coverage information. It should be good enough for importing into tools like [GitLab coverage visualizer](https://docs.gitlab.com/ee/ci/testing/test_coverage_visualization.html).
@@ -200,19 +200,19 @@ It may be desirable to also pass --project-root if you wish to alter the filenam
 ### Markdown output
 Simple markdown formatting for test results. (We use it for display in a Teams Webhook)
 ```
-./xcresultparser -o md test.xcresult > teamsWebhook.txt
+xcresultparser -o md test.xcresult > teamsWebhook.txt
 ```
 
 ### Code Climate output
 JSON output for Code Climate checks
 ```
-./xcresultparser -o warnings test.xcresult > climate.json
+xcresultparser -o warnings test.xcresult > climate.json
 ```
 
 ### Error output
 JSON output describing errors
 ```
-./xcresultparser -o errors test.xcresult > errors.json
+xcresultparser -o errors test.xcresult > errors.json
 ```
 
 #### About paths for the sonarqube scanner
