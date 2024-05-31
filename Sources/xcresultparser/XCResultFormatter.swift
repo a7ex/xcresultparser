@@ -357,7 +357,6 @@ public struct XCResultFormatter {
                         "\(target.name): \(covPercent)% (\(target.coveredLines)/\(target.executableLines))"
                     )
                 )
-
                 if(coverageReportFormat != .targets) {
                     if !outputFormatter.accordionOpenTag.isEmpty {
                         lines.append(
