@@ -487,3 +487,4 @@ private extension ActionTestSummaryGroup {
         return !hasFailedTests
     }
 }
+
