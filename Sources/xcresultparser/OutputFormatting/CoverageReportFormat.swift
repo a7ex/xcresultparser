@@ -1,6 +1,5 @@
 //
-//  File.swift
-//
+//  CoverageReportFormat.swift
 //
 //  Created by nkokhelo mhlongo on 2024/05/31.
 //
