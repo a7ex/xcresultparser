@@ -87,16 +87,20 @@ You should see the tool respond like this:
 ```
 Error: Missing expected argument '<xcresult-file>'
 
-OVERVIEW: xcresultparser 1.6.0
+OVERVIEW: xcresultparser 1.6.1
 Interpret binary .xcresult files and print summary in different formats: txt,
 xml, html or colored cli output.
 
-USAGE: xcresultparser [--output-format <output-format>] [--project-root <project-root>] [--coverage-targets <coverage-targets> ...] [--summary-fields <summary-fields>] [--coverage ...] [--no-test-result ...] [--failed-tests-only ...] [--quiet ...] [--target-info ...] [--version ...] [<xcresult-file>]
+USAGE: xcresultparser [--coverage-report-format <coverage-report-format>] [--output-format <output-format>] [--project-root <project-root>] [--coverage-targets <coverage-targets> ...] [--summary-fields <summary-fields>] [--coverage ...] [--no-test-result ...] [--failed-tests-only ...] [--quiet ...] [--target-info ...] [--version ...] [<xcresult-file>]
 
 ARGUMENTS:
   <xcresult-file>         The path to the .xcresult file.
 
 OPTIONS:
+  --coverage-report-format <coverage-report-format>
+                          The coverage report format. The Default is 'methods',
+                          It can either be 'totals', 'targets', 'classes' or
+                          'methods'
   -o, --output-format <output-format>
                           The output format. It can be either 'txt', 'cli',
                           'html', 'md', 'xml', 'junit', 'cobertura',

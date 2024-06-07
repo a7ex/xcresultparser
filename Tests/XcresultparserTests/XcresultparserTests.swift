@@ -31,6 +31,74 @@ final class XcresultparserTests: XCTestCase {
         XCTAssertTrue(resultParser.coverageDetails.starts(with: "Coverage report"))
         XCTAssertEqual("", resultParser.documentSuffix)
     }
+    
+    func testTextResultFormatterTotalCoverageReportFormat() throws {
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
+
+        guard let resultParser = XCResultFormatter(
+            with: xcresultFile,
+            formatter: TextResultFormatter(),
+            coverageTargets: [],
+            coverageReportFormat: .totals
+        ) else {
+            XCTFail("Unable to create XCResultFormatter with \(xcresultFile)")
+            return
+        }
+        XCTAssertEqual("", resultParser.documentPrefix(title: "XCResults"))
+
+        let expectedSummary = """
+        Summary
+          Number of errors = 0
+          Number of warnings = 3
+          Number of analyzer warnings = 0
+          Number of tests = 7
+          Number of failed tests = 1
+          Number of skipped tests = 0
+        """
+        XCTAssertEqual(expectedSummary, resultParser.summary)
+        XCTAssertEqual("---------------------\n", resultParser.divider)
+        XCTAssertTrue(resultParser.testDetails.starts(with: "Test Scheme Action"))
+        
+        let lines = resultParser.coverageDetails.components(separatedBy: "\n")
+        XCTAssertEqual(2, lines.count)
+        XCTAssertEqual("Coverage report", lines.first)
+        XCTAssertTrue(lines.last?.starts(with: "Total coverage:") == true)
+    }
+    
+    func testTextResultFormatterMethodsCoverageReportFormat() throws {
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
+
+        guard let resultParser = XCResultFormatter(
+            with: xcresultFile,
+            formatter: TextResultFormatter(),
+            coverageTargets: [],
+            coverageReportFormat: .methods
+        ) else {
+            XCTFail("Unable to create XCResultFormatter with \(xcresultFile)")
+            return
+        }
+        XCTAssertEqual("", resultParser.documentPrefix(title: "XCResults"))
+
+        let expectedSummary = """
+        Summary
+          Number of errors = 0
+          Number of warnings = 3
+          Number of analyzer warnings = 0
+          Number of tests = 7
+          Number of failed tests = 1
+          Number of skipped tests = 0
+        """
+        XCTAssertEqual(expectedSummary, resultParser.summary)
+        XCTAssertEqual("---------------------\n", resultParser.divider)
+        XCTAssertTrue(resultParser.testDetails.starts(with: "Test Scheme Action"))
+        
+        let lines = resultParser.coverageDetails.components(separatedBy: "\n")
+        XCTAssertEqual(473, lines.count)
+        XCTAssertEqual("Coverage report", lines.first)
+        XCTAssertTrue(lines[1].starts(with: "Total coverage:") == true)
+        XCTAssertTrue(lines[2].starts(with: "XcresultparserLib:") == true)
+        XCTAssertTrue(lines[3].contains("CLIResultFormatter.swift:") == true)
+    }
 
     func testCLIResultFormatter() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
@@ -257,6 +325,35 @@ final class XcresultparserTests: XCTestCase {
 
         sut = OutputFormat(string: "xyz")
         XCTAssertEqual(OutputFormat.cli, sut)
+    }
+    
+    func testCoverageReportFormat() {
+        var sut = CoverageReportFormat(string: "methods")
+        XCTAssertEqual(CoverageReportFormat.methods, sut)
+
+        sut = CoverageReportFormat(string: "classes")
+        XCTAssertEqual(CoverageReportFormat.classes, sut)
+
+        sut = CoverageReportFormat(string: "targets")
+        XCTAssertEqual(CoverageReportFormat.targets, sut)
+        
+        sut = CoverageReportFormat(string: "totals")
+        XCTAssertEqual(CoverageReportFormat.totals, sut)
+        
+        sut = CoverageReportFormat(string: "not existing")
+        XCTAssertEqual(CoverageReportFormat.methods, sut)
+        
+        sut = CoverageReportFormat(string: "")
+        XCTAssertEqual(CoverageReportFormat.methods, sut)
+        
+        sut = CoverageReportFormat(string: "Classes")
+        XCTAssertEqual(CoverageReportFormat.classes, sut)
+        
+        sut = CoverageReportFormat(string: "CLASSES")
+        XCTAssertEqual(CoverageReportFormat.classes, sut)
+        
+        sut = CoverageReportFormat(string: "clASSeS")
+        XCTAssertEqual(CoverageReportFormat.classes, sut)
     }
 
     // MARK: helper functions
