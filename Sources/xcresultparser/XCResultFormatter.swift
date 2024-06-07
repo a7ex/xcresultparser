@@ -33,6 +33,7 @@ public struct XCResultFormatter {
     private let coverageTargets: Set<String>
     private let failedTestsOnly: Bool
     private let summaryFields: SummaryFields
+    private let coverageReportFormat: CoverageReportFormat
 
     private var numFormatter: NumberFormatter = {
         let numFormatter = NumberFormatter()
@@ -53,7 +54,8 @@ public struct XCResultFormatter {
         formatter: XCResultFormatting,
         coverageTargets: [String] = [],
         failedTestsOnly: Bool = false,
-        summaryFields: String = "errors|warnings|analyzerWarnings|tests|failed|skipped"
+        summaryFields: String = "errors|warnings|analyzerWarnings|tests|failed|skipped",
+        coverageReportFormat: CoverageReportFormat = .methods
     ) {
         resultFile = XCResultFile(url: url)
         guard let record = resultFile.getInvocationRecord() else {
@@ -65,6 +67,7 @@ public struct XCResultFormatter {
         self.coverageTargets = codeCoverage?.targets(filteredBy: coverageTargets) ?? []
         self.failedTestsOnly = failedTestsOnly
         self.summaryFields = SummaryFields(specifiers: summaryFields)
+        self.coverageReportFormat = coverageReportFormat
 
         // if let logsId = invocationRecord?.actions.last?.actionResult.logRef?.id {
         //    let testLogs = resultFile.getLogs(id: logsId)
@@ -348,61 +351,67 @@ public struct XCResultFormatter {
             let covPercent = percentFormatter.unwrappedString(for: target.lineCoverage * 100)
             executableLines += target.executableLines
             coveredLines += target.coveredLines
-            lines.append(
-                outputFormatter.codeCoverageTargetSummary(
-                    "\(target.name): \(covPercent)% (\(target.coveredLines)/\(target.executableLines))"
-                )
-            )
-            if !outputFormatter.accordionOpenTag.isEmpty {
+            if(coverageReportFormat != .totals) {
                 lines.append(
-                    outputFormatter.accordionOpenTag
-                )
-            }
-            for file in target.files {
-                let covPercent = percentFormatter.unwrappedString(for: file.lineCoverage * 100)
-                lines.append(
-                    outputFormatter.codeCoverageFileSummary(
-                        "\(file.name): \(covPercent)% (\(file.coveredLines)/\(file.executableLines))"
+                    outputFormatter.codeCoverageTargetSummary(
+                        "\(target.name): \(covPercent)% (\(target.coveredLines)/\(target.executableLines))"
                     )
                 )
-                if !outputFormatter.accordionOpenTag.isEmpty {
-                    lines.append(
-                        outputFormatter.accordionOpenTag
-                    )
-                }
-                if !outputFormatter.tableOpenTag.isEmpty {
-                    lines.append(
-                        outputFormatter.tableOpenTag
-                    )
-                }
-                for function in file.functions {
-                    let covPercentLine = percentFormatter.unwrappedString(for: function.lineCoverage * 100)
-                    lines.append(
-                        outputFormatter.codeCoverageFunctionSummary(
-                            [
-                                "\(covPercentLine)%",
-                                "\(function.name):\(function.lineNumber)",
-                                "(\(function.coveredLines)/\(function.executableLines))",
-                                "\(function.executionCount) times"
-                            ]
+                if(coverageReportFormat != .targets) {
+                    if !outputFormatter.accordionOpenTag.isEmpty {
+                        lines.append(
+                            outputFormatter.accordionOpenTag
                         )
-                    )
+                    }
+                    for file in target.files {
+                        let covPercent = percentFormatter.unwrappedString(for: file.lineCoverage * 100)
+                        lines.append(
+                            outputFormatter.codeCoverageFileSummary(
+                                "\(file.name): \(covPercent)% (\(file.coveredLines)/\(file.executableLines))"
+                            )
+                        )
+                        if(coverageReportFormat != .classes) {
+                            if !outputFormatter.accordionOpenTag.isEmpty {
+                                lines.append(
+                                    outputFormatter.accordionOpenTag
+                                )
+                            }
+                            if !outputFormatter.tableOpenTag.isEmpty {
+                                lines.append(
+                                    outputFormatter.tableOpenTag
+                                )
+                            }
+                            for function in file.functions {
+                                let covPercentLine = percentFormatter.unwrappedString(for: function.lineCoverage * 100)
+                                lines.append(
+                                    outputFormatter.codeCoverageFunctionSummary(
+                                        [
+                                            "\(covPercentLine)%",
+                                            "\(function.name):\(function.lineNumber)",
+                                            "(\(function.coveredLines)/\(function.executableLines))",
+                                            "\(function.executionCount) times"
+                                        ]
+                                    )
+                                )
+                            }
+                            if !outputFormatter.tableCloseTag.isEmpty {
+                                lines.append(
+                                    outputFormatter.tableCloseTag
+                                )
+                            }
+                            if !outputFormatter.accordionCloseTag.isEmpty {
+                                lines.append(
+                                    outputFormatter.accordionCloseTag
+                                )
+                            }
+                        }
+                    }
+                    if !outputFormatter.accordionCloseTag.isEmpty {
+                        lines.append(
+                            outputFormatter.accordionCloseTag
+                        )
+                    }
                 }
-                if !outputFormatter.tableCloseTag.isEmpty {
-                    lines.append(
-                        outputFormatter.tableCloseTag
-                    )
-                }
-                if !outputFormatter.accordionCloseTag.isEmpty {
-                    lines.append(
-                        outputFormatter.accordionCloseTag
-                    )
-                }
-            }
-            if !outputFormatter.accordionCloseTag.isEmpty {
-                lines.append(
-                    outputFormatter.accordionCloseTag
-                )
             }
         }
         // Append the total coverage below the header
@@ -477,3 +486,4 @@ private extension ActionTestSummaryGroup {
         return !hasFailedTests
     }
 }
+

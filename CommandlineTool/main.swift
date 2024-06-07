@@ -9,12 +9,15 @@ import ArgumentParser
 import Foundation
 import XcresultparserLib
 
-private let marketingVersion = "1.6.0"
+private let marketingVersion = "1.6.1"
 
 struct xcresultparser: ParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "xcresultparser \(marketingVersion)\nInterpret binary .xcresult files and print summary in different formats: txt, xml, html or colored cli output."
     )
+    
+    @Option(name: .long, help: "The coverage report format. The Default is 'methods', It can either be 'totals', 'targets', 'classes' or 'methods'")
+    var coverageReportFormat: String?
 
     @Option(name: .shortAndLong, help: "The output format. It can be either 'txt', 'cli', 'html', 'md', 'xml', 'junit', 'cobertura', 'warnings', 'errors' and 'warnings-and-errors'. In case of 'xml' sonar generic format for test results and generic format (Sonarqube) for coverage data is used. In the case of 'cobertura', --coverage is implied.")
     var outputFormat: String?
@@ -144,7 +147,8 @@ struct xcresultparser: ParsableCommand {
             formatter: outputFormatter,
             coverageTargets: coverageTargets,
             failedTestsOnly: failedTestsOnly == 1,
-            summaryFields: summaryFields ?? "errors|warnings|analyzerWarnings|tests|failed|skipped"
+            summaryFields: summaryFields ?? "errors|warnings|analyzerWarnings|tests|failed|skipped",
+            coverageReportFormat: CoverageReportFormat(string: coverageReportFormat)
         ) else {
             throw ParseError.argumentError
         }
