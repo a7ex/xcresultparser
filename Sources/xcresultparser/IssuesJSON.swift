@@ -17,7 +17,7 @@ public struct IssuesJSON {
     let projectRoot: String
     let checkName: String
     let invocationRecord: ActionsInvocationRecord
-    
+
     public init?(with url: URL, projectRoot: String = "") {
         resultFile = XCResultFile(url: url)
         guard let invocationRecord = resultFile.getInvocationRecord(),
@@ -28,7 +28,7 @@ public struct IssuesJSON {
         checkName = checkdata.md5()
         self.projectRoot = projectRoot
     }
-    
+
     public func jsonString(format: OutputFormat, quiet: Bool = false) throws -> String {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted

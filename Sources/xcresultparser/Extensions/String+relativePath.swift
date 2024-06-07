@@ -12,7 +12,7 @@ extension String {
         let idx2 = index(idx1, offsetBy: range.length)
         return String(self[idx1 ..< idx2])
     }
-    
+
     func relativePath(relativeTo projectRoot: String) -> String {
         guard !projectRoot.isEmpty else {
             return self

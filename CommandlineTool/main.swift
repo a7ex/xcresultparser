@@ -15,7 +15,7 @@ struct xcresultparser: ParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "xcresultparser \(marketingVersion)\nInterpret binary .xcresult files and print summary in different formats: txt, xml, html or colored cli output."
     )
-    
+
     @Option(name: .long, help: "The coverage report format. The Default is 'methods', It can either be 'totals', 'targets', 'classes' or 'methods'")
     var coverageReportFormat: String?
 
@@ -107,7 +107,7 @@ struct xcresultparser: ParsableCommand {
         let rslt = try converter.xmlString(quiet: quiet == 1)
         writeToStdOut(rslt)
     }
-    
+
     private func outputIssuesJSON(for xcresult: String, format: OutputFormat) throws {
         guard let converter = IssuesJSON(with: URL(fileURLWithPath: xcresult), projectRoot: projectRoot ?? "") else {
             throw ParseError.argumentError

@@ -15,7 +15,7 @@ struct IssueLocationInfo {
     let endLine: Int
     let startColumn: Int
     let endColumn: Int
-    
+
     init?(with documentLocation: DocumentLocation?) {
         guard let documentLocation,
               let url = URL(string: documentLocation.url) else {

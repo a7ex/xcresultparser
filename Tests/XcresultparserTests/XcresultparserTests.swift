@@ -31,7 +31,7 @@ final class XcresultparserTests: XCTestCase {
         XCTAssertTrue(resultParser.coverageDetails.starts(with: "Coverage report"))
         XCTAssertEqual("", resultParser.documentSuffix)
     }
-    
+
     func testTextResultFormatterTotalCoverageReportFormat() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
 
@@ -58,13 +58,13 @@ final class XcresultparserTests: XCTestCase {
         XCTAssertEqual(expectedSummary, resultParser.summary)
         XCTAssertEqual("---------------------\n", resultParser.divider)
         XCTAssertTrue(resultParser.testDetails.starts(with: "Test Scheme Action"))
-        
+
         let lines = resultParser.coverageDetails.components(separatedBy: "\n")
         XCTAssertEqual(2, lines.count)
         XCTAssertEqual("Coverage report", lines.first)
         XCTAssertTrue(lines.last?.starts(with: "Total coverage:") == true)
     }
-    
+
     func testTextResultFormatterMethodsCoverageReportFormat() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
 
@@ -91,7 +91,7 @@ final class XcresultparserTests: XCTestCase {
         XCTAssertEqual(expectedSummary, resultParser.summary)
         XCTAssertEqual("---------------------\n", resultParser.divider)
         XCTAssertTrue(resultParser.testDetails.starts(with: "Test Scheme Action"))
-        
+
         let lines = resultParser.coverageDetails.components(separatedBy: "\n")
         XCTAssertEqual(473, lines.count)
         XCTAssertEqual("Coverage report", lines.first)
@@ -244,7 +244,7 @@ final class XcresultparserTests: XCTestCase {
         }
         try assertXmlTestReportsAreEqual(expectedFileName: "junit_merged", actual: junitXML)
     }
-    
+
     func testCleanCodeWarnings() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         guard let converter = IssuesJSON(with: xcresultFile) else {
@@ -253,18 +253,18 @@ final class XcresultparserTests: XCTestCase {
         }
         let rslt = try converter.jsonString(format: .warnings, quiet: true)
         let result = try JSONDecoder().decode([Issue].self, from: Data(rslt.utf8))
-        
+
         let expectedFile = Bundle.module.url(forResource: "warnings", withExtension: "json")!
         let expectedData = try Data(contentsOf: expectedFile)
         let expectedObject = try JSONDecoder().decode([Issue].self, from: expectedData)
-        
+
         XCTAssertEqual(result.count, expectedObject.count)
         let first = try XCTUnwrap(result.first)
         let last = try XCTUnwrap(result.last)
         XCTAssertNotNil(expectedObject.first(where: { $0.checkName == first.checkName && $0.location == first.location }))
         XCTAssertNotNil(expectedObject.first(where: { $0.checkName == last.checkName && $0.location == last.location }))
     }
-    
+
     func testCleanCodeWarningsWithRelativePath() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         guard let converter = IssuesJSON(with: xcresultFile, projectRoot: "xcresultparser/") else {
@@ -278,7 +278,7 @@ final class XcresultparserTests: XCTestCase {
             }
         XCTAssertEqual("Tests/XcresultparserTests/XcresultparserTests.swift", result.first?.location.path)
     }
-    
+
     func testCleanCodeErrors() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         guard let converter = IssuesJSON(with: xcresultFile) else {
@@ -298,25 +298,25 @@ final class XcresultparserTests: XCTestCase {
 
         sut = OutputFormat(string: "html")
         XCTAssertEqual(OutputFormat.html, sut)
-        
+
         sut = OutputFormat(string: "cli")
         XCTAssertEqual(OutputFormat.cli, sut)
-        
+
         sut = OutputFormat(string: "cobertura")
         XCTAssertEqual(OutputFormat.cobertura, sut)
-        
+
         sut = OutputFormat(string: "junit")
         XCTAssertEqual(OutputFormat.junit, sut)
-        
+
         sut = OutputFormat(string: "md")
         XCTAssertEqual(OutputFormat.md, sut)
-        
+
         sut = OutputFormat(string: "warnings")
         XCTAssertEqual(OutputFormat.warnings, sut)
-        
+
         sut = OutputFormat(string: "errors")
         XCTAssertEqual(OutputFormat.errors, sut)
-        
+
         sut = OutputFormat(string: "warnings-and-errors")
         XCTAssertEqual(OutputFormat.warningsAndErrors, sut)
 
@@ -326,7 +326,7 @@ final class XcresultparserTests: XCTestCase {
         sut = OutputFormat(string: "xyz")
         XCTAssertEqual(OutputFormat.cli, sut)
     }
-    
+
     func testCoverageReportFormat() {
         var sut = CoverageReportFormat(string: "methods")
         XCTAssertEqual(CoverageReportFormat.methods, sut)
@@ -336,22 +336,22 @@ final class XcresultparserTests: XCTestCase {
 
         sut = CoverageReportFormat(string: "targets")
         XCTAssertEqual(CoverageReportFormat.targets, sut)
-        
+
         sut = CoverageReportFormat(string: "totals")
         XCTAssertEqual(CoverageReportFormat.totals, sut)
-        
+
         sut = CoverageReportFormat(string: "not existing")
         XCTAssertEqual(CoverageReportFormat.methods, sut)
-        
+
         sut = CoverageReportFormat(string: "")
         XCTAssertEqual(CoverageReportFormat.methods, sut)
-        
+
         sut = CoverageReportFormat(string: "Classes")
         XCTAssertEqual(CoverageReportFormat.classes, sut)
-        
+
         sut = CoverageReportFormat(string: "CLASSES")
         XCTAssertEqual(CoverageReportFormat.classes, sut)
-        
+
         sut = CoverageReportFormat(string: "clASSeS")
         XCTAssertEqual(CoverageReportFormat.classes, sut)
     }

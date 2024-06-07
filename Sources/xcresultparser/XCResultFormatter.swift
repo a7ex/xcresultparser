@@ -351,13 +351,13 @@ public struct XCResultFormatter {
             let covPercent = percentFormatter.unwrappedString(for: target.lineCoverage * 100)
             executableLines += target.executableLines
             coveredLines += target.coveredLines
-            if(coverageReportFormat != .totals) {
+            if coverageReportFormat != .totals {
                 lines.append(
                     outputFormatter.codeCoverageTargetSummary(
                         "\(target.name): \(covPercent)% (\(target.coveredLines)/\(target.executableLines))"
                     )
                 )
-                if(coverageReportFormat != .targets) {
+                if coverageReportFormat != .targets {
                     if !outputFormatter.accordionOpenTag.isEmpty {
                         lines.append(
                             outputFormatter.accordionOpenTag
@@ -370,7 +370,7 @@ public struct XCResultFormatter {
                                 "\(file.name): \(covPercent)% (\(file.coveredLines)/\(file.executableLines))"
                             )
                         )
-                        if(coverageReportFormat != .classes) {
+                        if coverageReportFormat != .classes {
                             if !outputFormatter.accordionOpenTag.isEmpty {
                                 lines.append(
                                     outputFormatter.accordionOpenTag
@@ -486,4 +486,3 @@ private extension ActionTestSummaryGroup {
         return !hasFailedTests
     }
 }
-

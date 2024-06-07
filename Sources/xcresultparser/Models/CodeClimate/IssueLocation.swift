@@ -14,12 +14,12 @@ struct IssueLocation: Codable, Equatable {
 }
 
 extension IssueLocation {
-    static func ==(lhs: IssueLocation, rhs: IssueLocation) -> Bool {
+    static func == (lhs: IssueLocation, rhs: IssueLocation) -> Bool {
         return lhs.positions.begin.line == rhs.positions.begin.line &&
-        lhs.positions.end.line == rhs.positions.end.line &&
-        lhs.positions.begin.column == rhs.positions.begin.column &&
-        lhs.positions.end.column == rhs.positions.end.column &&
-        lhs.path == rhs.path
+            lhs.positions.end.line == rhs.positions.end.line &&
+            lhs.positions.begin.column == rhs.positions.begin.column &&
+            lhs.positions.end.column == rhs.positions.end.column &&
+            lhs.path == rhs.path
     }
 }
 

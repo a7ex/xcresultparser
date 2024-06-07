@@ -25,7 +25,7 @@ struct Issue: Codable {
     let categories: [IssueCategory]
     /// Optional. A markdown snippet describing the issue, including deeper explanations and links to other resources.
     let content: IssueContent
-    
+
     enum CodingKeys: String, CodingKey {
         case description, fingerprint, severity, location, type, categories, content
         case checkName = "check_name"

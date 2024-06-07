@@ -115,4 +115,3 @@ public class CoverageConverter {
         return String(decoding: filelistData, as: UTF8.self).components(separatedBy: "\n")
     }
 }
-
