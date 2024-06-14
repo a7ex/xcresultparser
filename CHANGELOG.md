@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version 1.6.3 - 2024-06-14
+### CHANGES:
+Fixed new crash after 1.6.2 update by reverting any changes not directly related to updating the DTD file.
+
 ## Version 1.6.2 - 2024-06-14
 ### CHANGES:
 Fix crash for cobertura coverage converter

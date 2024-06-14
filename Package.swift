@@ -46,10 +46,7 @@ let package = Package(
                     package: "XCResultKit"
                 ),
             ],
-            path: "Sources",
-            resources: [
-                .copy("xcresultparser/Resources/coverage-04.dtd")
-            ]
+            path: "Sources"
         ),
         .testTarget(
             name: "XcresultparserTests",
