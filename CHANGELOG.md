@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version 1.6.2 - 2024-06-14
+### CHANGES:
+Fix crash for cobertura coverage converter
+
+The DTD URL changed and the fallback file, which was supposed to be read from the bundle crashed the app.
+No surprise, because the command line tool is not a bundle. DUH!
+The fix is to include the DTD as string in the code. Also removed the online poll of the DTD, as it will probably never change!
+
 ## Version 1.6.1 - 2024-05-19
 ### CHANGES:
 Adds support for configurying the coverage report format

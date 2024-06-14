@@ -1,5 +1,5 @@
 disabled_rules:
-  - identifier_name # Disables names that start with an underscore
+  # - identifier_name # Disables names that start with an underscore
   # - line_length
   - nesting
   - redundant_discardable_let # False positives for e.g. let _: URL =

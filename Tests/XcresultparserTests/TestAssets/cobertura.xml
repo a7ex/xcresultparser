@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE coverage SYSTEM "http://cobertura.sourceforge.net/xml/coverage-04.dtd" [
+<!DOCTYPE coverage SYSTEM "https://github.com/cobertura/cobertura/blob/master/cobertura/src/site/htdocs/xml/coverage-04.dtd" [
     <!ELEMENT coverage (sources?, packages)>
     <!ATTLIST coverage line-rate CDATA #REQUIRED>
     <!ATTLIST coverage branch-rate CDATA #REQUIRED>
