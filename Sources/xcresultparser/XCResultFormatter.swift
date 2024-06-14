@@ -12,7 +12,7 @@ public struct XCResultFormatter {
     private enum SummaryField: String {
         case errors, warnings, analyzerWarnings, tests, failed, skipped
     }
-    
+
     private struct SummaryFields {
         let enabledFields: Set<SummaryField>
         init(specifiers: String) {
@@ -23,9 +23,9 @@ public struct XCResultFormatter {
             )
         }
     }
-    
+
     // MARK: - Properties
-    
+
     private let resultFile: XCResultFile
     private let invocationRecord: ActionsInvocationRecord
     private let codeCoverage: CodeCoverage?
@@ -34,21 +34,21 @@ public struct XCResultFormatter {
     private let failedTestsOnly: Bool
     private let summaryFields: SummaryFields
     private let coverageReportFormat: CoverageReportFormat
-    
+
     private var numFormatter: NumberFormatter = {
         let numFormatter = NumberFormatter()
         numFormatter.maximumFractionDigits = 4
         return numFormatter
     }()
-    
+
     private var percentFormatter: NumberFormatter = {
         let numFormatter = NumberFormatter()
         numFormatter.maximumFractionDigits = 1
         return numFormatter
     }()
-    
+
     // MARK: - Initializer
-    
+
     public init?(
         with url: URL,
         formatter: XCResultFormatting,
@@ -68,19 +68,19 @@ public struct XCResultFormatter {
         self.failedTestsOnly = failedTestsOnly
         self.summaryFields = SummaryFields(specifiers: summaryFields)
         self.coverageReportFormat = coverageReportFormat
-        
+
         // if let logsId = invocationRecord?.actions.last?.actionResult.logRef?.id {
         //    let testLogs = resultFile.getLogs(id: logsId)
         // }
         //
         //        let testSummary = resultFile.getActionTestSummary(id: "xxx")
-        
+
         // let payload = resultFile.getPayload(id: "123")
         // let exportedPath = resultFile.exportPayload(id: "123")
     }
-    
+
     // MARK: - Public API
-    
+
     public var summary: String {
         if outputFormatter is MDResultFormatter {
             return createSummaryInOneLine()
@@ -88,41 +88,41 @@ public struct XCResultFormatter {
             return createSummary().joined(separator: "\n")
         }
     }
-    
+
     public var testDetails: String {
         return createTestDetailsString().joined(separator: "\n")
     }
-    
+
     public var divider: String {
         return outputFormatter.divider
     }
-    
+
     public func documentPrefix(title: String) -> String {
         return outputFormatter.documentPrefix(title: title)
     }
-    
+
     public var documentSuffix: String {
         return outputFormatter.documentSuffix
     }
-    
+
     public var coverageDetails: String {
         return createCoverageReport().joined(separator: "\n")
     }
-    
+
     // MARK: - Private API
-    
+
     private func createSummary() -> [String] {
         let metrics = invocationRecord.metrics
-        
+
         let analyzerWarningCount = metrics.analyzerWarningCount ?? 0
         let errorCount = metrics.errorCount ?? 0
         let testsCount = metrics.testsCount ?? 0
         let testsFailedCount = metrics.testsFailedCount ?? 0
         let warningCount = metrics.warningCount ?? 0
         let testsSkippedCount = metrics.testsSkippedCount ?? 0
-        
+
         var lines = [String]()
-        
+
         lines.append(
             outputFormatter.testConfiguration("Summary")
         )
@@ -170,17 +170,17 @@ public struct XCResultFormatter {
         }
         return lines
     }
-    
+
     private func createSummaryInOneLine() -> String {
         let metrics = invocationRecord.metrics
-        
+
         let analyzerWarningCount = metrics.analyzerWarningCount ?? 0
         let errorCount = metrics.errorCount ?? 0
         let testsCount = metrics.testsCount ?? 0
         let testsFailedCount = metrics.testsFailedCount ?? 0
         let warningCount = metrics.warningCount ?? 0
         let testsSkippedCount = metrics.testsSkippedCount ?? 0
-        
+
         var summary = ""
         if summaryFields.enabledFields.contains(.errors) {
             summary += "Errors: \(errorCount)"
@@ -202,7 +202,7 @@ public struct XCResultFormatter {
         }
         return summary
     }
-    
+
     private func createTestDetailsString() -> [String] {
         var lines = [String]()
         for testAction in invocationRecord.actions where testAction.schemeCommandName == "Test" {
@@ -210,7 +210,7 @@ public struct XCResultFormatter {
         }
         return lines
     }
-    
+
     private func createTestDetailsString(forAction testAction: ActionRecord) -> [String] {
         var lines = [String]()
         guard let testsId = testAction.actionResult.testsRef?.id,
@@ -220,7 +220,7 @@ public struct XCResultFormatter {
         let testPlanRunSummaries = testPlanRun.summaries
         let failureSummaries = invocationRecord.issues.testFailureSummaries
         let runDestination = testAction.runDestination.displayName
-        
+
         for thisSummary in testPlanRunSummaries {
             lines.append(
                 outputFormatter.testConfiguration(thisSummary.name ?? "No-name")
@@ -232,7 +232,7 @@ public struct XCResultFormatter {
                         outputFormatter.testConfiguration(targetConfig)
                     )
                 }
-                
+
                 if failedTestsOnly,
                    outputFormatter is CLIResultFormatter,
                    thisTestableSummary.tests.allSatisfy({ $0.hasNoFailedTests }) {
@@ -242,7 +242,7 @@ public struct XCResultFormatter {
                         lines += createTestSummaryInfo(thisTest, level: 0, failureSummaries: failureSummaries)
                     }
                 }
-                
+
                 lines.append(
                     outputFormatter.divider
                 )
@@ -250,7 +250,7 @@ public struct XCResultFormatter {
         }
         return lines
     }
-    
+
     private func createTestSummaryInfo(
         _ group: ActionTestSummaryGroup,
         level: Int,
@@ -262,7 +262,7 @@ public struct XCResultFormatter {
             return lines
         }
         let header = "\(group.nameString) (\(numFormatter.unwrappedString(for: group.duration)))"
-        
+
         switch level {
         case 0:
             break
@@ -301,7 +301,7 @@ public struct XCResultFormatter {
         }
         return lines
     }
-    
+
     private func actionTestFileStatusString(
         for testData: ActionTestMetadata,
         failureSummaries: [TestFailureIssueSummary]
@@ -316,39 +316,103 @@ public struct XCResultFormatter {
             return outputFormatter.singleTestItem(testTitle, failed: testData.isFailed)
         }
     }
-    
+
     private func actionTestFileStatusStringIcon(testData: ActionTestMetadata) -> String {
         if testData.isSuccessful {
             return outputFormatter.testPassIcon
         }
-        
+
         if testData.isSkipped {
             return outputFormatter.testSkipIcon
         }
-        
+
         return outputFormatter.testFailIcon
     }
-    
+
     private func actionTestFailureStatusString(
         with header: String,
         and failure: TestFailureIssueSummary
     ) -> String {
         return outputFormatter.failedTestItem(header, message: failure.message)
     }
-    
+
     private func createCoverageReport() -> [String] {
         var lines = [String]()
-        lines.append(outputFormatter.testConfiguration("Coverage report"))
+        lines.append(
+            outputFormatter.testConfiguration("Coverage report")
+        )
         guard let codeCoverage = codeCoverage else {
             return lines
         }
         var executableLines = 0
         var coveredLines = 0
         for target in codeCoverage.targets {
-            let targetData = createCoverageReportFor(target: target)
-            lines += targetData.lines
-            executableLines += targetData.executableLines
-            coveredLines += targetData.coveredLines
+            guard coverageTargets.contains(target.name) else { continue }
+            let covPercent = percentFormatter.unwrappedString(for: target.lineCoverage * 100)
+            executableLines += target.executableLines
+            coveredLines += target.coveredLines
+            if coverageReportFormat != .totals {
+                lines.append(
+                    outputFormatter.codeCoverageTargetSummary(
+                        "\(target.name): \(covPercent)% (\(target.coveredLines)/\(target.executableLines))"
+                    )
+                )
+                if coverageReportFormat != .targets {
+                    if !outputFormatter.accordionOpenTag.isEmpty {
+                        lines.append(
+                            outputFormatter.accordionOpenTag
+                        )
+                    }
+                    for file in target.files {
+                        let covPercent = percentFormatter.unwrappedString(for: file.lineCoverage * 100)
+                        lines.append(
+                            outputFormatter.codeCoverageFileSummary(
+                                "\(file.name): \(covPercent)% (\(file.coveredLines)/\(file.executableLines))"
+                            )
+                        )
+                        if coverageReportFormat != .classes {
+                            if !outputFormatter.accordionOpenTag.isEmpty {
+                                lines.append(
+                                    outputFormatter.accordionOpenTag
+                                )
+                            }
+                            if !outputFormatter.tableOpenTag.isEmpty {
+                                lines.append(
+                                    outputFormatter.tableOpenTag
+                                )
+                            }
+                            for function in file.functions {
+                                let covPercentLine = percentFormatter.unwrappedString(for: function.lineCoverage * 100)
+                                lines.append(
+                                    outputFormatter.codeCoverageFunctionSummary(
+                                        [
+                                            "\(covPercentLine)%",
+                                            "\(function.name):\(function.lineNumber)",
+                                            "(\(function.coveredLines)/\(function.executableLines))",
+                                            "\(function.executionCount) times"
+                                        ]
+                                    )
+                                )
+                            }
+                            if !outputFormatter.tableCloseTag.isEmpty {
+                                lines.append(
+                                    outputFormatter.tableCloseTag
+                                )
+                            }
+                            if !outputFormatter.accordionCloseTag.isEmpty {
+                                lines.append(
+                                    outputFormatter.accordionCloseTag
+                                )
+                            }
+                        }
+                    }
+                    if !outputFormatter.accordionCloseTag.isEmpty {
+                        lines.append(
+                            outputFormatter.accordionCloseTag
+                        )
+                    }
+                }
+            }
         }
         // Append the total coverage below the header
         guard executableLines > 0 else { return lines }
@@ -358,82 +422,6 @@ public struct XCResultFormatter {
             "Total coverage: \(covPercent)% (\(coveredLines)/\(executableLines))")
         lines.insert(line, at: 1)
         return lines
-    }
-    
-    private func createCoverageReportFor(target: CodeCoverageTarget) -> CodeCoverageParseResult {
-        var lines = [String]()
-        var executableLines = 0
-        var coveredLines = 0
-        guard coverageTargets.contains(target.name) else {
-            return CodeCoverageParseResult(lines: lines, executableLines: executableLines, coveredLines: coveredLines)
-        }
-        let covPercent = percentFormatter.unwrappedString(for: target.lineCoverage * 100)
-        executableLines += target.executableLines
-        coveredLines += target.coveredLines
-        guard coverageReportFormat == .totals else {
-            return CodeCoverageParseResult(lines: lines, executableLines: executableLines, coveredLines: coveredLines)
-        }
-        lines.append(
-            outputFormatter.codeCoverageTargetSummary(
-                "\(target.name): \(covPercent)% (\(target.coveredLines)/\(target.executableLines))"
-            )
-        )
-        if coverageReportFormat != .targets {
-            if !outputFormatter.accordionOpenTag.isEmpty {
-                lines.append(outputFormatter.accordionOpenTag)
-            }
-            for file in target.files {
-                lines += createCoverageReportFor(file: file)
-            }
-            if !outputFormatter.accordionCloseTag.isEmpty {
-                lines.append(outputFormatter.accordionCloseTag)
-            }
-        }
-        return CodeCoverageParseResult(lines: lines, executableLines: executableLines, coveredLines: coveredLines)
-    }
-    
-    func createCoverageReportFor(file: CodeCoverageFile) -> [String] {
-        var lines = [String]()
-        let covPercent = percentFormatter.unwrappedString(for: file.lineCoverage * 100)
-        lines.append(
-            outputFormatter.codeCoverageFileSummary(
-                "\(file.name): \(covPercent)% (\(file.coveredLines)/\(file.executableLines))"
-            )
-        )
-        if coverageReportFormat != .classes {
-            if !outputFormatter.accordionOpenTag.isEmpty {
-                lines.append(outputFormatter.accordionOpenTag)
-            }
-            if !outputFormatter.tableOpenTag.isEmpty {
-                lines.append(outputFormatter.tableOpenTag)
-            }
-            for function in file.functions {
-                let covPercentLine = percentFormatter.unwrappedString(for: function.lineCoverage * 100)
-                lines.append(
-                    outputFormatter.codeCoverageFunctionSummary(
-                        [
-                            "\(covPercentLine)%",
-                            "\(function.name):\(function.lineNumber)",
-                            "(\(function.coveredLines)/\(function.executableLines))",
-                            "\(function.executionCount) times"
-                        ]
-                    )
-                )
-            }
-            if !outputFormatter.tableCloseTag.isEmpty {
-                lines.append(outputFormatter.tableCloseTag)
-            }
-            if !outputFormatter.accordionCloseTag.isEmpty {
-                lines.append(outputFormatter.accordionCloseTag)
-            }
-        }
-        return lines
-    }
-    
-    struct CodeCoverageParseResult {
-        let lines: [String]
-        let executableLines: Int
-        let coveredLines: Int
     }
 }
 
@@ -481,11 +469,15 @@ extension CodeCoverage {
 
 private extension ActionTestSummaryGroup {
     var hasFailedTests: Bool {
-        if subtests.first(where: \.isFailed) != nil {
-            return true
+        for test in subtests {
+            if test.isFailed {
+                return true
+            }
         }
-        if subtestGroups.first(where: \.hasFailedTests) != nil {
-            return true
+        for subGroup in subtestGroups {
+            if subGroup.hasFailedTests {
+                return true
+            }
         }
         return false
     }

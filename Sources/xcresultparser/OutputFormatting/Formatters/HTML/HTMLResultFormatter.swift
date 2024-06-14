@@ -144,7 +144,6 @@ public struct HTMLResultFormatter: XCResultFormatting {
         return node
     }
 
-    // swiftlint:disable:next function_body_length
     private func htmlDocStart(with title: String) -> String {
         """
         <!DOCTYPE html>

@@ -12,11 +12,9 @@ struct Issue: Codable {
     let description: String
     /// Required. A unique name representing the static analysis check that emitted this issue.
     let checkName: String
-    /// Optional. A unique, deterministic identifier for the specific issue being reported to allow a user
-    /// to exclude it from future analyses. For example, an MD5 hash.
+    /// Optional. A unique, deterministic identifier for the specific issue being reported to allow a user to exclude it from future analyses. For example, an MD5 hash.
     let fingerprint: String
-    /// Optional. A Severity string (info, minor, major, critical, or blocker) describing the potential
-    /// impact of the issue found..
+    /// Optional. A Severity string (info, minor, major, critical, or blocker) describing the potential impact of the issue found..
     let severity: IssueSeverity
     let engineName: String
     /// Required. A Location object representing the place in the source code where the issue was discovered.
