@@ -370,7 +370,7 @@ public struct XCResultFormatter {
         let covPercent = percentFormatter.unwrappedString(for: target.lineCoverage * 100)
         executableLines += target.executableLines
         coveredLines += target.coveredLines
-        guard coverageReportFormat == .totals else {
+        guard coverageReportFormat != .totals else {
             return CodeCoverageParseResult(lines: lines, executableLines: executableLines, coveredLines: coveredLines)
         }
         lines.append(
