@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version 1.6.4 - 2024-06-16
+### CHANGES:
+removed swiftlint plugin from Package.swift file, as it seems to not work with commandline tools?
+
 ## Version 1.6.3 - 2024-06-16
 ### CHANGES:
 Reverted swift package version back to 5.6

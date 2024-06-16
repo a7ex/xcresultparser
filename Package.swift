@@ -1,10 +1,10 @@
-// swift-tools-version:5.6
+// swift-tools-version:5.4
 import PackageDescription
 
 let package = Package(
     name: "Xcresultparser",
     platforms: [
-        .macOS(.v12),
+        .macOS(.v11),
     ],
     products: [
         .executable(
@@ -25,10 +25,10 @@ let package = Package(
             url: "https://github.com/davidahouse/XCResultKit.git",
             .upToNextMajor(from: "1.0.2")
         ),
-        .package(
-            url: "https://github.com/realm/SwiftLint.git",
-            from: "0.55.1"
-        )
+//        .package(
+//            url: "https://github.com/realm/SwiftLint.git",
+//            from: "0.55.1"
+//        )
     ],
     targets: [
         .executableTarget(
@@ -48,8 +48,8 @@ let package = Package(
                     package: "XCResultKit"
                 ),
             ],
-            path: "Sources",
-            plugins: [.plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLint")]
+            path: "Sources"
+//            plugins: [.plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLint")]
         ),
         .testTarget(
             name: "XcresultparserTests",
