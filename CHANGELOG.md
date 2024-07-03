@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version 1.6.5 - 2024-07-04
+### CHANGES:
+Changed the Junit xml slightly in order to be compatible with Jenkins plugin
+
+It looks like the Jenkins plugin (https://plugins.jenkins.io/xunit/) expects:
+only 3 decimal places after the . in the time attribute
+an errors attribute, even if errors=0 on the testsuite
+
 ## Version 1.6.4 - 2024-06-16
 ### CHANGES:
 removed swiftlint plugin from Package.swift file, as it seems to not work with commandline tools?

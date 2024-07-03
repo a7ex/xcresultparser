@@ -47,7 +47,7 @@ public struct JunitXML: XmlSerializable {
 
     private var numFormatter: NumberFormatter = {
         let numFormatter = NumberFormatter()
-        numFormatter.maximumFractionDigits = 4
+        numFormatter.maximumFractionDigits = 3
         numFormatter.locale = Locale(identifier: "en_US")
         return numFormatter
     }()
@@ -93,6 +93,7 @@ public struct JunitXML: XmlSerializable {
             testsuites.addAttribute(name: "tests", stringValue: String(testsCount))
             let testsFailedCount = metrics.testsFailedCount ?? 0
             testsuites.addAttribute(name: "failures", stringValue: String(testsFailedCount))
+            testsuites.addAttribute(name: "errors", stringValue: "0") // apparently Jenkins needs this?!
         }
 
         let testActions = invocationRecord.actions.filter { $0.schemeCommandName == "Test" }
@@ -300,6 +301,7 @@ private extension ActionTestSummaryGroup {
         let stats = statistics
         testsuite.addAttribute(name: "tests", stringValue: String(stats.tests))
         testsuite.addAttribute(name: "failures", stringValue: String(stats.failures))
+        testsuite.addAttribute(name: "errors", stringValue: "0") // apparently Jenkins needs this?!
         testsuite.addAttribute(name: "time", stringValue: numFormatter.unwrappedString(for: duration))
         return testsuite
     }
@@ -332,7 +334,6 @@ private extension ActionTestSummaryGroup {
             }
             return result
         } catch {
-            print("Error: \(error)")
             return identifierString
         }
     }
