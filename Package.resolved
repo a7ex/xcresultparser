@@ -14,9 +14,9 @@
         "package": "XCResultKit",
         "repositoryURL": "https://github.com/davidahouse/XCResultKit.git",
         "state": {
-          "branch": null,
-          "revision": "612053960665fd1f16309c1ae4a8bf4efa64b8c5",
-          "version": "1.0.2"
+          "branch": "db9aa9d",
+          "revision": "db9aa9d39531188bf23a7afc1a683bd828e3fc5b",
+          "version": null
         }
       }
     ]

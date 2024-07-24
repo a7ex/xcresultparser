@@ -23,7 +23,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/davidahouse/XCResultKit.git",
-            .upToNextMajor(from: "1.0.2")
+            .revisionItem("db9aa9d")
         ),
 //        .package(
 //            url: "https://github.com/realm/SwiftLint.git",
