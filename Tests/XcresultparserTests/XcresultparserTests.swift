@@ -167,8 +167,83 @@ final class XcresultparserTests: XCTestCase {
         XCTAssertTrue(resultParser.coverageDetails.starts(with: "<h2>Coverage report</h2>"))
         XCTAssertTrue(resultParser.documentSuffix.hasSuffix("</html>"))
     }
+    
+    func testMDResultFormatter() throws {
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
 
+        guard let resultParser = XCResultFormatter(
+            with: xcresultFile,
+            formatter: MDResultFormatter(),
+            coverageTargets: []
+        ) else {
+            XCTFail("Unable to create XCResultFormatter with \(xcresultFile)")
+            return
+        }
+        XCTAssertEqual("", resultParser.documentPrefix(title: "XCResults"))
+
+        let expectedSummary = "Errors: 0; Warnings: 3; Analizer Warnings: 0; Tests: 7; Failed: 1; Skipped: 0"
+        XCTAssertEqual(expectedSummary, resultParser.summary)
+        XCTAssertEqual("\n---------------------\n", resultParser.divider)
+
+        XCTAssertTrue(resultParser.testDetails.starts(
+            with: "\n\n### XcresultparserTests.xctest (4,3274)\n### XcresultparserTests (4,3269)\n* <span"
+        ))
+
+        XCTAssertTrue(resultParser.coverageDetails.starts(
+            with: "\nTotal coverage: 49,2% (1530/3108)\nXcresultparserLib: 46,2% (672/1454)" +
+            "\n## CLIResultFormatter.swift: 61,9% (39/63)"
+        ))
+
+        XCTAssertEqual("", resultParser.documentSuffix)
+    }
+    
     func testCoverageConverter() throws {
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
+        let projectRoot = ""
+
+        guard let converter = CoverageConverter(
+            with: xcresultFile,
+            projectRoot: projectRoot
+        ) else {
+            XCTFail("Unable to create CoverageConverter from \(xcresultFile)")
+            return
+        }
+        let info = converter.targetsInfo
+        XCTAssertEqual("\nXcresultparserLib\nXcresultparserTests", info)
+        
+        let fileCoverage = try converter.getCoverageDataAsJSON()
+        XCTAssertEqual(13, fileCoverage.files.count)
+        let firstKey = try XCTUnwrap(fileCoverage.files.keys.sorted().first)
+        XCTAssertEqual(
+            "/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/CoberturaCoverageConverter.swift",
+            firstKey
+        )
+        let firstItem = try XCTUnwrap(fileCoverage.files[firstKey])
+        XCTAssertEqual(199, firstItem.count)
+        let firstLineDetail = try XCTUnwrap(firstItem.first)
+        XCTAssertFalse(firstLineDetail.isExecutable)
+        XCTAssertEqual(1, firstLineDetail.line)
+        XCTAssertNil(firstLineDetail.executionCount)
+        XCTAssertNil(firstLineDetail.subranges)
+        
+        let otherLineDetail = firstItem[50]
+        XCTAssertTrue(otherLineDetail.isExecutable)
+        XCTAssertEqual(51, otherLineDetail.line)
+        XCTAssertEqual(0, otherLineDetail.executionCount)
+        XCTAssertNil(otherLineDetail.subranges)
+        
+        // Deprecated methods
+        
+        let fileList = try converter.coverageFileList()
+        XCTAssertEqual(14, fileList.count)
+        let firstFile = "/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/CoberturaCoverageConverter.swift"
+        XCTAssertEqual(firstFile, fileList.first)
+        let coverageForFile = try converter.coverageForFile(path: firstFile)
+        XCTAssertTrue(coverageForFile.starts(with: "  1: *\n  2: *\n  3: *"))
+        XCTAssertTrue(coverageForFile.contains(" 35: 0"))
+    }
+
+    func testSonarCoverageConverter() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         let projectRoot = ""
         let quiet = 1
@@ -182,9 +257,6 @@ final class XcresultparserTests: XCTestCase {
         }
         let rslt = try converter.xmlString(quiet: quiet == 1)
         XCTAssertTrue(rslt.starts(with: "<coverage version=\"1\">"))
-
-        // Runs are non deterministic a simple compare is not doable for tests
-        // assertXmlTestReportsAreEqual(expectedFileName: "sonarCoverage", actual: converter)
     }
 
     func testCoberturaConverter() throws {
@@ -198,8 +270,6 @@ final class XcresultparserTests: XCTestCase {
             XCTFail("Unable to create CoverageConverter from \(xcresultFile)")
             return
         }
-//        let url = URL(fileURLWithPath: "/Users/alex/Desktop/vergleich.xml")
-//        try converter.xmlString.write(to: url, atomically: true, encoding: .utf8)
         try assertXmlTestReportsAreEqual(expectedFileName: "cobertura", actual: converter)
     }
 
@@ -358,7 +428,12 @@ final class XcresultparserTests: XCTestCase {
 
     // MARK: helper functions
 
-    func assertXmlTestReportsAreEqual(expectedFileName: String, actual: XmlSerializable, file: StaticString = #file, line: UInt = #line) throws {
+    func assertXmlTestReportsAreEqual(
+        expectedFileName: String,
+        actual: XmlSerializable,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) throws {
         let expectedResultFile = Bundle.module.url(forResource: expectedFileName, withExtension: "xml")!
 
         let actualXMLDocument = try XMLDocument(data: Data("\(actual.xmlString)\n".utf8), options: [])

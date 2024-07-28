@@ -1,4 +1,4 @@
-// swift-tools-version:5.4
+// swift-tools-version: 6.0
 import PackageDescription
 
 let package = Package(
@@ -19,16 +19,12 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/apple/swift-argument-parser.git",
-            .upToNextMajor(from: "1.2.2")
+            .upToNextMajor(from: "1.5.0")
         ),
         .package(
             url: "https://github.com/davidahouse/XCResultKit.git",
-            .upToNextMajor(from: "1.0.2")
-        ),
-//        .package(
-//            url: "https://github.com/realm/SwiftLint.git",
-//            from: "0.55.1"
-//        )
+            .upToNextMajor(from: "1.1.0")
+        )
     ],
     targets: [
         .executableTarget(

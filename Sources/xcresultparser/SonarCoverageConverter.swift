@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import XCResultKit
 
 public class SonarCoverageConverter: CoverageConverter, XmlSerializable {
     public var xmlString: String {

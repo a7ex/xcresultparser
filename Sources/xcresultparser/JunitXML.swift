@@ -17,14 +17,21 @@ struct NodeNames {
     let testcaseName: String
     let testcaseDurationName: String
     let testcaseClassNameName: String
+    
+    static let defaultNodeNames = NodeNames(
+        testsuitesName: "testsuites",
+        testcaseName: "testcase",
+        testcaseDurationName: "time",
+        testcaseClassNameName: "classname"
+    )
+    
+    static let sonarNodeNames = NodeNames(
+        testsuitesName: "testExecutions",
+        testcaseName: "testCase",
+        testcaseDurationName: "duration",
+        testcaseClassNameName: ""
+    )
 }
-
-private var nodeNames = NodeNames(
-    testsuitesName: "testsuites",
-    testcaseName: "testcase",
-    testcaseDurationName: "time",
-    testcaseClassNameName: "classname"
-)
 
 public struct JunitXML: XmlSerializable {
     struct TestrunProperty {
@@ -44,6 +51,8 @@ public struct JunitXML: XmlSerializable {
     private let projectRoot: String
     private let invocationRecord: ActionsInvocationRecord
     private let testReportFormat: TestReportFormat
+    
+    private let nodeNames: NodeNames
 
     private var numFormatter: NumberFormatter = {
         let numFormatter = NumberFormatter()
@@ -65,12 +74,9 @@ public struct JunitXML: XmlSerializable {
         invocationRecord = record
         testReportFormat = format
         if testReportFormat == .sonar {
-            nodeNames = NodeNames(
-                testsuitesName: "testExecutions",
-                testcaseName: "testCase",
-                testcaseDurationName: "duration",
-                testcaseClassNameName: ""
-            )
+            nodeNames = NodeNames.sonarNodeNames
+        } else {
+            nodeNames = NodeNames.defaultNodeNames
         }
     }
 
@@ -210,7 +216,10 @@ public struct JunitXML: XmlSerializable {
 
         for thisTest in tests {
             let testcase = thisTest.xmlNode(
-                classname: group.nameString, numFormatter: numFormatter, format: testReportFormat
+                classname: group.nameString,
+                numFormatter: numFormatter,
+                format: testReportFormat,
+                nodeNames: nodeNames
             )
             if thisTest.isFailed {
                 if let summary = thisTest.failureSummary(in: failureSummaries) {
@@ -229,7 +238,12 @@ public struct JunitXML: XmlSerializable {
     ) -> [XMLElement] {
         var combined = [XMLElement]()
         for thisTest in tests {
-            let testcase = thisTest.xmlNode(classname: name, numFormatter: numFormatter, format: testReportFormat)
+            let testcase = thisTest.xmlNode(
+                classname: name,
+                numFormatter: numFormatter,
+                format: testReportFormat,
+                nodeNames: nodeNames
+            )
             if thisTest.isFailed {
                 if let summary = thisTest.failureSummary(in: failureSummaries) {
                     testcase.addChild(summary.failureXML(projectRoot: projectRoot))
@@ -262,7 +276,12 @@ extension XMLElement {
 }
 
 private extension ActionTestMetadata {
-    func xmlNode(classname: String, numFormatter: NumberFormatter, format: TestReportFormat) -> XMLElement {
+    func xmlNode(
+        classname: String,
+        numFormatter: NumberFormatter,
+        format: TestReportFormat,
+        nodeNames: NodeNames
+    ) -> XMLElement {
         let testcase = XMLElement(name: nodeNames.testcaseName)
         testcase.addAttribute(name: "name", stringValue: name ?? "No-name")
         if let time = duration,
@@ -282,6 +301,13 @@ private extension ActionTestMetadata {
             }
         }
         return testcase
+    }
+    
+    func failureSummary(in summaries: [TestFailureIssueSummary]) -> TestFailureIssueSummary? {
+        return summaries.first { summary in
+            return summary.testCaseName == identifier?.replacingOccurrences(of: "/", with: ".") ||
+                summary.testCaseName == "-[\(identifier?.replacingOccurrences(of: "/", with: " ") ?? "")]"
+        }
     }
 }
 
@@ -405,14 +431,5 @@ private extension TestFailureIssueSummary {
 private extension Bool {
     var intValue: Int {
         return self ? 1 : 0
-    }
-}
-
-private extension ActionTestMetadata {
-    func failureSummary(in summaries: [TestFailureIssueSummary]) -> TestFailureIssueSummary? {
-        return summaries.first { summary in
-            return summary.testCaseName == identifier?.replacingOccurrences(of: "/", with: ".") ||
-                summary.testCaseName == "-[\(identifier?.replacingOccurrences(of: "/", with: " ") ?? "")]"
-        }
     }
 }
