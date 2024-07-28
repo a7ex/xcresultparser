@@ -1,25 +1,24 @@
 {
-  "object": {
-    "pins": [
-      {
-        "package": "swift-argument-parser",
-        "repositoryURL": "https://github.com/apple/swift-argument-parser.git",
-        "state": {
-          "branch": null,
-          "revision": "fee6933f37fde9a5e12a1e4aeaa93fe60116ff2a",
-          "version": "1.2.2"
-        }
-      },
-      {
-        "package": "XCResultKit",
-        "repositoryURL": "https://github.com/davidahouse/XCResultKit.git",
-        "state": {
-          "branch": null,
-          "revision": "612053960665fd1f16309c1ae4a8bf4efa64b8c5",
-          "version": "1.0.2"
-        }
+  "originHash" : "54446e8a2617deadae3d77bc72533cbf1e25290c734ad296ddfdd7c2b8a1e9ac",
+  "pins" : [
+    {
+      "identity" : "swift-argument-parser",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-argument-parser.git",
+      "state" : {
+        "revision" : "41982a3656a71c768319979febd796c6fd111d5c",
+        "version" : "1.5.0"
       }
-    ]
-  },
-  "version": 1
+    },
+    {
+      "identity" : "xcresultkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/davidahouse/XCResultKit.git",
+      "state" : {
+        "revision" : "77c502467f4891928218cb104b0cbeced7f7e937",
+        "version" : "1.1.0"
+      }
+    }
+  ],
+  "version" : 3
 }
