@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version 1.7.0 - 2024-07-28
+### CHANGES:
+- Use XcresultKit 1.1.0, which is Xcode 16 compatible by supporting the xcresulttool --legacy flag
+- Make the package Swift 6 compatible, which just meant to eliminate an anyway not so nice global variable.
+- Add a few more missing, not so important, tests.
+
 ## Version 1.6.5 - 2024-07-04
 ### CHANGES:
 Changed the Junit xml slightly in order to be compatible with Jenkins plugin
