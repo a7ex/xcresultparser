@@ -186,12 +186,12 @@ final class XcresultparserTests: XCTestCase {
         XCTAssertEqual("\n---------------------\n", resultParser.divider)
 
         XCTAssertTrue(resultParser.testDetails.starts(
-            with: "\n\n### XcresultparserTests.xctest (4,3274)\n### XcresultparserTests (4,3269)\n* <span"
+            with: "\n\n### XcresultparserTests.xctest (4.3274)\n### XcresultparserTests (4.3269)\n* <span"
         ))
 
         XCTAssertTrue(resultParser.coverageDetails.starts(
-            with: "\nTotal coverage: 49,2% (1530/3108)\nXcresultparserLib: 46,2% (672/1454)" +
-            "\n## CLIResultFormatter.swift: 61,9% (39/63)"
+            with: "\nTotal coverage: 49.2% (1530/3108)\nXcresultparserLib: 46.2% (672/1454)" +
+            "\n## CLIResultFormatter.swift: 61.9% (39/63)"
         ))
 
         XCTAssertEqual("", resultParser.documentSuffix)
