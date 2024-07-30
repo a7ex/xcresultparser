@@ -1,0 +1,23 @@
+{
+  "configurations" : [
+    {
+      "id" : "E1E08303-EEF4-40FA-AEB1-1293563FB435",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "language" : "en",
+    "locationScenario" : {
+      "identifier" : "New York, NY, USA",
+      "referenceType" : "built-in"
+    },
+    "region" : "US"
+  },
+  "testTargets" : [
+
+  ],
+  "version" : 1
+}
