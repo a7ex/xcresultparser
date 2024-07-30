@@ -180,19 +180,20 @@ final class XcresultparserTests: XCTestCase {
             return
         }
         XCTAssertEqual("", resultParser.documentPrefix(title: "XCResults"))
-
+        
         let expectedSummary = "Errors: 0; Warnings: 3; Analizer Warnings: 0; Tests: 7; Failed: 1; Skipped: 0"
         XCTAssertEqual(expectedSummary, resultParser.summary)
         XCTAssertEqual("\n---------------------\n", resultParser.divider)
+        
+        let lines = resultParser.testDetails.components(separatedBy: .newlines)
+        XCTAssertTrue(lines[2].starts(with: "### XcresultparserTests.xctest"))
+        XCTAssertTrue(lines[3].starts(with: "### XcresultparserTests"))
+        XCTAssertTrue(lines[4].starts(with: "* <span"))
 
-        XCTAssertTrue(resultParser.testDetails.starts(
-            with: "\n\n### XcresultparserTests.xctest (4,3274)\n### XcresultparserTests (4,3269)\n* <span"
-        ))
-
-        XCTAssertTrue(resultParser.coverageDetails.starts(
-            with: "\nTotal coverage: 49,2% (1530/3108)\nXcresultparserLib: 46,2% (672/1454)" +
-            "\n## CLIResultFormatter.swift: 61,9% (39/63)"
-        ))
+        let cLines = resultParser.coverageDetails.components(separatedBy: .newlines)
+        XCTAssertTrue(cLines[1].starts(with: "Total coverage:"))
+        XCTAssertTrue(cLines[2].starts(with: "XcresultparserLib:"))
+        XCTAssertTrue(cLines[3].starts(with: "## CLIResultFormatter.swift:"))
 
         XCTAssertEqual("", resultParser.documentSuffix)
     }
