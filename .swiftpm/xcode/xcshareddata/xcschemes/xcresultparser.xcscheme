@@ -83,6 +83,14 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "-s errors|warnings"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-n"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--coverage-report-format targets"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -93,6 +101,10 @@
          <CommandLineArgument
             argument = "-o txt"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o warnings-and-errors"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o html"
@@ -120,6 +132,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-h"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "/Users/alex/Run-Sparkasse-UnitTests-2024.05.14_18-10-36-+0200.xcresult"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

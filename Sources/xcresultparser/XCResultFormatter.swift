@@ -392,7 +392,7 @@ public struct XCResultFormatter {
         return CodeCoverageParseResult(lines: lines, executableLines: executableLines, coveredLines: coveredLines)
     }
     
-    func createCoverageReportFor(file: CodeCoverageFile) -> [String] {
+    private func createCoverageReportFor(file: CodeCoverageFile) -> [String] {
         var lines = [String]()
         let covPercent = percentFormatter.unwrappedString(for: file.lineCoverage * 100)
         lines.append(

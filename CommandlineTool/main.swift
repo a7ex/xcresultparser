@@ -28,6 +28,9 @@ struct xcresultparser: ParsableCommand {
     @Option(name: [.customShort("t"), .customLong("coverage-targets")], help: "Specify which targets to calculate coverage from. You can use more than one -t option to specify a list of targets.")
     var coverageTargets: [String] = []
 
+    @Option(name: [.customShort("e"), .customLong("excluded-path")], help: "Specify which path names to exclude. You can use more than one -e option to specify a list of path patterns to exclude.")
+    var excludedPaths: [String] = []
+
     @Option(name: .shortAndLong, help: "The fields in the summary. Default is all: errors|warnings|analyzerWarnings|tests|failed|skipped")
     var summaryFields: String?
 
@@ -88,7 +91,8 @@ struct xcresultparser: ParsableCommand {
         guard let converter = SonarCoverageConverter(
             with: URL(fileURLWithPath: xcresult),
             projectRoot: projectRoot ?? "",
-            coverageTargets: coverageTargets
+            coverageTargets: coverageTargets,
+            excludedPaths: excludedPaths
         ) else {
             throw ParseError.argumentError
         }
@@ -100,7 +104,8 @@ struct xcresultparser: ParsableCommand {
         guard let converter = CoberturaCoverageConverter(
             with: URL(fileURLWithPath: xcresult),
             projectRoot: projectRoot ?? "",
-            coverageTargets: coverageTargets
+            coverageTargets: coverageTargets,
+            excludedPaths: excludedPaths
         ) else {
             throw ParseError.argumentError
         }
@@ -153,8 +158,8 @@ struct xcresultparser: ParsableCommand {
             throw ParseError.argumentError
         }
         writeToStdOutLn(resultParser.documentPrefix(title: "XCResults"))
+        writeToStdOutLn(resultParser.summary)
         if noTestResult == 0 {
-            writeToStdOutLn(resultParser.summary)
             writeToStdOutLn(resultParser.divider)
             writeToStdOutLn(resultParser.testDetails)
         }

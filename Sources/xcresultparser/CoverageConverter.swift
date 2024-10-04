@@ -29,11 +29,13 @@ public class CoverageConverter {
     let codeCoverage: CodeCoverage
     let invocationRecord: ActionsInvocationRecord
     let coverageTargets: Set<String>
+    let excludedPaths: Set<String>
 
     public init?(
         with url: URL,
         projectRoot: String = "",
-        coverageTargets: [String] = []
+        coverageTargets: [String] = [],
+        excludedPaths: [String] = []
     ) {
         resultFile = XCResultFile(url: url)
         guard let record = resultFile.getCodeCoverage() else {
@@ -46,6 +48,7 @@ public class CoverageConverter {
         }
         self.invocationRecord = invocationRecord
         self.coverageTargets = record.targets(filteredBy: coverageTargets)
+        self.excludedPaths = Set(excludedPaths)
     }
 
     public func xmlString(quiet: Bool) throws -> String {
