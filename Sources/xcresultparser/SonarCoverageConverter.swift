@@ -23,6 +23,9 @@ public class SonarCoverageConverter: CoverageConverter, XmlSerializable {
         // Get the xccov results as a JSON.
         let coverageJson = try getCoverageDataAsJSON()
         for (file, lineData) in coverageJson.files {
+            guard !isPathExcluded(file) else {
+                continue
+            }
             let coverage = try fileCoverageXML(for: file, coverageData: lineData, relativeTo: projectRoot)
             coverageXML.addChild(coverage)
         }

@@ -69,6 +69,9 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
 
         var fileInfo: [FileInfo] = []
         for (fileName, value) in coverageJson.files {
+            guard !isPathExcluded(fileName) else {
+                continue
+            }
             var fileLines = [LineInfo]() // This will store information about each line.
 
             for lineData in value {

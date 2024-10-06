@@ -85,6 +85,13 @@ public class CoverageConverter {
         return try JSONDecoder().decode(FileCoverage.self, from: coverageData)
     }
 
+    func isPathExcluded(_ path: String) -> Bool {
+        for excludedPath in excludedPaths where path.contains(excludedPath) {
+            return true
+        }
+        return false
+    }
+
     // MARK: - unused and only here for reference
 
     // This method was replaced by getCoverageDataAsJSON()

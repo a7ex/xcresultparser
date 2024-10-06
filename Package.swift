@@ -23,7 +23,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/davidahouse/XCResultKit.git",
-            .upToNextMajor(from: "1.1.0")
+            .upToNextMajor(from: "1.2.0")
         )
     ],
     targets: [
@@ -57,7 +57,9 @@ let package = Package(
                 .copy("TestAssets/junit_merged.xml"),
                 .copy("TestAssets/sonarTestExecution.xml"),
                 .copy("TestAssets/cobertura.xml"),
+                .copy("TestAssets/coberturaExcludingDirectory.xml"),
                 .copy("TestAssets/warnings.json"),
+                .copy("TestAssets/resultWithCompileError.xcresult")
             ]
         )
     ]

@@ -36,8 +36,18 @@ struct Issue: Codable {
 }
 
 extension Issue {
-    init(issueSummary: IssueSummary, severity: IssueSeverity, checkName: String, projectRoot: String = "") {
+    init?(
+        issueSummary: IssueSummary,
+        severity: IssueSeverity,
+        checkName: String,
+        projectRoot: String = "",
+        excludedPaths: Set<String> = []
+    ) {
         let issueLocationInfo = IssueLocationInfo(with: issueSummary.documentLocationInCreatingWorkspace)
+        if let filePath = issueLocationInfo?.filePath,
+           excludedPaths.isPathExcluded(filePath) {
+            return nil
+        }
         description = "\(issueSummary.issueType) • \(issueSummary.message)"
         self.checkName = checkName
         self.severity = severity
@@ -47,6 +57,16 @@ extension Issue {
         type = .issue
         categories = []
         content = IssueContent(body: "\(issueSummary.issueType) • \(issueSummary.message)")
+    }
+}
+
+private extension Set<String> {
+    func isPathExcluded(_ path: String) -> Bool {
+        print("Checking path: \(path)")
+        for excludedPath in self where path.contains(excludedPath) {
+            return true
+        }
+        return false
     }
 }
 

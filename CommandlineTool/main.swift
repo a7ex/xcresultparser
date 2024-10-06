@@ -9,7 +9,7 @@ import ArgumentParser
 import Foundation
 import XcresultparserLib
 
-private let marketingVersion = "1.7.2"
+private let marketingVersion = "1.8.0"
 
 struct xcresultparser: ParsableCommand {
     static let configuration = CommandConfiguration(
@@ -28,7 +28,7 @@ struct xcresultparser: ParsableCommand {
     @Option(name: [.customShort("t"), .customLong("coverage-targets")], help: "Specify which targets to calculate coverage from. You can use more than one -t option to specify a list of targets.")
     var coverageTargets: [String] = []
 
-    @Option(name: [.customShort("e"), .customLong("excluded-path")], help: "Specify which path names to exclude. You can use more than one -e option to specify a list of path patterns to exclude.")
+    @Option(name: [.customShort("e"), .customLong("excluded-path")], help: "Specify which path names to exclude. You can use more than one -e option to specify a list of path patterns to exclude. This option only has effect, if the format is either 'cobertura' or 'xml' with the --coverage (-c) option for a code coverage report or if the format is one of 'warnings', 'errors' or 'warnings-and-errors'.")
     var excludedPaths: [String] = []
 
     @Option(name: .shortAndLong, help: "The fields in the summary. Default is all: errors|warnings|analyzerWarnings|tests|failed|skipped")
@@ -114,7 +114,11 @@ struct xcresultparser: ParsableCommand {
     }
 
     private func outputIssuesJSON(for xcresult: String, format: OutputFormat) throws {
-        guard let converter = IssuesJSON(with: URL(fileURLWithPath: xcresult), projectRoot: projectRoot ?? "") else {
+        guard let converter = IssuesJSON(
+            with: URL(fileURLWithPath: xcresult),
+            projectRoot: projectRoot ?? "",
+            excludedPaths: excludedPaths
+        ) else {
             throw ParseError.argumentError
         }
         let rslt = try converter.jsonString(format: format, quiet: quiet == 1)

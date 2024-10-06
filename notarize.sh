@@ -71,7 +71,12 @@ codesign --sign "$teamId" -o runtime "product/$productName"
 zip -r "product/${productName}.zip" "product/$productName"
 
 # upload to notary
-xcrun notarytool submit "product/${productName}.zip" -p "$profileName"
+result=$(xcrun notarytool submit "product/${productName}.zip" -p "$profileName")
+
+jobID=$(echo $result | grep -oE 'id: [0-9a-f-]+' | sed 's/id: //' | head -n 1)
+
+echo $result
+echo "Check the status with:"
 
 # ------------------------- Sample Output
 # Conducting pre-submission checks for xcresultparser.zip and initiating connection to the Apple notary service...
@@ -87,7 +92,7 @@ xcrun notarytool submit "product/${productName}.zip" -p "$profileName"
 #####################################################################################
 ################# Later call 'info' or 'log' to verify the result
 # info:
-# xcrun notarytool info <submission id from previous step> -p FarbflashAppleDevAccount
+echo "xcrun notarytool info $jobID -p FarbflashAppleDevAccount"
 
 # ------------------------- Sample Output
 # Successfully received submission info
@@ -98,7 +103,7 @@ xcrun notarytool submit "product/${productName}.zip" -p "$profileName"
 # -------------------------
 
 # log:
-# xcrun notarytool log <submission id from previous step> -p FarbflashAppleDevAccount
+echo "xcrun notarytool log $jobID -p FarbflashAppleDevAccount"
 
 # ------------------------- Sample Output
 # {

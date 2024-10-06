@@ -83,12 +83,20 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "-o junit"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-e SFCrypto"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-s errors|warnings"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-n"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--coverage-report-format targets"
@@ -104,7 +112,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o warnings-and-errors"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o html"
@@ -132,11 +140,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-h"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "/Users/alex/Run-Sparkasse-UnitTests-2024.05.14_18-10-36-+0200.xcresult"
-            isEnabled = "YES">
+            argument = "/Users/adf/Desktop/Sparkasse.xcresult"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o md"
@@ -148,6 +156,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o xml "
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o cobertura"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument

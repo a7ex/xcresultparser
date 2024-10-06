@@ -17,8 +17,13 @@ public struct IssuesJSON {
     let projectRoot: String
     let checkName: String
     let invocationRecord: ActionsInvocationRecord
+    let excludedPaths: Set<String>
 
-    public init?(with url: URL, projectRoot: String = "") {
+    public init?(
+        with url: URL,
+        projectRoot: String = "",
+        excludedPaths: [String] = []
+    ) {
         resultFile = XCResultFile(url: url)
         guard let invocationRecord = resultFile.getInvocationRecord(),
               let checkdata = try? Data(contentsOf: url.appendingPathComponent("Info.plist")) else {
@@ -27,6 +32,7 @@ public struct IssuesJSON {
         self.invocationRecord = invocationRecord
         checkName = checkdata.md5()
         self.projectRoot = projectRoot
+        self.excludedPaths = Set(excludedPaths)
     }
 
     public func jsonString(format: OutputFormat, quiet: Bool = false) throws -> String {
@@ -35,17 +41,49 @@ public struct IssuesJSON {
         let jsonData: Data
         if format == .errors {
             let errors = invocationRecord.issues.errorSummaries
-                .map { Issue(issueSummary: $0, severity: .blocker, checkName: checkName, projectRoot: projectRoot) }
+                .compactMap {
+                    Issue(
+                        issueSummary: $0,
+                        severity: .blocker,
+                        checkName: checkName,
+                        projectRoot: projectRoot,
+                        excludedPaths: excludedPaths
+                    )
+                }
             jsonData = try encoder.encode(errors)
         } else {
             let warnings = invocationRecord.issues.warningSummaries
-                .map { Issue(issueSummary: $0, severity: .minor, checkName: checkName, projectRoot: projectRoot) }
+                .compactMap {
+                    Issue(
+                        issueSummary: $0,
+                        severity: .minor,
+                        checkName: checkName,
+                        projectRoot: projectRoot,
+                        excludedPaths: excludedPaths
+                    )
+                }
             let analyzerWarnings = invocationRecord.issues.analyzerWarningSummaries
-                .map { Issue(issueSummary: $0, severity: .major, checkName: checkName, projectRoot: projectRoot) }
+                .compactMap {
+                    Issue(
+                        issueSummary: $0,
+                        severity: .major,
+                        checkName: checkName,
+                        projectRoot: projectRoot,
+                        excludedPaths: excludedPaths
+                    )
+                }
             var combined = warnings + analyzerWarnings
             if format == .warningsAndErrors {
                 let errors = invocationRecord.issues.errorSummaries
-                    .map { Issue(issueSummary: $0, severity: .blocker, checkName: checkName, projectRoot: projectRoot) }
+                    .compactMap {
+                        Issue(
+                            issueSummary: $0,
+                            severity: .blocker,
+                            checkName: checkName,
+                            projectRoot: projectRoot,
+                            excludedPaths: excludedPaths
+                        )
+                    }
                 combined += errors
             }
             jsonData = try encoder.encode(combined)

@@ -87,11 +87,11 @@ You should see the tool respond like this:
 ```
 Error: Missing expected argument '<xcresult-file>'
 
-OVERVIEW: xcresultparser 1.7.2
+OVERVIEW: xcresultparser 1.8.0
 Interpret binary .xcresult files and print summary in different formats: txt,
 xml, html or colored cli output.
 
-USAGE: xcresultparser [--coverage-report-format <coverage-report-format>] [--output-format <output-format>] [--project-root <project-root>] [--coverage-targets <coverage-targets> ...] [--summary-fields <summary-fields>] [--coverage ...] [--no-test-result ...] [--failed-tests-only ...] [--quiet ...] [--target-info ...] [--version ...] [<xcresult-file>]
+USAGE: xcresultparser [<options>] [<xcresult-file>]
 
 ARGUMENTS:
   <xcresult-file>         The path to the .xcresult file.
@@ -116,6 +116,14 @@ OPTIONS:
                           Specify which targets to calculate coverage from. You
                           can use more than one -t option to specify a list of
                           targets.
+  -e, --excluded-path <excluded-path>
+                          Specify which path names to exclude. You can use more
+                          than one -e option to specify a list of path patterns
+                          to exclude. This option only has effect, if the
+                          format is either 'cobertura' or 'xml' with the
+                          --coverage (-c) option for a code coverage report or
+                          if the format is one of 'warnings', 'errors' or
+                          'warnings-and-errors'.
   -s, --summary-fields <summary-fields>
                           The fields in the summary. Default is all:
                           errors|warnings|analyzerWarnings|tests|failed|skipped
