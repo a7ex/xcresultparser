@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version 1.8.1 - 2024-10-16
+### CHANGES:
+- fixed bug which causes malformat of issues
+
+## Version 1.8.0 - 2024-10-06
+### CHANGES:
+Add new parameter '--excluded-path' in order to exclude specified paths for coverage and warnings-and-errors
+Add unit tests for the new feature
+Read submission ID from notarization call in order to echo the entire command for 'notarytool' info and 'notarytool log', so we can copy and paste it into the terminal
+Add new xcresult file to test xcresult with errors
+
 ## Version 1.7.2 - 2024-07-31
 ### CHANGES:
 - Swift 5.9 is better choice over 5.10 in terms of compatibility

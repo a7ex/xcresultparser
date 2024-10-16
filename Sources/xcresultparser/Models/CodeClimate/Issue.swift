@@ -62,7 +62,6 @@ extension Issue {
 
 private extension Set<String> {
     func isPathExcluded(_ path: String) -> Bool {
-        print("Checking path: \(path)")
         for excludedPath in self where path.contains(excludedPath) {
             return true
         }
