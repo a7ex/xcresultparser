@@ -48,7 +48,7 @@ public struct JunitXML: XmlSerializable {
     // MARK: - Properties
 
     private let resultFile: XCResultFile
-    private let projectRoot: String
+    private let projectRoot: URL?
     private let invocationRecord: ActionsInvocationRecord
     private let testReportFormat: TestReportFormat
     
@@ -70,7 +70,15 @@ public struct JunitXML: XmlSerializable {
         guard let record = resultFile.getInvocationRecord() else {
             return nil
         }
-        self.projectRoot = projectRoot
+
+        var isDirectory: ObjCBool = false
+        if FileManager.default.fileExists(atPath: projectRoot, isDirectory: &isDirectory),
+              isDirectory.boolValue == true {
+            self.projectRoot = URL(fileURLWithPath: projectRoot)
+        } else {
+            self.projectRoot = nil
+        }
+
         invocationRecord = record
         testReportFormat = format
         if testReportFormat == .sonar {
@@ -332,36 +340,39 @@ private extension ActionTestSummaryGroup {
         return testsuite
     }
 
-    func sonarFileXML(projectRoot: String) -> XMLElement {
+    func sonarFileXML(projectRoot: URL?) -> XMLElement {
         let testsuite = XMLElement(name: "file")
         testsuite.addAttribute(name: "path", stringValue: relativeFilenameGuess(in: projectRoot))
         return testsuite
     }
 
-    private func relativeFilenameGuess(in projectRoot: String) -> String {
-        guard !projectRoot.isEmpty else {
+    private static var cachedPathnames = [String: String]()
+    private func relativeFilenameGuess(in projectRootUrl: URL?) -> String {
+        guard let projectRootUrl else {
             return identifierString
         }
-        var isDirectory: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: projectRoot, isDirectory: &isDirectory),
-              isDirectory.boolValue == true else {
-            return identifierString
+        if let cachedValue = Self.cachedPathnames[identifierString] {
+            return cachedValue
         }
-        let url = URL(fileURLWithPath: projectRoot)
         let arguments = ["-rl", "--include", "*.swift", "class \(identifierString)[ |:]", "."]
         do {
-            let filelistData = try Shell.execute(program: "/usr/bin/grep", with: arguments, at: url)
+            let filelistData = try Shell.execute(program: "/usr/bin/grep", with: arguments, at: projectRootUrl)
             guard let result = String(decoding: filelistData, as: UTF8.self).components(separatedBy: "\n").first,
                   !result.isEmpty else {
-                return identifierString
+                return cache(identifierString, for: identifierString)
             }
             if result.hasPrefix("./") {
-                return String(result.dropFirst(2))
+                return cache(String(result.dropFirst(2)), for: identifierString)
             }
-            return result
+            return cache(result, for: identifierString)
         } catch {
-            return identifierString
+            return cache(identifierString, for: identifierString)
         }
+    }
+
+    private func cache(_ value: String, for key: String) -> String {
+        Self.cachedPathnames[key] = value
+        return value
     }
 
     private var statistics: TestMetrics {
@@ -385,7 +396,7 @@ private extension ActionTestSummaryGroup {
 }
 
 private extension TestFailureIssueSummary {
-    func failureXML(projectRoot: String = "") -> XMLElement {
+    func failureXML(projectRoot: URL? = nil) -> XMLElement {
         let failure = XMLElement(name: "failure")
         var value = message
         if let loc = documentLocationInCreatingWorkspace?.url {
@@ -413,11 +424,11 @@ private extension TestFailureIssueSummary {
         return failure
     }
 
-    private func relativePart(of url: URL, relativeTo projectRoot: String) -> String {
-        guard !projectRoot.isEmpty else {
+    private func relativePart(of url: URL, relativeTo projectRoot: URL?) -> String {
+        guard let projectRoot else {
             return url.path
         }
-        let parts = url.path.components(separatedBy: "/\(projectRoot)")
+        let parts = url.path.components(separatedBy: "\(projectRoot.path)")
         guard parts.count > 1 else {
             return url.path
         }
