@@ -33,7 +33,7 @@ public class CoverageConverter {
 
     // MARK: - Dependencies
 
-    let shell = DependencyFactory.shell()
+    let shell = DependencyFactory.createShell()
 
     public init?(
         with url: URL,

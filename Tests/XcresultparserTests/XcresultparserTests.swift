@@ -343,14 +343,14 @@ final class XcresultparserTests: XCTestCase {
         let cliResult = """
 ./Tests/XcresultparserTests.swift:class XcresultparserTests
 """
-        let savedFilemangerFactory = DependencyFactory.fileManager
-        let savedShellFactory = DependencyFactory.shell
+        let savedFilemangerFactory = DependencyFactory.createFileManager
+        let savedShellFactory = DependencyFactory.createShell
 
-        DependencyFactory.fileManager = {
+        DependencyFactory.createFileManager = {
             MockedFileManager(fileExists: true , isPathDirectory: true)
         }
         let mockedShell = MockedShell(response: Data(cliResult.utf8), error: nil)
-        DependencyFactory.shell = {
+        DependencyFactory.createShell = {
             mockedShell
         }
         mockedShell.argumentValidation = { arguments in
@@ -370,8 +370,8 @@ final class XcresultparserTests: XCTestCase {
         }
         try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecutionWithProjectRootRelative", actual: junitXML)
 
-        DependencyFactory.fileManager = savedFilemangerFactory
-        DependencyFactory.shell = savedShellFactory
+        DependencyFactory.createFileManager = savedFilemangerFactory
+        DependencyFactory.createShell = savedShellFactory
     }
 
     func testJunitXMLSonarAbsolutePaths() throws {
@@ -380,14 +380,14 @@ final class XcresultparserTests: XCTestCase {
 /Users/actual/project/Tests/XcresultparserTests.swift:class XcresultparserTests
 """
 
-        let savedFilemangerFactory = DependencyFactory.fileManager
-        let savedShellFactory = DependencyFactory.shell
+        let savedFilemangerFactory = DependencyFactory.createFileManager
+        let savedShellFactory = DependencyFactory.createShell
 
-        DependencyFactory.fileManager = {
+        DependencyFactory.createFileManager = {
             MockedFileManager(fileExists: true , isPathDirectory: true)
         }
         let mockedShell = MockedShell(response: Data(cliResult.utf8), error: nil)
-        DependencyFactory.shell = {
+        DependencyFactory.createShell = {
             mockedShell
         }
         mockedShell.argumentValidation = { arguments in
@@ -407,8 +407,8 @@ final class XcresultparserTests: XCTestCase {
         }
         try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecutionWithProjectRootAbsolute", actual: junitXML)
 
-        DependencyFactory.fileManager = savedFilemangerFactory
-        DependencyFactory.shell = savedShellFactory
+        DependencyFactory.createFileManager = savedFilemangerFactory
+        DependencyFactory.createShell = savedShellFactory
     }
 
     func testJunitXMLJunit() throws {
