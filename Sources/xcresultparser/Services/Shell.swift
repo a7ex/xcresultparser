@@ -18,9 +18,6 @@ extension Commandline {
 }
 
 struct Shell: Commandline {
-    init() {
-        // nothing to do here, but required by public struct
-    }
     func execute(
         program: String,
         with arguments: [String],
