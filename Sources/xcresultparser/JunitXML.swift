@@ -51,7 +51,8 @@ public struct JunitXML: XmlSerializable {
     private let projectRoot: URL?
     private let invocationRecord: ActionsInvocationRecord
     private let testReportFormat: TestReportFormat
-    
+    private let relativePathNames: Bool
+
     private let nodeNames: NodeNames
 
     private var numFormatter: NumberFormatter = {
@@ -61,10 +62,13 @@ public struct JunitXML: XmlSerializable {
         return numFormatter
     }()
 
+    // MARK: - Initializer
+
     public init?(
         with url: URL,
         projectRoot: String = "",
-        format: TestReportFormat = .junit
+        format: TestReportFormat = .junit,
+        relativePathNames: Bool = true
     ) {
         resultFile = XCResultFile(url: url)
         guard let record = resultFile.getInvocationRecord() else {
@@ -72,7 +76,7 @@ public struct JunitXML: XmlSerializable {
         }
 
         var isDirectory: ObjCBool = false
-        if FileManager.default.fileExists(atPath: projectRoot, isDirectory: &isDirectory),
+        if DependencyFactory.fileManager.fileExists(atPath: projectRoot, isDirectory: &isDirectory),
               isDirectory.boolValue == true {
             self.projectRoot = URL(fileURLWithPath: projectRoot)
         } else {
@@ -86,6 +90,7 @@ public struct JunitXML: XmlSerializable {
         } else {
             nodeNames = NodeNames.defaultNodeNames
         }
+        self.relativePathNames = relativePathNames
     }
 
     func createRootElement() -> XMLElement {
@@ -152,6 +157,13 @@ public struct JunitXML: XmlSerializable {
         return xml.xmlString(options: [.nodePrettyPrint, .nodeCompactEmptyElement])
     }
 
+    // only used in unit testing
+    static func resetCachedPathnames() {
+        ActionTestSummaryGroup.resetCachedPathnames()
+    }
+
+    // MARK: - Private interface
+
     // The XMLElement produced by this function is not allowed in the junit XML format and thus unused.
     // It is kept in case it serves another format.
     private func runDestinationXML(_ destination: ActionRunDestinationRecord) -> XMLElement {
@@ -191,7 +203,7 @@ public struct JunitXML: XmlSerializable {
             if testReportFormat == .sonar {
                 var nodes = [XMLElement]()
                 for subGroup in group.subtestGroups {
-                    let node = subGroup.sonarFileXML(projectRoot: projectRoot)
+                    let node = subGroup.sonarFileXML(projectRoot: projectRoot, relativePathNames: relativePathNames)
                     let testcases = createTestCases(
                         for: subGroup.nameString, tests: subGroup.subtests, failureSummaries: failureSummaries
                     )
@@ -219,7 +231,7 @@ public struct JunitXML: XmlSerializable {
         testDirectory: String = ""
     ) -> XMLElement {
         let node = testReportFormat == .sonar ?
-            group.sonarFileXML(projectRoot: projectRoot) :
+            group.sonarFileXML(projectRoot: projectRoot, relativePathNames: relativePathNames) :
             group.testSuiteXML(numFormatter: numFormatter)
 
         for thisTest in tests {
@@ -320,6 +332,8 @@ private extension ActionTestMetadata {
 }
 
 private extension ActionTestSummaryGroup {
+    private static var cachedPathnames = [String: String]()
+
     struct TestMetrics {
         let tests: Int
         let failures: Int
@@ -340,39 +354,59 @@ private extension ActionTestSummaryGroup {
         return testsuite
     }
 
-    func sonarFileXML(projectRoot: URL?) -> XMLElement {
+    func sonarFileXML(projectRoot: URL?, relativePathNames: Bool = true) -> XMLElement {
         let testsuite = XMLElement(name: "file")
-        testsuite.addAttribute(name: "path", stringValue: relativeFilenameGuess(in: projectRoot))
+        testsuite.addAttribute(name: "path", stringValue: classPath(in: projectRoot, relativePathNames: relativePathNames))
         return testsuite
     }
 
-    private static var cachedPathnames = [String: String]()
-    private func relativeFilenameGuess(in projectRootUrl: URL?) -> String {
+    // only used in unit testing
+    static func resetCachedPathnames() {
+        cachedPathnames.removeAll()
+    }
+
+    // MARK: - Private interface
+
+    private func classPath(in projectRootUrl: URL?, relativePathNames: Bool = true) -> String {
         guard let projectRootUrl else {
             return identifierString
         }
-        if let cachedValue = Self.cachedPathnames[identifierString] {
-            return cachedValue
+        if Self.cachedPathnames.isEmpty {
+            cacheAllClassNames(in: projectRootUrl, relativePathNames: relativePathNames)
         }
-        let arguments = ["-rl", "--include", "*.swift", "class \(identifierString)[ |:]", "."]
-        do {
-            let filelistData = try Shell.execute(program: "/usr/bin/grep", with: arguments, at: projectRootUrl)
-            guard let result = String(decoding: filelistData, as: UTF8.self).components(separatedBy: "\n").first,
-                  !result.isEmpty else {
-                return cache(identifierString, for: identifierString)
-            }
-            if result.hasPrefix("./") {
-                return cache(String(result.dropFirst(2)), for: identifierString)
-            }
-            return cache(result, for: identifierString)
-        } catch {
-            return cache(identifierString, for: identifierString)
-        }
+        return Self.cachedPathnames[identifierString] ?? identifierString
     }
 
-    private func cache(_ value: String, for key: String) -> String {
-        Self.cachedPathnames[key] = value
-        return value
+    private func cacheAllClassNames(in projectRootUrl: URL, relativePathNames: Bool = true) {
+        let program = "/usr/bin/egrep"
+        let grepPathArgument = relativePathNames ? "." : projectRootUrl.path
+        let arguments = [
+            "-rio",
+            "--include", "*.swift",
+            "--include", "*.m",
+            "^(?:public )?(?:final )?(?:public )?(?:(class|\\@implementation) )[a-zA-Z0-9_]+",
+            grepPathArgument
+        ]
+        guard let filelistData = try? DependencyFactory.shell.execute(program: program, with: arguments, at: projectRootUrl) else {
+            return
+        }
+        let trimCharacterSet = CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: ":"))
+        let result = String(decoding: filelistData, as: UTF8.self).components(separatedBy: "\n")
+        for match in result {
+            let items = match.components(separatedBy: ":")
+            if items.count > 1,
+               let path = items.first,
+               !path.isEmpty,
+               let className = items
+                .dropFirst()
+                .joined(separator: ":")
+                .trimmingCharacters(in: trimCharacterSet)
+                .components(separatedBy: .whitespaces)
+                .last,
+               !className.isEmpty {
+                Self.cachedPathnames[className] = path.withoutLocalPrefix
+            }
+        }
     }
 
     private var statistics: TestMetrics {
@@ -392,6 +426,15 @@ private extension ActionTestSummaryGroup {
         return num + subtests.reduce(0) { result, test in
             return result + test.isFailed.intValue
         }
+    }
+}
+
+private extension String {
+    var withoutLocalPrefix: String {
+        if hasPrefix("./") {
+            return String(dropFirst(2))
+        }
+        return self
     }
 }
 

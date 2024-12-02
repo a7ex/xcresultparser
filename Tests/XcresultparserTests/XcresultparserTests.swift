@@ -324,6 +324,7 @@ final class XcresultparserTests: XCTestCase {
     }
 
     func testJunitXMLSonar() throws {
+        JunitXML.resetCachedPathnames()
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         let projectRoot = ""
         guard let junitXML = JunitXML(
@@ -335,6 +336,71 @@ final class XcresultparserTests: XCTestCase {
             return
         }
         try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecution", actual: junitXML)
+    }
+
+    func testJunitXMLSonarRelativePaths() throws {
+        JunitXML.resetCachedPathnames()
+        let cliResult = """
+./Tests/XcresultparserTests.swift:class XcresultparserTests
+"""
+        let oldFilemanger = DependencyFactory.fileManager
+        let oldShell = DependencyFactory.shell
+
+        DependencyFactory.fileManager = MockedFileManager(fileExists: true , isPathDirectory: true)
+        let mockedShell = MockedShell(response: Data(cliResult.utf8), error: nil)
+        DependencyFactory.shell = mockedShell
+        mockedShell.argumentValidation = { arguments in
+            return arguments.last == "."
+        }
+
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
+        let projectRoot = "/Users/imaginary/project"
+        guard let junitXML = JunitXML(
+            with: xcresultFile,
+            projectRoot: projectRoot,
+            format: .sonar,
+            relativePathNames: true
+        ) else {
+            XCTFail("Unable to create JunitXML from \(xcresultFile)")
+            return
+        }
+        try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecutionWithProjectRootRelative", actual: junitXML)
+
+        DependencyFactory.fileManager = oldFilemanger
+        DependencyFactory.shell = oldShell
+    }
+
+    func testJunitXMLSonarAbsolutePaths() throws {
+        JunitXML.resetCachedPathnames()
+        let cliResult = """
+/Users/actual/project/Tests/XcresultparserTests.swift:class XcresultparserTests
+"""
+
+        let oldFilemanger = DependencyFactory.fileManager
+        let oldShell = DependencyFactory.shell
+
+        DependencyFactory.fileManager = MockedFileManager(fileExists: true , isPathDirectory: true)
+        let mockedShell = MockedShell(response: Data(cliResult.utf8), error: nil)
+        DependencyFactory.shell = mockedShell
+        mockedShell.argumentValidation = { arguments in
+            return arguments.last != "."
+        }
+
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
+        let projectRoot = "/Users/imaginary/project"
+        guard let junitXML = JunitXML(
+            with: xcresultFile,
+            projectRoot: projectRoot,
+            format: .sonar,
+            relativePathNames: false
+        ) else {
+            XCTFail("Unable to create JunitXML from \(xcresultFile)")
+            return
+        }
+        try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecutionWithProjectRootAbsolute", actual: junitXML)
+
+        DependencyFactory.fileManager = oldFilemanger
+        DependencyFactory.shell = oldShell
     }
 
     func testJunitXMLJunit() throws {
@@ -522,5 +588,44 @@ final class XcresultparserTests: XCTestCase {
         let expectedXMLDocument = try XMLDocument(contentsOf: expectedResultFile, options: [])
 
         XCTAssertEqual(actualXMLDocument.xmlString, expectedXMLDocument.xmlString, file: file, line: line)
+    }
+}
+
+class MockedFileManager: FileManaging {
+    var fileExists = true
+    var isPathDirectory = true
+
+    init(fileExists: Bool, isPathDirectory: Bool) {
+        self.fileExists = fileExists
+        self.isPathDirectory = isPathDirectory
+    }
+
+    func fileExists(atPath path: String, isDirectory: UnsafeMutablePointer<ObjCBool>?) -> Bool {
+        if let isDirectory = isDirectory {
+            isDirectory.pointee = ObjCBool(isPathDirectory)
+        }
+        return fileExists
+    }
+}
+
+class MockedShell: Commandline {
+    var response = Data()
+    var error: Error?
+    var argumentValidation: ([String]) -> Bool = { _ in true }
+
+    init(response: Data, error: Error?) {
+        self.response = response
+        self.error = error
+    }
+
+    func execute(program: String, with arguments: [String], at executionPath: URL?) throws -> Data {
+        if !argumentValidation(arguments) {
+            throw NSError(domain: "error", code: 17)
+        }
+        if let error {
+            throw error
+        } else {
+            return response
+        }
     }
 }

@@ -81,7 +81,7 @@ public class CoverageConverter {
         }
         arguments.append("--json")
         arguments.append(resultFile.url.path)
-        let coverageData = try Shell.execute(program: "/usr/bin/xcrun", with: arguments)
+        let coverageData = try DependencyFactory.shell.execute(program: "/usr/bin/xcrun", with: arguments)
         return try JSONDecoder().decode(FileCoverage.self, from: coverageData)
     }
 
@@ -107,7 +107,7 @@ public class CoverageConverter {
         arguments.append("--file")
         arguments.append(path)
         arguments.append(resultFile.url.path)
-        let coverageData = try Shell.execute(program: "/usr/bin/xcrun", with: arguments)
+        let coverageData = try DependencyFactory.shell.execute(program: "/usr/bin/xcrun", with: arguments)
         return String(decoding: coverageData, as: UTF8.self)
     }
 
@@ -121,7 +121,7 @@ public class CoverageConverter {
         }
         arguments.append("--file-list")
         arguments.append(resultFile.url.path)
-        let filelistData = try Shell.execute(program: "/usr/bin/xcrun", with: arguments)
+        let filelistData = try DependencyFactory.shell.execute(program: "/usr/bin/xcrun", with: arguments)
         return String(decoding: filelistData, as: UTF8.self).components(separatedBy: "\n")
     }
 }
