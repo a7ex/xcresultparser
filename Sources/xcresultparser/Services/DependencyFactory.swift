@@ -8,6 +8,10 @@
 import Foundation
 
 class DependencyFactory {
-    static var shell: Commandline = Shell()
-    static var fileManager: FileManaging = FileManager.default
+    static var shell: () -> Commandline = {
+        Shell()
+    }
+    static var fileManager: () -> FileManaging = {
+        FileManager.default
+    }
 }

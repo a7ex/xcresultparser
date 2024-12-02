@@ -76,7 +76,7 @@ public struct JunitXML: XmlSerializable {
         }
 
         var isDirectory: ObjCBool = false
-        if DependencyFactory.fileManager.fileExists(atPath: projectRoot, isDirectory: &isDirectory),
+        if DependencyFactory.fileManager().fileExists(atPath: projectRoot, isDirectory: &isDirectory),
               isDirectory.boolValue == true {
             self.projectRoot = URL(fileURLWithPath: projectRoot)
         } else {
@@ -387,7 +387,7 @@ private extension ActionTestSummaryGroup {
             "^(?:public )?(?:final )?(?:public )?(?:(class|\\@implementation) )[a-zA-Z0-9_]+",
             grepPathArgument
         ]
-        guard let filelistData = try? DependencyFactory.shell.execute(program: program, with: arguments, at: projectRootUrl) else {
+        guard let filelistData = try? DependencyFactory.shell().execute(program: program, with: arguments, at: projectRootUrl) else {
             return
         }
         let trimCharacterSet = CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: ":"))
