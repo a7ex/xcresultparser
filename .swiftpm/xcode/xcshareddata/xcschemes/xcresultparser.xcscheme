@@ -84,10 +84,6 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-d"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--project-root /Users/adf/Work/_StarFinanz/__Projects/BankingWhitelabel/XcodeProject/ios-bankingwhitelabel"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -116,7 +112,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o txt"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o warnings-and-errors"
@@ -148,10 +144,6 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-h"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "/Users/adf/Desktop/Sparkasse2.xcresult"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
