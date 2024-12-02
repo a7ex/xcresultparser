@@ -343,12 +343,11 @@ final class XcresultparserTests: XCTestCase {
         let cliResult = """
 ./Tests/XcresultparserTests.swift:class XcresultparserTests
 """
-        let savedFilemangerFactory = DependencyFactory.createFileManager
+        let savedFilemanger = SharedInstances.fileManager
         let savedShellFactory = DependencyFactory.createShell
 
-        DependencyFactory.createFileManager = {
-            MockedFileManager(fileExists: true , isPathDirectory: true)
-        }
+        SharedInstances.fileManager = MockedFileManager(fileExists: true , isPathDirectory: true)
+
         let mockedShell = MockedShell(response: Data(cliResult.utf8), error: nil)
         DependencyFactory.createShell = {
             mockedShell
@@ -370,7 +369,7 @@ final class XcresultparserTests: XCTestCase {
         }
         try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecutionWithProjectRootRelative", actual: junitXML)
 
-        DependencyFactory.createFileManager = savedFilemangerFactory
+        SharedInstances.fileManager = savedFilemanger
         DependencyFactory.createShell = savedShellFactory
     }
 
@@ -380,12 +379,11 @@ final class XcresultparserTests: XCTestCase {
 /Users/actual/project/Tests/XcresultparserTests.swift:class XcresultparserTests
 """
 
-        let savedFilemangerFactory = DependencyFactory.createFileManager
+        let savedFilemanger = SharedInstances.fileManager
         let savedShellFactory = DependencyFactory.createShell
 
-        DependencyFactory.createFileManager = {
-            MockedFileManager(fileExists: true , isPathDirectory: true)
-        }
+        SharedInstances.fileManager = MockedFileManager(fileExists: true , isPathDirectory: true)
+
         let mockedShell = MockedShell(response: Data(cliResult.utf8), error: nil)
         DependencyFactory.createShell = {
             mockedShell
@@ -407,7 +405,7 @@ final class XcresultparserTests: XCTestCase {
         }
         try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecutionWithProjectRootAbsolute", actual: junitXML)
 
-        DependencyFactory.createFileManager = savedFilemangerFactory
+        SharedInstances.fileManager = savedFilemanger
         DependencyFactory.createShell = savedShellFactory
     }
 

@@ -76,7 +76,7 @@ public struct JunitXML: XmlSerializable {
         }
 
         var isDirectory: ObjCBool = false
-        if DependencyFactory.createFileManager().fileExists(atPath: projectRoot, isDirectory: &isDirectory),
+        if SharedInstances.fileManager.fileExists(atPath: projectRoot, isDirectory: &isDirectory),
               isDirectory.boolValue == true {
             self.projectRoot = URL(fileURLWithPath: projectRoot)
         } else {
