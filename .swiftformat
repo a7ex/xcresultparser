@@ -1,3 +1,5 @@
+--swiftversion 5.9
+
 --allman false
 --assetliterals visual-width
 --beforemarks

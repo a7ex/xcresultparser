@@ -129,7 +129,7 @@ public struct HTMLResultFormatter: XCResultFormatting {
 
     private func htmlElement(_ nodeName: String, content: String, cssClass: String? = nil) -> XMLElement {
         let node = XMLElement(name: nodeName, stringValue: content)
-        if let cssClass = cssClass {
+        if let cssClass {
             node.addAttribute(name: "class", stringValue: cssClass)
         }
         return node
@@ -137,7 +137,7 @@ public struct HTMLResultFormatter: XCResultFormatting {
 
     private func htmlElement(_ nodeName: String, content: XMLElement, cssClass: String? = nil) -> XMLElement {
         let node = XMLElement(name: nodeName)
-        if let cssClass = cssClass {
+        if let cssClass {
             node.addAttribute(name: "class", stringValue: cssClass)
         }
         node.addChild(content)

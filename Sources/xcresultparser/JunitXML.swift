@@ -17,14 +17,14 @@ struct NodeNames {
     let testcaseName: String
     let testcaseDurationName: String
     let testcaseClassNameName: String
-    
+
     static let defaultNodeNames = NodeNames(
         testsuitesName: "testsuites",
         testcaseName: "testcase",
         testcaseDurationName: "time",
         testcaseClassNameName: "classname"
     )
-    
+
     static let sonarNodeNames = NodeNames(
         testsuitesName: "testExecutions",
         testcaseName: "testCase",
@@ -77,7 +77,7 @@ public struct JunitXML: XmlSerializable {
 
         var isDirectory: ObjCBool = false
         if SharedInstances.fileManager.fileExists(atPath: projectRoot, isDirectory: &isDirectory),
-              isDirectory.boolValue == true {
+           isDirectory.boolValue == true {
             self.projectRoot = URL(fileURLWithPath: projectRoot)
         } else {
             self.projectRoot = nil
@@ -306,11 +306,10 @@ private extension ActionTestMetadata {
         testcase.addAttribute(name: "name", stringValue: name ?? "No-name")
         if let time = duration,
            !nodeNames.testcaseDurationName.isEmpty {
-            let correctedTime: String
-            if format == .sonar {
-                correctedTime = String(max(1, Int(time * 1000)))
+            let correctedTime: String = if format == .sonar {
+                String(max(1, Int(time * 1000)))
             } else {
-                correctedTime = numFormatter.unwrappedString(for: time)
+                numFormatter.unwrappedString(for: time)
             }
             testcase.addAttribute(
                 name: nodeNames.testcaseDurationName,
@@ -322,7 +321,7 @@ private extension ActionTestMetadata {
         }
         return testcase
     }
-    
+
     func failureSummary(in summaries: [TestFailureIssueSummary]) -> TestFailureIssueSummary? {
         return summaries.first { summary in
             return summary.testCaseName == identifier?.replacingOccurrences(of: "/", with: ".") ||
@@ -398,11 +397,11 @@ private extension ActionTestSummaryGroup {
                let path = items.first,
                !path.isEmpty,
                let className = items
-                .dropFirst()
-                .joined(separator: ":")
-                .trimmingCharacters(in: trimCharacterSet)
-                .components(separatedBy: .whitespaces)
-                .last,
+               .dropFirst()
+               .joined(separator: ":")
+               .trimmingCharacters(in: trimCharacterSet)
+               .components(separatedBy: .whitespaces)
+               .last,
                !className.isEmpty {
                 Self.cachedPathnames[className] = path.withoutLocalPrefix
             }
