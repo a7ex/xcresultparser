@@ -59,7 +59,9 @@ let package = Package(
                 .copy("TestAssets/cobertura.xml"),
                 .copy("TestAssets/coberturaExcludingDirectory.xml"),
                 .copy("TestAssets/warnings.json"),
-                .copy("TestAssets/resultWithCompileError.xcresult")
+                .copy("TestAssets/resultWithCompileError.xcresult"),
+                .copy("TestAssets/sonarTestExecutionWithProjectRootAbsolute.xml"),
+                .copy("TestAssets/sonarTestExecutionWithProjectRootRelative.xml")
             ]
         )
     ]

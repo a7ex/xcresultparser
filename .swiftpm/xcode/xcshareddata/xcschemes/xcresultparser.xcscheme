@@ -83,6 +83,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "-d"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-o junit"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -141,10 +145,6 @@
          <CommandLineArgument
             argument = "-h"
             isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "/Users/adf/Desktop/Sparkasse.xcresult"
-            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o md"

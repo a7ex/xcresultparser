@@ -167,7 +167,7 @@ final class XcresultparserTests: XCTestCase {
         XCTAssertTrue(resultParser.coverageDetails.starts(with: "<h2>Coverage report</h2>"))
         XCTAssertTrue(resultParser.documentSuffix.hasSuffix("</html>"))
     }
-    
+
     func testMDResultFormatter() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
 
@@ -180,11 +180,11 @@ final class XcresultparserTests: XCTestCase {
             return
         }
         XCTAssertEqual("", resultParser.documentPrefix(title: "XCResults"))
-        
+
         let expectedSummary = "Errors: 0; Warnings: 3; Analizer Warnings: 0; Tests: 7; Failed: 1; Skipped: 0"
         XCTAssertEqual(expectedSummary, resultParser.summary)
         XCTAssertEqual("\n---------------------\n", resultParser.divider)
-        
+
         let lines = resultParser.testDetails.components(separatedBy: .newlines)
         XCTAssertTrue(lines[2].starts(with: "### XcresultparserTests.xctest"))
         XCTAssertTrue(lines[3].starts(with: "### XcresultparserTests"))
@@ -197,7 +197,7 @@ final class XcresultparserTests: XCTestCase {
 
         XCTAssertEqual("", resultParser.documentSuffix)
     }
-    
+
     func testCoverageConverter() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         let projectRoot = ""
@@ -211,7 +211,7 @@ final class XcresultparserTests: XCTestCase {
         }
         let info = converter.targetsInfo
         XCTAssertEqual("\nXcresultparserLib\nXcresultparserTests", info)
-        
+
         let fileCoverage = try converter.getCoverageDataAsJSON()
         XCTAssertEqual(13, fileCoverage.files.count)
         let firstKey = try XCTUnwrap(fileCoverage.files.keys.sorted().first)
@@ -226,15 +226,15 @@ final class XcresultparserTests: XCTestCase {
         XCTAssertEqual(1, firstLineDetail.line)
         XCTAssertNil(firstLineDetail.executionCount)
         XCTAssertNil(firstLineDetail.subranges)
-        
+
         let otherLineDetail = firstItem[50]
         XCTAssertTrue(otherLineDetail.isExecutable)
         XCTAssertEqual(51, otherLineDetail.line)
         XCTAssertEqual(0, otherLineDetail.executionCount)
         XCTAssertNil(otherLineDetail.subranges)
-        
+
         // Deprecated methods
-        
+
         let fileList = try converter.coverageFileList()
         XCTAssertEqual(14, fileList.count)
         let firstFile = "/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/CoberturaCoverageConverter.swift"
@@ -324,6 +324,7 @@ final class XcresultparserTests: XCTestCase {
     }
 
     func testJunitXMLSonar() throws {
+        JunitXML.resetCachedPathnames()
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         let projectRoot = ""
         guard let junitXML = JunitXML(
@@ -335,6 +336,77 @@ final class XcresultparserTests: XCTestCase {
             return
         }
         try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecution", actual: junitXML)
+    }
+
+    func testJunitXMLSonarRelativePaths() throws {
+        JunitXML.resetCachedPathnames()
+        let cliResult = """
+        ./Tests/XcresultparserTests.swift:class XcresultparserTests
+        """
+        let savedFilemanger = SharedInstances.fileManager
+        let savedShellFactory = DependencyFactory.createShell
+
+        SharedInstances.fileManager = MockedFileManager(fileExists: true, isPathDirectory: true)
+
+        let mockedShell = MockedShell(response: Data(cliResult.utf8), error: nil)
+        DependencyFactory.createShell = {
+            mockedShell
+        }
+        mockedShell.argumentValidation = { arguments in
+            return arguments.last == "."
+        }
+
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
+        let projectRoot = "/Users/imaginary/project"
+        guard let junitXML = JunitXML(
+            with: xcresultFile,
+            projectRoot: projectRoot,
+            format: .sonar,
+            relativePathNames: true
+        ) else {
+            XCTFail("Unable to create JunitXML from \(xcresultFile)")
+            return
+        }
+        try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecutionWithProjectRootRelative", actual: junitXML)
+
+        SharedInstances.fileManager = savedFilemanger
+        DependencyFactory.createShell = savedShellFactory
+    }
+
+    func testJunitXMLSonarAbsolutePaths() throws {
+        JunitXML.resetCachedPathnames()
+        let cliResult = """
+        /Users/actual/project/Tests/XcresultparserTests.swift:class XcresultparserTests
+        """
+
+        let savedFilemanger = SharedInstances.fileManager
+        let savedShellFactory = DependencyFactory.createShell
+
+        SharedInstances.fileManager = MockedFileManager(fileExists: true, isPathDirectory: true)
+
+        let mockedShell = MockedShell(response: Data(cliResult.utf8), error: nil)
+        DependencyFactory.createShell = {
+            mockedShell
+        }
+        mockedShell.argumentValidation = { arguments in
+            return arguments.last != "."
+        }
+
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
+        let projectRoot = "/Users/imaginary/project"
+        guard let junitXML = JunitXML(
+            with: xcresultFile,
+            projectRoot: projectRoot,
+            format: .sonar,
+            relativePathNames: false
+        ) else {
+            XCTFail("Unable to create JunitXML from \(xcresultFile)")
+            return
+        }
+        try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecutionWithProjectRootAbsolute", actual: junitXML)
+
+        SharedInstances.fileManager = savedFilemanger
+        DependencyFactory.createShell = savedShellFactory
     }
 
     func testJunitXMLJunit() throws {
@@ -522,5 +594,44 @@ final class XcresultparserTests: XCTestCase {
         let expectedXMLDocument = try XMLDocument(contentsOf: expectedResultFile, options: [])
 
         XCTAssertEqual(actualXMLDocument.xmlString, expectedXMLDocument.xmlString, file: file, line: line)
+    }
+}
+
+class MockedFileManager: FileManaging {
+    var fileExists = true
+    var isPathDirectory = true
+
+    init(fileExists: Bool, isPathDirectory: Bool) {
+        self.fileExists = fileExists
+        self.isPathDirectory = isPathDirectory
+    }
+
+    func fileExists(atPath path: String, isDirectory: UnsafeMutablePointer<ObjCBool>?) -> Bool {
+        if let isDirectory {
+            isDirectory.pointee = ObjCBool(isPathDirectory)
+        }
+        return fileExists
+    }
+}
+
+class MockedShell: Commandline {
+    var response = Data()
+    var error: Error?
+    var argumentValidation: ([String]) -> Bool = { _ in true }
+
+    init(response: Data, error: Error?) {
+        self.response = response
+        self.error = error
+    }
+
+    func execute(program: String, with arguments: [String], at executionPath: URL?) throws -> Data {
+        if !argumentValidation(arguments) {
+            throw NSError(domain: "error", code: 17)
+        }
+        if let error {
+            throw error
+        } else {
+            return response
+        }
     }
 }

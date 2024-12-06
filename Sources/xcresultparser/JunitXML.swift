@@ -17,14 +17,14 @@ struct NodeNames {
     let testcaseName: String
     let testcaseDurationName: String
     let testcaseClassNameName: String
-    
+
     static let defaultNodeNames = NodeNames(
         testsuitesName: "testsuites",
         testcaseName: "testcase",
         testcaseDurationName: "time",
         testcaseClassNameName: "classname"
     )
-    
+
     static let sonarNodeNames = NodeNames(
         testsuitesName: "testExecutions",
         testcaseName: "testCase",
@@ -48,10 +48,11 @@ public struct JunitXML: XmlSerializable {
     // MARK: - Properties
 
     private let resultFile: XCResultFile
-    private let projectRoot: String
+    private let projectRoot: URL?
     private let invocationRecord: ActionsInvocationRecord
     private let testReportFormat: TestReportFormat
-    
+    private let relativePathNames: Bool
+
     private let nodeNames: NodeNames
 
     private var numFormatter: NumberFormatter = {
@@ -61,16 +62,27 @@ public struct JunitXML: XmlSerializable {
         return numFormatter
     }()
 
+    // MARK: - Initializer
+
     public init?(
         with url: URL,
         projectRoot: String = "",
-        format: TestReportFormat = .junit
+        format: TestReportFormat = .junit,
+        relativePathNames: Bool = true
     ) {
         resultFile = XCResultFile(url: url)
         guard let record = resultFile.getInvocationRecord() else {
             return nil
         }
-        self.projectRoot = projectRoot
+
+        var isDirectory: ObjCBool = false
+        if SharedInstances.fileManager.fileExists(atPath: projectRoot, isDirectory: &isDirectory),
+           isDirectory.boolValue == true {
+            self.projectRoot = URL(fileURLWithPath: projectRoot)
+        } else {
+            self.projectRoot = nil
+        }
+
         invocationRecord = record
         testReportFormat = format
         if testReportFormat == .sonar {
@@ -78,6 +90,7 @@ public struct JunitXML: XmlSerializable {
         } else {
             nodeNames = NodeNames.defaultNodeNames
         }
+        self.relativePathNames = relativePathNames
     }
 
     func createRootElement() -> XMLElement {
@@ -144,6 +157,13 @@ public struct JunitXML: XmlSerializable {
         return xml.xmlString(options: [.nodePrettyPrint, .nodeCompactEmptyElement])
     }
 
+    // only used in unit testing
+    static func resetCachedPathnames() {
+        ActionTestSummaryGroup.resetCachedPathnames()
+    }
+
+    // MARK: - Private interface
+
     // The XMLElement produced by this function is not allowed in the junit XML format and thus unused.
     // It is kept in case it serves another format.
     private func runDestinationXML(_ destination: ActionRunDestinationRecord) -> XMLElement {
@@ -183,7 +203,7 @@ public struct JunitXML: XmlSerializable {
             if testReportFormat == .sonar {
                 var nodes = [XMLElement]()
                 for subGroup in group.subtestGroups {
-                    let node = subGroup.sonarFileXML(projectRoot: projectRoot)
+                    let node = subGroup.sonarFileXML(projectRoot: projectRoot, relativePathNames: relativePathNames)
                     let testcases = createTestCases(
                         for: subGroup.nameString, tests: subGroup.subtests, failureSummaries: failureSummaries
                     )
@@ -211,7 +231,7 @@ public struct JunitXML: XmlSerializable {
         testDirectory: String = ""
     ) -> XMLElement {
         let node = testReportFormat == .sonar ?
-            group.sonarFileXML(projectRoot: projectRoot) :
+            group.sonarFileXML(projectRoot: projectRoot, relativePathNames: relativePathNames) :
             group.testSuiteXML(numFormatter: numFormatter)
 
         for thisTest in tests {
@@ -286,11 +306,10 @@ private extension ActionTestMetadata {
         testcase.addAttribute(name: "name", stringValue: name ?? "No-name")
         if let time = duration,
            !nodeNames.testcaseDurationName.isEmpty {
-            let correctedTime: String
-            if format == .sonar {
-                correctedTime = String(max(1, Int(time * 1000)))
+            let correctedTime: String = if format == .sonar {
+                String(max(1, Int(time * 1000)))
             } else {
-                correctedTime = numFormatter.unwrappedString(for: time)
+                numFormatter.unwrappedString(for: time)
             }
             testcase.addAttribute(
                 name: nodeNames.testcaseDurationName,
@@ -302,7 +321,7 @@ private extension ActionTestMetadata {
         }
         return testcase
     }
-    
+
     func failureSummary(in summaries: [TestFailureIssueSummary]) -> TestFailureIssueSummary? {
         return summaries.first { summary in
             return summary.testCaseName == identifier?.replacingOccurrences(of: "/", with: ".") ||
@@ -312,6 +331,8 @@ private extension ActionTestMetadata {
 }
 
 private extension ActionTestSummaryGroup {
+    private static var cachedPathnames = [String: String]()
+
     struct TestMetrics {
         let tests: Int
         let failures: Int
@@ -332,35 +353,58 @@ private extension ActionTestSummaryGroup {
         return testsuite
     }
 
-    func sonarFileXML(projectRoot: String) -> XMLElement {
+    func sonarFileXML(projectRoot: URL?, relativePathNames: Bool = true) -> XMLElement {
         let testsuite = XMLElement(name: "file")
-        testsuite.addAttribute(name: "path", stringValue: relativeFilenameGuess(in: projectRoot))
+        testsuite.addAttribute(name: "path", stringValue: classPath(in: projectRoot, relativePathNames: relativePathNames))
         return testsuite
     }
 
-    private func relativeFilenameGuess(in projectRoot: String) -> String {
-        guard !projectRoot.isEmpty else {
+    // only used in unit testing
+    static func resetCachedPathnames() {
+        cachedPathnames.removeAll()
+    }
+
+    // MARK: - Private interface
+
+    private func classPath(in projectRootUrl: URL?, relativePathNames: Bool = true) -> String {
+        guard let projectRootUrl else {
             return identifierString
         }
-        var isDirectory: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: projectRoot, isDirectory: &isDirectory),
-              isDirectory.boolValue == true else {
-            return identifierString
+        if Self.cachedPathnames.isEmpty {
+            cacheAllClassNames(in: projectRootUrl, relativePathNames: relativePathNames)
         }
-        let url = URL(fileURLWithPath: projectRoot)
-        let arguments = ["-rl", "--include", "*.swift", "class \(identifierString)[ |:]", "."]
-        do {
-            let filelistData = try Shell.execute(program: "/usr/bin/grep", with: arguments, at: url)
-            guard let result = String(decoding: filelistData, as: UTF8.self).components(separatedBy: "\n").first,
-                  !result.isEmpty else {
-                return identifierString
+        return Self.cachedPathnames[identifierString] ?? identifierString
+    }
+
+    private func cacheAllClassNames(in projectRootUrl: URL, relativePathNames: Bool = true) {
+        let program = "/usr/bin/egrep"
+        let grepPathArgument = relativePathNames ? "." : projectRootUrl.path
+        let arguments = [
+            "-rio",
+            "--include", "*.swift",
+            "--include", "*.m",
+            "^(?:public )?(?:final )?(?:public )?(?:(class|\\@implementation) )[a-zA-Z0-9_]+",
+            grepPathArgument
+        ]
+        guard let filelistData = try? DependencyFactory.createShell().execute(program: program, with: arguments, at: projectRootUrl) else {
+            return
+        }
+        let trimCharacterSet = CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: ":"))
+        let result = String(decoding: filelistData, as: UTF8.self).components(separatedBy: "\n")
+        for match in result {
+            let items = match.components(separatedBy: ":")
+            if items.count > 1,
+               let path = items.first,
+               !path.isEmpty,
+               let className = items
+               .dropFirst()
+               .joined(separator: ":")
+               .trimmingCharacters(in: trimCharacterSet)
+               .components(separatedBy: .whitespaces)
+               .last,
+               !className.isEmpty {
+                Self.cachedPathnames[className] = path.withoutLocalPrefix
             }
-            if result.hasPrefix("./") {
-                return String(result.dropFirst(2))
-            }
-            return result
-        } catch {
-            return identifierString
         }
     }
 
@@ -384,8 +428,17 @@ private extension ActionTestSummaryGroup {
     }
 }
 
+private extension String {
+    var withoutLocalPrefix: String {
+        if hasPrefix("./") {
+            return String(dropFirst(2))
+        }
+        return self
+    }
+}
+
 private extension TestFailureIssueSummary {
-    func failureXML(projectRoot: String = "") -> XMLElement {
+    func failureXML(projectRoot: URL? = nil) -> XMLElement {
         let failure = XMLElement(name: "failure")
         var value = message
         if let loc = documentLocationInCreatingWorkspace?.url {
@@ -413,11 +466,11 @@ private extension TestFailureIssueSummary {
         return failure
     }
 
-    private func relativePart(of url: URL, relativeTo projectRoot: String) -> String {
-        guard !projectRoot.isEmpty else {
+    private func relativePart(of url: URL, relativeTo projectRoot: URL?) -> String {
+        guard let projectRoot else {
             return url.path
         }
-        let parts = url.path.components(separatedBy: "/\(projectRoot)")
+        let parts = url.path.components(separatedBy: "\(projectRoot.path)")
         guard parts.count > 1 else {
             return url.path
         }
