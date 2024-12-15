@@ -383,6 +383,7 @@ private extension ActionTestSummaryGroup {
             "-rio",
             "--include", "*.swift",
             "--include", "*.m",
+            "--include", "*.mm",
             "^(?:public )?(?:final )?(?:public )?(?:(class|\\@implementation) )[a-zA-Z0-9_]+",
             grepPathArgument
         ]

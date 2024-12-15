@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version 1.8.3 - 2024-12-15
+### CHANGES:
+- Add .mm files to grep filter to resolve junit class names to files
+
+## Version 1.8.2 - 2024-12-06
+### CHANGES:
+- Fix performance of command to generate junit xml for xml with paths for the test classes.
+xcresultparser -o xml <XCResultBundle> should be magnitudes faster now!
+
 ## Version 1.8.1 - 2024-10-16
 ### CHANGES:
 - fixed bug which causes malformat of issues
