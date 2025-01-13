@@ -140,7 +140,12 @@ public struct JunitXML: XmlSerializable {
             for thisSummary in testPlanRunSummaries {
                 for thisTestableSummary in thisSummary.testableSummaries {
                     for group in thisTestableSummary.tests {
-                        for testsuite in createTestSuite(group, failureSummaries: failureSummaries) {
+                        let groupTestsuites = createTestSuite(
+                            group,
+                            failureSummaries: failureSummaries,
+                            configurationName: thisSummary.name ?? "Unnamed configuration"
+                        )
+                        for testsuite in groupTestsuites {
                             testsuites.addChild(testsuite)
                         }
                     }
@@ -184,26 +189,40 @@ public struct JunitXML: XmlSerializable {
     private func createTestSuite(
         _ group: ActionTestSummaryGroup,
         failureSummaries: [TestFailureIssueSummary],
+        configurationName: String,
         testDirectory: String = ""
     ) -> [XMLElement] {
         guard group.identifierString.hasSuffix(".xctest") || group.subtestGroups.isEmpty else {
-            return group.subtestGroups.reduce([XMLElement]()) { rslt, subGroup in
+            return group.subtestGroups.reduce([XMLElement]()) {
+                rslt,
+                subGroup in
                 return rslt + createTestSuite(
-                    subGroup, failureSummaries: failureSummaries, testDirectory: subGroup.identifierString
+                    subGroup,
+                    failureSummaries: failureSummaries,
+                    configurationName: configurationName,
+                    testDirectory: subGroup.identifierString
                 )
             }
         }
         if group.subtestGroups.isEmpty {
             return [
                 createTestSuiteFinally(
-                    group, tests: group.subtests, failureSummaries: failureSummaries, testDirectory: testDirectory
+                    group,
+                    tests: group.subtests,
+                    failureSummaries: failureSummaries,
+                    testDirectory: testDirectory,
+                    configurationName: configurationName
                 )
             ]
         } else {
             if testReportFormat == .sonar {
                 var nodes = [XMLElement]()
                 for subGroup in group.subtestGroups {
-                    let node = subGroup.sonarFileXML(projectRoot: projectRoot, relativePathNames: relativePathNames)
+                    let node = subGroup.sonarFileXML(
+                        projectRoot: projectRoot,
+                        configurationName: configurationName,
+                        relativePathNames: relativePathNames
+                    )
                     let testcases = createTestCases(
                         for: subGroup.nameString, tests: subGroup.subtests, failureSummaries: failureSummaries
                     )
@@ -228,11 +247,15 @@ public struct JunitXML: XmlSerializable {
         _ group: ActionTestSummaryGroup,
         tests: [ActionTestMetadata],
         failureSummaries: [TestFailureIssueSummary],
-        testDirectory: String = ""
+        testDirectory: String = "",
+        configurationName: String
     ) -> XMLElement {
         let node = testReportFormat == .sonar ?
-            group.sonarFileXML(projectRoot: projectRoot, relativePathNames: relativePathNames) :
-            group.testSuiteXML(numFormatter: numFormatter)
+        group.sonarFileXML(
+            projectRoot: projectRoot,
+            configurationName: configurationName,
+            relativePathNames: relativePathNames
+        ) : group.testSuiteXML(numFormatter: numFormatter)
 
         for thisTest in tests {
             let testcase = thisTest.xmlNode(
@@ -353,9 +376,13 @@ private extension ActionTestSummaryGroup {
         return testsuite
     }
 
-    func sonarFileXML(projectRoot: URL?, relativePathNames: Bool = true) -> XMLElement {
+    func sonarFileXML(projectRoot: URL?, configurationName: String, relativePathNames: Bool = true) -> XMLElement {
         let testsuite = XMLElement(name: "file")
-        testsuite.addAttribute(name: "path", stringValue: classPath(in: projectRoot, relativePathNames: relativePathNames))
+        testsuite.addAttribute(
+            name: "path",
+            stringValue: classPath(in: projectRoot, relativePathNames: relativePathNames)
+        )
+        testsuite.addAttribute(name: "configuration", stringValue: configurationName)
         return testsuite
     }
 

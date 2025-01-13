@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testExecutions version="1">
-    <file path="Tests/XcresultparserTests.swift">
+    <file path="Tests/XcresultparserTests.swift" configuration="Test Scheme Action">
         <testCase name="testCLIResultFormatter()" duration="307"/>
         <testCase name="testCoverageConverter()" duration="2818">
             <failure message="short">failed - Unable to create CoverageConverter from /Users/fhaeser/Library/Developer/Xcode/DerivedData/xcresultparser-ebyquorsyljyyuchjpndxzpxmxvo/Build/Products/Debug/XcresultparserTests.xctest/Contents/Resources/Xcresultparser_XcresultparserTests.bundle/Contents/Resources/test.xcresult (/Users/fhaeser/code/xcresultparser/Tests/XcresultparserTests/XcresultparserTests.swift:108)</failure>

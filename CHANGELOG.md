@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version 1.8.4 - 2025-01-12
+### CHANGES:
+- Add 'configuration' property to test export
+- Add support for sonarqube on sonarcloud.io (in order to verify, that this change doesn't break the sonarqube scan)
+
 ## Version 1.8.3 - 2024-12-15
 ### CHANGES:
 - Add .mm files to grep filter to resolve junit class names to files

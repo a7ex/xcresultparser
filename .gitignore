@@ -92,3 +92,8 @@ iOSInjectionProject/
 
 # Compiled app, ready for notarization
 product/
+
+
+.scannerwork/
+sonarqube-coverage.xml
+sonarqube-testresults.xml
