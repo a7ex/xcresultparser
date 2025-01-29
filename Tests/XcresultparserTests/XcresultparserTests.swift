@@ -181,7 +181,7 @@ final class XcresultparserTests: XCTestCase {
         }
         XCTAssertEqual("", resultParser.documentPrefix(title: "XCResults"))
 
-        let expectedSummary = "Errors: 0; Warnings: 3; Analizer Warnings: 0; Tests: 7; Failed: 1; Skipped: 0"
+        let expectedSummary = "Errors: 0; Warnings: 3; Analyzer Warnings: 0; Tests: 7; Failed: 1; Skipped: 0"
         XCTAssertEqual(expectedSummary, resultParser.summary)
         XCTAssertEqual("\n---------------------\n", resultParser.divider)
 

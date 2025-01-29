@@ -189,7 +189,7 @@ public struct XCResultFormatter {
             summary += "; Warnings: \(warningCount)"
         }
         if summaryFields.enabledFields.contains(.analyzerWarnings) {
-            summary += "; Analizer Warnings: \(analyzerWarningCount)"
+            summary += "; Analyzer Warnings: \(analyzerWarningCount)"
         }
         if summaryFields.enabledFields.contains(.tests) {
             summary += "; Tests: \(testsCount)"
