@@ -23,7 +23,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/davidahouse/XCResultKit.git",
-            .upToNextMajor(from: "1.2.0")
+            .upToNextMajor(from: "1.2.2")
         )
     ],
     targets: [

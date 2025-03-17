@@ -14,8 +14,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/davidahouse/XCResultKit.git",
       "state" : {
-        "revision" : "63a93e454e30084b8948cba0ee42112fca1f6010",
-        "version" : "1.2.0"
+        "revision" : "d49890579f3fd10253ae3d4ba056b89e76ea971e",
+        "version" : "1.2.2"
       }
     }
   ],
