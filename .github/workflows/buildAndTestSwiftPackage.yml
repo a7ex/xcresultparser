@@ -17,7 +17,7 @@ jobs:
       run: swift build -c release --disable-sandbox --arch arm64 --arch x86_64
     - name: Run tests
       run: swift test -v
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
           name: xcresultparser
           path: .build/apple/Products/Release/xcresultparser
