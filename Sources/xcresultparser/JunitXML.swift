@@ -128,7 +128,7 @@ public struct JunitXML: XmlSerializable {
             }
 
             let testPlanRunSummaries = testPlanRun.summaries
-            let failureSummaries = invocationRecord.issues.testFailureSummaries
+            let failureSummaries = testAction.actionResult.issues.testFailureSummaries
 
             if testReportFormat != .sonar {
                 let startDate = testAction.startedTime
