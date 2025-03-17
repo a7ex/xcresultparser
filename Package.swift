@@ -53,8 +53,10 @@ let package = Package(
             resources: [
                 .copy("TestAssets/test.xcresult"),
                 .copy("TestAssets/test_merged.xcresult"),
+                .copy("TestAssets/test_repeated.xcresult"),
                 .copy("TestAssets/junit.xml"),
                 .copy("TestAssets/junit_merged.xml"),
+                .copy("TestAssets/junit_repeated.xml"),
                 .copy("TestAssets/sonarTestExecution.xml"),
                 .copy("TestAssets/cobertura.xml"),
                 .copy("TestAssets/coberturaExcludingDirectory.xml"),

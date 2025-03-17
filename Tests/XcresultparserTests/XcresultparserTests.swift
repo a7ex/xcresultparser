@@ -437,6 +437,20 @@ final class XcresultparserTests: XCTestCase {
         try assertXmlTestReportsAreEqual(expectedFileName: "junit_merged", actual: junitXML)
     }
 
+    func testJunitXMLRepeated() throws {
+        let xcresultFile = Bundle.module.url(forResource: "test_repeated", withExtension: "xcresult")!
+        let projectRoot = ""
+        guard let junitXML = JunitXML(
+            with: xcresultFile,
+            projectRoot: projectRoot,
+            format: .junit
+        ) else {
+            XCTFail("Unable to create JunitXML from \(xcresultFile)")
+            return
+        }
+        try assertXmlTestReportsAreEqual(expectedFileName: "junit_repeated", actual: junitXML)
+    }
+
     func testCleanCodeWarnings() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         guard let converter = IssuesJSON(with: xcresultFile) else {
