@@ -485,11 +485,17 @@ private extension TestFailureIssueSummary {
             }
         }
         if !value.isEmpty {
-            //            failure.addAttribute(name: "name", stringValue: value)
             let textNode = XMLNode(kind: .text)
             textNode.objectValue = value
             failure.addChild(textNode)
-            failure.addAttribute(name: "message", stringValue: "short")
+            let shortMessage: String
+            if let producingTarget {
+                shortMessage = "\(issueType) in \(producingTarget): \(testCaseName)"
+            } else {
+                shortMessage = "\(issueType): \(testCaseName)"
+            }
+            failure.addAttribute(name: "message", stringValue: shortMessage)
+            failure.addAttribute(name: "type", stringValue: issueType)
         }
         return failure
     }

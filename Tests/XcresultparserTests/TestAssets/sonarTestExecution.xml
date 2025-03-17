@@ -3,7 +3,7 @@
     <file path="XcresultparserTests" configuration="Test Scheme Action">
         <testCase name="testCLIResultFormatter()" duration="307"/>
         <testCase name="testCoverageConverter()" duration="2818">
-            <failure message="short">failed - Unable to create CoverageConverter from /Users/fhaeser/Library/Developer/Xcode/DerivedData/xcresultparser-ebyquorsyljyyuchjpndxzpxmxvo/Build/Products/Debug/XcresultparserTests.xctest/Contents/Resources/Xcresultparser_XcresultparserTests.bundle/Contents/Resources/test.xcresult (/Users/fhaeser/code/xcresultparser/Tests/XcresultparserTests/XcresultparserTests.swift:108)</failure>
+            <failure message="Uncategorized: XcresultparserTests.testCoverageConverter()" type="Uncategorized">failed - Unable to create CoverageConverter from /Users/fhaeser/Library/Developer/Xcode/DerivedData/xcresultparser-ebyquorsyljyyuchjpndxzpxmxvo/Build/Products/Debug/XcresultparserTests.xctest/Contents/Resources/Xcresultparser_XcresultparserTests.bundle/Contents/Resources/test.xcresult (/Users/fhaeser/code/xcresultparser/Tests/XcresultparserTests/XcresultparserTests.swift:108)</failure>
         </testCase>
         <testCase name="testHTMLResultFormatter()" duration="331"/>
         <testCase name="testJunitXMLJunit()" duration="255"/>
