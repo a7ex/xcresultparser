@@ -87,7 +87,7 @@ You should see the tool respond like this:
 ```
 Error: Missing expected argument '<xcresult-file>'
 
-OVERVIEW: xcresultparser 1.8.4
+OVERVIEW: xcresultparser 1.8.5
 Interpret binary .xcresult files and print summary in different formats: txt,
 xml, html or colored cli output.
 
