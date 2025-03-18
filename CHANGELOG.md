@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version 1.8.5 - 2025-03-18
+### CHANGES:
+- Fix incorrect JUnit failure message for merged & repeated test case (Merits go to John Szumski)
+- Fix short message and type not populated for junit output (Merits go to Luis Padron)
+
 ## Version 1.8.4 - 2025-01-12
 ### CHANGES:
 - Add 'configuration' property to test export
