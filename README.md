@@ -87,7 +87,7 @@ You should see the tool respond like this:
 ```
 Error: Missing expected argument '<xcresult-file>'
 
-OVERVIEW: xcresultparser 1.8.5
+OVERVIEW: xcresultparser 1.9.0
 Interpret binary .xcresult files and print summary in different formats: txt,
 xml, html or colored cli output.
 
@@ -128,6 +128,9 @@ OPTIONS:
                           The fields in the summary. Default is all:
                           errors|warnings|analyzerWarnings|tests|failed|skipped
   -c, --coverage          Whether to print coverage data.
+  -x, --exclude-coverage-not-in-project
+                          Omit elements with file pathes, which do not contain
+                          'projectRoot'.
   -n, --no-test-result    Whether to print test results.
   -f, --failed-tests-only Whether to only print failed tests.
   -q, --quiet             Quiet. Don't print status output.
