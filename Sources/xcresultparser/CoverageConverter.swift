@@ -30,6 +30,7 @@ public class CoverageConverter {
     let invocationRecord: ActionsInvocationRecord
     let coverageTargets: Set<String>
     let excludedPaths: Set<String>
+    let strictPathnames: Bool
 
     // MARK: - Dependencies
 
@@ -39,13 +40,15 @@ public class CoverageConverter {
         with url: URL,
         projectRoot: String = "",
         coverageTargets: [String] = [],
-        excludedPaths: [String] = []
+        excludedPaths: [String] = [],
+        strictPathnames: Bool
     ) {
         resultFile = XCResultFile(url: url)
         guard let record = resultFile.getCodeCoverage() else {
             return nil
         }
         self.projectRoot = projectRoot
+        self.strictPathnames = projectRoot.isEmpty ? false : strictPathnames
         codeCoverage = record
         guard let invocationRecord = resultFile.getInvocationRecord() else {
             return nil

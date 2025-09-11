@@ -37,6 +37,9 @@ struct xcresultparser: ParsableCommand {
     @Flag(name: .shortAndLong, help: "Whether to print coverage data.")
     var coverage: Int
 
+    @Flag(name: .shortAndLong, help: "Omit elements with file pathes, which do not contain 'projectRoot'.")
+    var strictPathnames: Int
+
     @Flag(name: .shortAndLong, help: "Whether to print test results.")
     var noTestResult: Int
 
@@ -92,7 +95,8 @@ struct xcresultparser: ParsableCommand {
             with: URL(fileURLWithPath: xcresult),
             projectRoot: projectRoot ?? "",
             coverageTargets: coverageTargets,
-            excludedPaths: excludedPaths
+            excludedPaths: excludedPaths,
+            strictPathnames: strictPathnames == 1
         ) else {
             throw ParseError.argumentError
         }
@@ -105,7 +109,8 @@ struct xcresultparser: ParsableCommand {
             with: URL(fileURLWithPath: xcresult),
             projectRoot: projectRoot ?? "",
             coverageTargets: coverageTargets,
-            excludedPaths: excludedPaths
+            excludedPaths: excludedPaths,
+            strictPathnames: strictPathnames == 1
         ) else {
             throw ParseError.argumentError
         }
@@ -129,7 +134,8 @@ struct xcresultparser: ParsableCommand {
         guard let converter = SonarCoverageConverter(
             with: URL(fileURLWithPath: xcresult),
             projectRoot: projectRoot ?? "",
-            coverageTargets: coverageTargets
+            coverageTargets: coverageTargets,
+            strictPathnames: strictPathnames == 1
         ) else {
             throw ParseError.argumentError
         }

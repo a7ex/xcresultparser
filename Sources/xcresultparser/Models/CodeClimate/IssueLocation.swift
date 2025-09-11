@@ -34,7 +34,7 @@ extension IssueLocation {
             )
             return
         }
-        path = issueLocationInfo.filePath.relativePath(relativeTo: projectRoot)
+        path = issueLocationInfo.filePath.relativePath(relativeTo: projectRoot) ?? issueLocationInfo.filePath
         lines = IssueLocationData(begin: issueLocationInfo.startLine, end: issueLocationInfo.endLine)
         positions = IssuePositionData(
             begin: PositionData(line: issueLocationInfo.startLine, column: issueLocationInfo.startColumn),

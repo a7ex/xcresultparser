@@ -72,6 +72,11 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
             guard !isPathExcluded(fileName) else {
                 continue
             }
+            let relativePath = fileName.relativePath(relativeTo: projectRoot)
+            if strictPathnames,
+               relativePath == nil {
+                continue
+            }
             var fileLines = [LineInfo]() // This will store information about each line.
 
             for lineData in value {
@@ -83,7 +88,8 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
                 fileLines.append(line)
             }
 
-            let fileInfoInst = FileInfo(path: fileName.relativePath(relativeTo: projectRoot), lines: fileLines)
+
+            let fileInfoInst = FileInfo(path: relativePath ?? fileName, lines: fileLines)
             fileInfo.append(fileInfoInst)
         }
         // Sort files to avoid duplicated packages

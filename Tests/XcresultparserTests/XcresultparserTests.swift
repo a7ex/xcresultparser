@@ -1,7 +1,10 @@
+import Foundation
 @testable import XcresultparserLib
-import XCTest
+import Testing
 
-final class XcresultparserTests: XCTestCase {
+@MainActor
+struct XcresultparserTests {
+    @Test
     func testTextResultFormatter() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
 
@@ -10,10 +13,10 @@ final class XcresultparserTests: XCTestCase {
             formatter: TextResultFormatter(),
             coverageTargets: []
         ) else {
-            XCTFail("Unable to create XCResultFormatter with \(xcresultFile)")
+            Issue.record("Unable to create XCResultFormatter with \(xcresultFile)")
             return
         }
-        XCTAssertEqual("", resultParser.documentPrefix(title: "XCResults"))
+        #expect(resultParser.documentPrefix(title: "XCResults") == "")
 
         let expectedSummary = """
         Summary
@@ -24,14 +27,15 @@ final class XcresultparserTests: XCTestCase {
           Number of failed tests = 1
           Number of skipped tests = 0
         """
-        XCTAssertEqual(expectedSummary, resultParser.summary)
-        XCTAssertEqual("---------------------\n", resultParser.divider)
-        XCTAssertTrue(resultParser.testDetails.starts(with: "Test Scheme Action"))
+        #expect(resultParser.summary == expectedSummary)
+        #expect(resultParser.divider == "---------------------\n")
+        #expect(resultParser.testDetails.starts(with: "Test Scheme Action"))
 
-        XCTAssertTrue(resultParser.coverageDetails.starts(with: "Coverage report"))
-        XCTAssertEqual("", resultParser.documentSuffix)
+        #expect(resultParser.coverageDetails.starts(with: "Coverage report"))
+        #expect(resultParser.documentSuffix == "")
     }
 
+    @Test
     func testTextResultFormatterTotalCoverageReportFormat() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
 
@@ -41,10 +45,10 @@ final class XcresultparserTests: XCTestCase {
             coverageTargets: [],
             coverageReportFormat: .totals
         ) else {
-            XCTFail("Unable to create XCResultFormatter with \(xcresultFile)")
+            Issue.record("Unable to create XCResultFormatter with \(xcresultFile)")
             return
         }
-        XCTAssertEqual("", resultParser.documentPrefix(title: "XCResults"))
+        #expect("" == resultParser.documentPrefix(title: "XCResults"))
 
         let expectedSummary = """
         Summary
@@ -55,16 +59,17 @@ final class XcresultparserTests: XCTestCase {
           Number of failed tests = 1
           Number of skipped tests = 0
         """
-        XCTAssertEqual(expectedSummary, resultParser.summary)
-        XCTAssertEqual("---------------------\n", resultParser.divider)
-        XCTAssertTrue(resultParser.testDetails.starts(with: "Test Scheme Action"))
+        #expect(expectedSummary == resultParser.summary)
+        #expect(resultParser.divider == "---------------------\n")
+        #expect(resultParser.testDetails.starts(with: "Test Scheme Action"))
 
         let lines = resultParser.coverageDetails.components(separatedBy: "\n")
-        XCTAssertEqual(2, lines.count)
-        XCTAssertEqual("Coverage report", lines.first)
-        XCTAssertTrue(lines.last?.starts(with: "Total coverage:") == true)
+        #expect(lines.count == 2)
+        #expect(lines.first == "Coverage report")
+        #expect(lines.last?.starts(with: "Total coverage:") == true)
     }
 
+    @Test
     func testTextResultFormatterMethodsCoverageReportFormat() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
 
@@ -74,10 +79,10 @@ final class XcresultparserTests: XCTestCase {
             coverageTargets: [],
             coverageReportFormat: .methods
         ) else {
-            XCTFail("Unable to create XCResultFormatter with \(xcresultFile)")
+            Issue.record("Unable to create XCResultFormatter with \(xcresultFile)")
             return
         }
-        XCTAssertEqual("", resultParser.documentPrefix(title: "XCResults"))
+        #expect(resultParser.documentPrefix(title: "XCResults") == "")
 
         let expectedSummary = """
         Summary
@@ -88,18 +93,19 @@ final class XcresultparserTests: XCTestCase {
           Number of failed tests = 1
           Number of skipped tests = 0
         """
-        XCTAssertEqual(expectedSummary, resultParser.summary)
-        XCTAssertEqual("---------------------\n", resultParser.divider)
-        XCTAssertTrue(resultParser.testDetails.starts(with: "Test Scheme Action"))
+        #expect(resultParser.summary == expectedSummary)
+        #expect(resultParser.divider == "---------------------\n")
+        #expect(resultParser.testDetails.starts(with: "Test Scheme Action"))
 
         let lines = resultParser.coverageDetails.components(separatedBy: "\n")
-        XCTAssertEqual(473, lines.count)
-        XCTAssertEqual("Coverage report", lines.first)
-        XCTAssertTrue(lines[1].starts(with: "Total coverage:") == true)
-        XCTAssertTrue(lines[2].starts(with: "XcresultparserLib:") == true)
-        XCTAssertTrue(lines[3].contains("CLIResultFormatter.swift:") == true)
+        #expect(lines.count == 473)
+        #expect(lines.first == "Coverage report")
+        #expect(lines[1].starts(with: "Total coverage:") == true)
+        #expect(lines[2].starts(with: "XcresultparserLib:") == true)
+        #expect(lines[3].contains("CLIResultFormatter.swift:") == true)
     }
 
+    @Test
     func testCLIResultFormatter() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
 
@@ -108,10 +114,10 @@ final class XcresultparserTests: XCTestCase {
             formatter: CLIResultFormatter(),
             coverageTargets: []
         ) else {
-            XCTFail("Unable to create XCResultFormatter with \(xcresultFile)")
+            Issue.record("Unable to create XCResultFormatter with \(xcresultFile)")
             return
         }
-        XCTAssertEqual("", resultParser.documentPrefix(title: "XCResults"))
+        #expect(resultParser.documentPrefix(title: "XCResults") == "")
 
         let expectedSummary = """
         \u{001B}[1mSummary\u{001B}[0m
@@ -122,16 +128,17 @@ final class XcresultparserTests: XCTestCase {
         \u{001B}[31m  Number of failed tests = 1\u{001B}[0m
           Number of skipped tests = 0\u{001B}[0m
         """
-        XCTAssertEqual(expectedSummary, resultParser.summary)
-        XCTAssertEqual("-----------------\n", resultParser.divider)
+        #expect(resultParser.summary == expectedSummary)
+        #expect(resultParser.divider == "-----------------\n")
 
-        XCTAssertTrue(resultParser.testDetails.starts(with: "\u{001B}[1mTest Scheme Action\u{001B}[0m"))
+        #expect(resultParser.testDetails.starts(with: "\u{001B}[1mTest Scheme Action\u{001B}[0m"))
 
-        XCTAssertTrue(resultParser.coverageDetails.starts(with: "\u{001B}[1mCoverage report\u{001B}[0m"))
+        #expect(resultParser.coverageDetails.starts(with: "\u{001B}[1mCoverage report\u{001B}[0m"))
 
-        XCTAssertEqual("", resultParser.documentSuffix)
+        #expect(resultParser.documentSuffix == "")
     }
 
+    @Test
     func testHTMLResultFormatter() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
 
@@ -140,7 +147,7 @@ final class XcresultparserTests: XCTestCase {
             formatter: HTMLResultFormatter(),
             coverageTargets: []
         ) else {
-            XCTFail("Unable to create XCResultFormatter with \(xcresultFile)")
+            Issue.record("Unable to create XCResultFormatter with \(xcresultFile)")
             return
         }
         let documentPrefix = """
@@ -150,7 +157,7 @@ final class XcresultparserTests: XCTestCase {
             <meta charset="utf-8">
             <title>XCResults</title>
         """
-        XCTAssertTrue(resultParser.documentPrefix(title: "XCResults").starts(with: documentPrefix))
+        #expect(resultParser.documentPrefix(title: "XCResults").starts(with: documentPrefix))
 
         let expectedSummary = """
         <h2>Summary</h2>
@@ -161,13 +168,14 @@ final class XcresultparserTests: XCTestCase {
         <p class="resultSummaryLineFailed">Number of failed tests = 1</p>
         <p class="resultSummaryLineSuccess">Number of skipped tests = 0</p>
         """
-        XCTAssertEqual(expectedSummary, resultParser.summary)
-        XCTAssertEqual("<hr>", resultParser.divider)
-        XCTAssertTrue(resultParser.testDetails.starts(with: "<h2>Test Scheme Action</h2>"))
-        XCTAssertTrue(resultParser.coverageDetails.starts(with: "<h2>Coverage report</h2>"))
-        XCTAssertTrue(resultParser.documentSuffix.hasSuffix("</html>"))
+        #expect(resultParser.summary == expectedSummary)
+        #expect(resultParser.divider == "<hr>")
+        #expect(resultParser.testDetails.starts(with: "<h2>Test Scheme Action</h2>"))
+        #expect(resultParser.coverageDetails.starts(with: "<h2>Coverage report</h2>"))
+        #expect(resultParser.documentSuffix.hasSuffix("</html>"))
     }
 
+    @Test
     func testMDResultFormatter() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
 
@@ -176,99 +184,128 @@ final class XcresultparserTests: XCTestCase {
             formatter: MDResultFormatter(),
             coverageTargets: []
         ) else {
-            XCTFail("Unable to create XCResultFormatter with \(xcresultFile)")
+            Issue.record("Unable to create XCResultFormatter with \(xcresultFile)")
             return
         }
-        XCTAssertEqual("", resultParser.documentPrefix(title: "XCResults"))
+        #expect(resultParser.documentPrefix(title: "XCResults") == "")
 
         let expectedSummary = "Errors: 0; Warnings: 3; Analyzer Warnings: 0; Tests: 7; Failed: 1; Skipped: 0"
-        XCTAssertEqual(expectedSummary, resultParser.summary)
-        XCTAssertEqual("\n---------------------\n", resultParser.divider)
+        #expect(resultParser.summary == expectedSummary)
+        #expect(resultParser.divider == "\n---------------------\n")
 
         let lines = resultParser.testDetails.components(separatedBy: .newlines)
-        XCTAssertTrue(lines[2].starts(with: "### XcresultparserTests.xctest"))
-        XCTAssertTrue(lines[3].starts(with: "### XcresultparserTests"))
-        XCTAssertTrue(lines[4].starts(with: "* <span"))
+        #expect(lines[2].starts(with: "### XcresultparserTests.xctest"))
+        #expect(lines[3].starts(with: "### XcresultparserTests"))
+        #expect(lines[4].starts(with: "* <span"))
 
         let cLines = resultParser.coverageDetails.components(separatedBy: .newlines)
-        XCTAssertTrue(cLines[1].starts(with: "Total coverage:"))
-        XCTAssertTrue(cLines[2].starts(with: "XcresultparserLib:"))
-        XCTAssertTrue(cLines[3].starts(with: "## CLIResultFormatter.swift:"))
+        #expect(cLines[1].starts(with: "Total coverage:"))
+        #expect(cLines[2].starts(with: "XcresultparserLib:"))
+        #expect(cLines[3].starts(with: "## CLIResultFormatter.swift:"))
 
-        XCTAssertEqual("", resultParser.documentSuffix)
+        #expect(resultParser.documentSuffix == "")
     }
 
-    func testCoverageConverter() throws {
+    @Test(arguments: [true, false])
+    func testCoverageConverter(strictPathnames: Bool) throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         let projectRoot = ""
 
         guard let converter = CoverageConverter(
             with: xcresultFile,
-            projectRoot: projectRoot
+            projectRoot: projectRoot,
+            strictPathnames: strictPathnames
         ) else {
-            XCTFail("Unable to create CoverageConverter from \(xcresultFile)")
+            Issue.record("Unable to create CoverageConverter from \(xcresultFile)")
             return
         }
         let info = converter.targetsInfo
-        XCTAssertEqual("\nXcresultparserLib\nXcresultparserTests", info)
+        #expect(info == "\nXcresultparserLib\nXcresultparserTests")
 
         let fileCoverage = try converter.getCoverageDataAsJSON()
-        XCTAssertEqual(13, fileCoverage.files.count)
-        let firstKey = try XCTUnwrap(fileCoverage.files.keys.sorted().first)
-        XCTAssertEqual(
-            "/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/CoberturaCoverageConverter.swift",
+        #expect(fileCoverage.files.count == 13)
+        let firstKey = try #require(fileCoverage.files.keys.sorted().first)
+        #expect(
+            "/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/CoberturaCoverageConverter.swift" ==
             firstKey
         )
-        let firstItem = try XCTUnwrap(fileCoverage.files[firstKey])
-        XCTAssertEqual(199, firstItem.count)
-        let firstLineDetail = try XCTUnwrap(firstItem.first)
-        XCTAssertFalse(firstLineDetail.isExecutable)
-        XCTAssertEqual(1, firstLineDetail.line)
-        XCTAssertNil(firstLineDetail.executionCount)
-        XCTAssertNil(firstLineDetail.subranges)
+        let firstItem = try #require(fileCoverage.files[firstKey])
+        #expect(firstItem.count == 199)
+        let firstLineDetail = try #require(firstItem.first)
+        #expect(firstLineDetail.isExecutable == false)
+        #expect(firstLineDetail.line == 1)
+        #expect(firstLineDetail.executionCount == nil)
+        #expect(firstLineDetail.subranges == nil)
 
         let otherLineDetail = firstItem[50]
-        XCTAssertTrue(otherLineDetail.isExecutable)
-        XCTAssertEqual(51, otherLineDetail.line)
-        XCTAssertEqual(0, otherLineDetail.executionCount)
-        XCTAssertNil(otherLineDetail.subranges)
+        #expect(otherLineDetail.isExecutable)
+        #expect(otherLineDetail.line == 51)
+        #expect(otherLineDetail.executionCount == 0)
+        #expect(otherLineDetail.subranges == nil)
 
         // Deprecated methods
 
         let fileList = try converter.coverageFileList()
-        XCTAssertEqual(14, fileList.count)
+        #expect(fileList.count == 14)
         let firstFile = "/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/CoberturaCoverageConverter.swift"
-        XCTAssertEqual(firstFile, fileList.first)
+        #expect(fileList.first == firstFile)
         let coverageForFile = try converter.coverageForFile(path: firstFile)
-        XCTAssertTrue(coverageForFile.starts(with: "  1: *\n  2: *\n  3: *"))
-        XCTAssertTrue(coverageForFile.contains(" 35: 0"))
+        #expect(coverageForFile.starts(with: "  1: *\n  2: *\n  3: *"))
+        #expect(coverageForFile.contains(" 35: 0"))
     }
 
-    func testSonarCoverageConverter() throws {
+    @Test(arguments: [true, false])
+    func testCoverageConverterPathnames(strictPathnames: Bool) throws {
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
+        let projectRoot = "/Users/notexistant/code/xcresultparser"
+
+        guard let converter = SonarCoverageConverter(
+            with: xcresultFile,
+            projectRoot: projectRoot,
+            strictPathnames: strictPathnames
+        ) else {
+            Issue.record("Unable to create CoverageConverter from \(xcresultFile)")
+            return
+        }
+
+        let xml = try converter.xmlString(quiet: true)
+
+        if strictPathnames {
+            #expect(xml == "<coverage version=\"1\"/>")
+        } else {
+            #expect(xml.contains("/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/OutputFormatting/Formatters/CLI/CLIResultFormatter.swift"))
+        }
+
+    }
+
+    @Test(arguments: [true, false])
+    func testSonarCoverageConverter(strictPathnames: Bool) throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         let projectRoot = ""
         let quiet = 1
 
         guard let converter = SonarCoverageConverter(
             with: xcresultFile,
-            projectRoot: projectRoot
+            projectRoot: projectRoot,
+            strictPathnames: strictPathnames
         ) else {
-            XCTFail("Unable to create CoverageConverter from \(xcresultFile)")
+            Issue.record("Unable to create CoverageConverter from \(xcresultFile)")
             return
         }
         let rslt = try converter.xmlString(quiet: quiet == 1)
-        XCTAssertTrue(rslt.starts(with: "<coverage version=\"1\">"))
+        #expect(rslt.starts(with: "<coverage version=\"1\">"))
         let lines = rslt.components(separatedBy: .newlines)
-        XCTAssertEqual(1492, lines.count)
-        let pos = try XCTUnwrap(lines.firstIndex(of: "<file path=\"/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/OutputFormatting/Formatters/XCResultFormatting.swift\">"))
-        XCTAssertEqual("    <lineToCover lineNumber=\"36\" covered=\"true\"/>", lines[pos + 1])
-        XCTAssertEqual("    <lineToCover lineNumber=\"37\" covered=\"true\"/>", lines[pos + 2])
+        #expect(lines.count == 1492)
+        let pos = try #require(lines.firstIndex(of: "<file path=\"/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/OutputFormatting/Formatters/XCResultFormatting.swift\">"))
+        #expect(lines[pos + 1] == "    <lineToCover lineNumber=\"36\" covered=\"true\"/>")
+        #expect(lines[pos + 2] == "    <lineToCover lineNumber=\"37\" covered=\"true\"/>")
 
-        let pos2 = try XCTUnwrap(lines.firstIndex(of: "<file path=\"/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/Shell.swift\">"))
-        XCTAssertEqual("    <lineToCover lineNumber=\"15\" covered=\"false\"/>", lines[pos2 + 1])
-        XCTAssertEqual("    <lineToCover lineNumber=\"16\" covered=\"false\"/>", lines[pos2 + 2])
+        let pos2 = try #require(lines.firstIndex(of: "<file path=\"/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/Shell.swift\">"))
+        #expect(lines[pos2 + 1] == "    <lineToCover lineNumber=\"15\" covered=\"false\"/>")
+        #expect(lines[pos2 + 2] == "    <lineToCover lineNumber=\"16\" covered=\"false\"/>")
     }
 
+    @Test
     func testSonarCoverageConverterExcludeFiles() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         let projectRoot = ""
@@ -277,37 +314,41 @@ final class XcresultparserTests: XCTestCase {
         guard let converter = SonarCoverageConverter(
             with: xcresultFile,
             projectRoot: projectRoot,
-            excludedPaths: ["OutputFormatting/Formatters"]
+            excludedPaths: ["OutputFormatting/Formatters"],
+            strictPathnames: false
         ) else {
-            XCTFail("Unable to create CoverageConverter from \(xcresultFile)")
+            Issue.record("Unable to create CoverageConverter from \(xcresultFile)")
             return
         }
         let rslt = try converter.xmlString(quiet: quiet == 1)
-        XCTAssertTrue(rslt.starts(with: "<coverage version=\"1\">"))
+        #expect(rslt.starts(with: "<coverage version=\"1\">"))
         let lines = rslt.components(separatedBy: .newlines)
-        XCTAssertEqual(1082, lines.count)
+        #expect(lines.count == 1082)
         let pos = lines.firstIndex(of: "<file path=\"/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/OutputFormatting/Formatters/XCResultFormatting.swift\">")
-        XCTAssertNil(pos)
+        #expect(pos == nil)
 
-        let pos2 = try XCTUnwrap(lines.firstIndex(of: "<file path=\"/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/Shell.swift\">"))
-        XCTAssertEqual("    <lineToCover lineNumber=\"15\" covered=\"false\"/>", lines[pos2 + 1])
-        XCTAssertEqual("    <lineToCover lineNumber=\"16\" covered=\"false\"/>", lines[pos2 + 2])
+        let pos2 = try #require(lines.firstIndex(of: "<file path=\"/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/Shell.swift\">"))
+        #expect(lines[pos2 + 1] == "    <lineToCover lineNumber=\"15\" covered=\"false\"/>")
+        #expect(lines[pos2 + 2] == "    <lineToCover lineNumber=\"16\" covered=\"false\"/>")
     }
 
+    @Test
     func testCoberturaConverter() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         let projectRoot = ""
 
         guard let converter = CoberturaCoverageConverter(
             with: xcresultFile,
-            projectRoot: projectRoot
+            projectRoot: projectRoot,
+            strictPathnames: false
         ) else {
-            XCTFail("Unable to create CoverageConverter from \(xcresultFile)")
+            Issue.record("Unable to create CoverageConverter from \(xcresultFile)")
             return
         }
         try assertXmlTestReportsAreEqual(expectedFileName: "cobertura", actual: converter)
     }
 
+    @Test
     func testCoberturaConverterExcludeFiles() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         let projectRoot = ""
@@ -315,14 +356,16 @@ final class XcresultparserTests: XCTestCase {
         guard let converter = CoberturaCoverageConverter(
             with: xcresultFile,
             projectRoot: projectRoot,
-            excludedPaths: ["OutputFormatting/Formatters"]
+            excludedPaths: ["OutputFormatting/Formatters"],
+            strictPathnames: false
         ) else {
-            XCTFail("Unable to create CoverageConverter from \(xcresultFile)")
+            Issue.record("Unable to create CoverageConverter from \(xcresultFile)")
             return
         }
         try assertXmlTestReportsAreEqual(expectedFileName: "coberturaExcludingDirectory", actual: converter)
     }
 
+    @Test
     func testJunitXMLSonar() throws {
         JunitXML.resetCachedPathnames()
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
@@ -332,12 +375,13 @@ final class XcresultparserTests: XCTestCase {
             projectRoot: projectRoot,
             format: .sonar
         ) else {
-            XCTFail("Unable to create JunitXML from \(xcresultFile)")
+            Issue.record("Unable to create JunitXML from \(xcresultFile)")
             return
         }
         try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecution", actual: junitXML)
     }
 
+    @Test
     func testJunitXMLSonarRelativePaths() throws {
         JunitXML.resetCachedPathnames()
         let cliResult = """
@@ -364,7 +408,7 @@ final class XcresultparserTests: XCTestCase {
             format: .sonar,
             relativePathNames: true
         ) else {
-            XCTFail("Unable to create JunitXML from \(xcresultFile)")
+            Issue.record("Unable to create JunitXML from \(xcresultFile)")
             return
         }
         try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecutionWithProjectRootRelative", actual: junitXML)
@@ -373,6 +417,7 @@ final class XcresultparserTests: XCTestCase {
         DependencyFactory.createShell = savedShellFactory
     }
 
+    @Test
     func testJunitXMLSonarAbsolutePaths() throws {
         JunitXML.resetCachedPathnames()
         let cliResult = """
@@ -400,7 +445,7 @@ final class XcresultparserTests: XCTestCase {
             format: .sonar,
             relativePathNames: false
         ) else {
-            XCTFail("Unable to create JunitXML from \(xcresultFile)")
+            Issue.record("Unable to create JunitXML from \(xcresultFile)")
             return
         }
         try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecutionWithProjectRootAbsolute", actual: junitXML)
@@ -409,6 +454,7 @@ final class XcresultparserTests: XCTestCase {
         DependencyFactory.createShell = savedShellFactory
     }
 
+    @Test
     func testJunitXMLJunit() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         let projectRoot = ""
@@ -417,12 +463,13 @@ final class XcresultparserTests: XCTestCase {
             projectRoot: projectRoot,
             format: .junit
         ) else {
-            XCTFail("Unable to create JunitXML from \(xcresultFile)")
+            Issue.record("Unable to create JunitXML from \(xcresultFile)")
             return
         }
         try assertXmlTestReportsAreEqual(expectedFileName: "junit", actual: junitXML)
     }
 
+    @Test
     func testJunitXMLMergedJunit() throws {
         let xcresultFile = Bundle.module.url(forResource: "test_merged", withExtension: "xcresult")!
         let projectRoot = ""
@@ -431,12 +478,13 @@ final class XcresultparserTests: XCTestCase {
             projectRoot: projectRoot,
             format: .junit
         ) else {
-            XCTFail("Unable to create JunitXML from \(xcresultFile)")
+            Issue.record("Unable to create JunitXML from \(xcresultFile)")
             return
         }
         try assertXmlTestReportsAreEqual(expectedFileName: "junit_merged", actual: junitXML)
     }
 
+    @Test
     func testJunitXMLRepeated() throws {
         let xcresultFile = Bundle.module.url(forResource: "test_repeated", withExtension: "xcresult")!
         let projectRoot = ""
@@ -445,153 +493,159 @@ final class XcresultparserTests: XCTestCase {
             projectRoot: projectRoot,
             format: .junit
         ) else {
-            XCTFail("Unable to create JunitXML from \(xcresultFile)")
+            Issue.record("Unable to create JunitXML from \(xcresultFile)")
             return
         }
         try assertXmlTestReportsAreEqual(expectedFileName: "junit_repeated", actual: junitXML)
     }
 
+    @Test
     func testCleanCodeWarnings() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         guard let converter = IssuesJSON(with: xcresultFile) else {
-            XCTFail("Unable to create warnings json from \(xcresultFile)")
+            Issue.record("Unable to create warnings json from \(xcresultFile)")
             return
         }
         let rslt = try converter.jsonString(format: .warnings, quiet: true)
-        let result = try JSONDecoder().decode([Issue].self, from: Data(rslt.utf8))
+        let result = try JSONDecoder().decode([XcresultparserLib.Issue].self, from: Data(rslt.utf8))
 
         let expectedFile = Bundle.module.url(forResource: "warnings", withExtension: "json")!
         let expectedData = try Data(contentsOf: expectedFile)
-        let expectedObject = try JSONDecoder().decode([Issue].self, from: expectedData)
+        let expectedObject = try JSONDecoder().decode([XcresultparserLib.Issue].self, from: expectedData)
 
-        XCTAssertEqual(result.count, expectedObject.count)
-        let first = try XCTUnwrap(result.first)
-        let last = try XCTUnwrap(result.last)
-        XCTAssertNotNil(expectedObject.first(where: { $0.checkName == first.checkName && $0.location == first.location }))
-        XCTAssertNotNil(expectedObject.first(where: { $0.checkName == last.checkName && $0.location == last.location }))
+        #expect(expectedObject.count == result.count)
+        let first = try #require(result.first)
+        let last = try #require(result.last)
+        #expect(expectedObject.first(where: { $0.checkName == first.checkName && $0.location == first.location }) != nil)
+        #expect(expectedObject.first(where: { $0.checkName == last.checkName && $0.location == last.location }) != nil)
     }
 
+    @Test
     func testCleanCodeWarningsWithRelativePath() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         guard let converter = IssuesJSON(with: xcresultFile, projectRoot: "xcresultparser/") else {
-            XCTFail("Unable to create warnings json from \(xcresultFile)")
+            Issue.record("Unable to create warnings json from \(xcresultFile)")
             return
         }
         let rslt = try converter.jsonString(format: .warnings, quiet: true)
-        let result = try JSONDecoder().decode([Issue].self, from: Data(rslt.utf8))
+        let result = try JSONDecoder().decode([XcresultparserLib.Issue].self, from: Data(rslt.utf8))
             .sorted { lhs, rhs in
                 lhs.location.path > rhs.location.path
             }
-        XCTAssertEqual("Tests/XcresultparserTests/XcresultparserTests.swift", result.first?.location.path)
+        #expect(result.first?.location.path == "Tests/XcresultparserTests/XcresultparserTests.swift")
     }
 
     func testCleanCodeWarningsExcludingFiles() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         guard let converter = IssuesJSON(with: xcresultFile, excludedPaths: ["Tests/XcresultparserTests"]) else {
-            XCTFail("Unable to create warnings json from \(xcresultFile)")
+            Issue.record("Unable to create warnings json from \(xcresultFile)")
             return
         }
         let rslt = try converter.jsonString(format: .warnings, quiet: true)
-        let result = try JSONDecoder().decode([Issue].self, from: Data(rslt.utf8))
-        XCTAssertEqual(0, result.count)
+        let result = try JSONDecoder().decode([XcresultparserLib.Issue].self, from: Data(rslt.utf8))
+        #expect(result.count == 0)
     }
 
+    @Test
     func testCleanCodeNoErrors() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         guard let converter = IssuesJSON(with: xcresultFile) else {
-            XCTFail("Unable to create warnings json from \(xcresultFile)")
+            Issue.record("Unable to create warnings json from \(xcresultFile)")
             return
         }
         let rslt = try converter.jsonString(format: .errors, quiet: true)
-        XCTAssertEqual("[\n\n]", rslt)
+        #expect(rslt == "[\n\n]")
     }
 
+    @Test
     func testCleanCodeErrors() throws {
         let xcresultFile = Bundle.module.url(forResource: "resultWithCompileError", withExtension: "xcresult")!
         guard let converter = IssuesJSON(with: xcresultFile) else {
-            XCTFail("Unable to create warnings json from \(xcresultFile)")
+            Issue.record("Unable to create warnings json from \(xcresultFile)")
             return
         }
         let rslt = try converter.jsonString(format: .errors, quiet: true)
-        let result = try JSONDecoder().decode([Issue].self, from: Data(rslt.utf8))
+        let result = try JSONDecoder().decode([XcresultparserLib.Issue].self, from: Data(rslt.utf8))
             .sorted { lhs, rhs in
                 lhs.location.path > rhs.location.path
             }
-        XCTAssertEqual(2, result.count)
-        let compileError = try XCTUnwrap(result.first)
-        XCTAssertEqual("Swift Compiler Error • Cannot find 'xmlString1' in scope", compileError.description)
-        XCTAssertEqual(.blocker, compileError.severity)
-        XCTAssertTrue(compileError.location.path.contains("Sources/xcresultparser/CoberturaCoverageConverter.swift"))
-        XCTAssertEqual(.issue, compileError.type)
-        XCTAssertEqual("Swift Compiler Error • Cannot find 'xmlString1' in scope", compileError.content.body)
-        XCTAssertEqual(0, compileError.categories.count)
+        #expect(result.count == 2)
+        let compileError = try #require(result.first)
+        #expect(compileError.description == "Swift Compiler Error • Cannot find 'xmlString1' in scope")
+        #expect(compileError.severity == .blocker)
+        #expect(compileError.location.path.contains("Sources/xcresultparser/CoberturaCoverageConverter.swift"))
+        #expect(compileError.type == .issue)
+        #expect(compileError.content.body == "Swift Compiler Error • Cannot find 'xmlString1' in scope")
+        #expect(compileError.categories.count == 0)
     }
 
+    @Test
     func testOutputFormat() {
         var sut = OutputFormat(string: "txt")
-        XCTAssertEqual(OutputFormat.txt, sut)
+        #expect(sut == OutputFormat.txt)
 
         sut = OutputFormat(string: "xml")
-        XCTAssertEqual(OutputFormat.xml, sut)
+        #expect(sut == OutputFormat.xml)
 
         sut = OutputFormat(string: "html")
-        XCTAssertEqual(OutputFormat.html, sut)
+        #expect(sut == OutputFormat.html)
 
         sut = OutputFormat(string: "cli")
-        XCTAssertEqual(OutputFormat.cli, sut)
+        #expect(sut == OutputFormat.cli)
 
         sut = OutputFormat(string: "cobertura")
-        XCTAssertEqual(OutputFormat.cobertura, sut)
+        #expect(sut == OutputFormat.cobertura)
 
         sut = OutputFormat(string: "junit")
-        XCTAssertEqual(OutputFormat.junit, sut)
+        #expect(sut == OutputFormat.junit)
 
         sut = OutputFormat(string: "md")
-        XCTAssertEqual(OutputFormat.md, sut)
+        #expect(sut == OutputFormat.md)
 
         sut = OutputFormat(string: "warnings")
-        XCTAssertEqual(OutputFormat.warnings, sut)
+        #expect(sut == OutputFormat.warnings)
 
         sut = OutputFormat(string: "errors")
-        XCTAssertEqual(OutputFormat.errors, sut)
+        #expect(sut == OutputFormat.errors)
 
         sut = OutputFormat(string: "warnings-and-errors")
-        XCTAssertEqual(OutputFormat.warningsAndErrors, sut)
+        #expect(sut == OutputFormat.warningsAndErrors)
 
         sut = OutputFormat(string: "")
-        XCTAssertEqual(OutputFormat.cli, sut)
+        #expect(sut == OutputFormat.cli)
 
         sut = OutputFormat(string: "xyz")
-        XCTAssertEqual(OutputFormat.cli, sut)
+        #expect(sut == OutputFormat.cli)
     }
 
+    @Test
     func testCoverageReportFormat() {
         var sut = CoverageReportFormat(string: "methods")
-        XCTAssertEqual(CoverageReportFormat.methods, sut)
+        #expect(sut == CoverageReportFormat.methods)
 
         sut = CoverageReportFormat(string: "classes")
-        XCTAssertEqual(CoverageReportFormat.classes, sut)
+        #expect(sut == CoverageReportFormat.classes)
 
         sut = CoverageReportFormat(string: "targets")
-        XCTAssertEqual(CoverageReportFormat.targets, sut)
+        #expect(sut == CoverageReportFormat.targets)
 
         sut = CoverageReportFormat(string: "totals")
-        XCTAssertEqual(CoverageReportFormat.totals, sut)
+        #expect(sut == CoverageReportFormat.totals)
 
         sut = CoverageReportFormat(string: "not existing")
-        XCTAssertEqual(CoverageReportFormat.methods, sut)
+        #expect(sut == CoverageReportFormat.methods)
 
         sut = CoverageReportFormat(string: "")
-        XCTAssertEqual(CoverageReportFormat.methods, sut)
+        #expect(sut == CoverageReportFormat.methods)
 
         sut = CoverageReportFormat(string: "Classes")
-        XCTAssertEqual(CoverageReportFormat.classes, sut)
+        #expect(sut == CoverageReportFormat.classes)
 
         sut = CoverageReportFormat(string: "CLASSES")
-        XCTAssertEqual(CoverageReportFormat.classes, sut)
+        #expect(sut == CoverageReportFormat.classes)
 
         sut = CoverageReportFormat(string: "clASSeS")
-        XCTAssertEqual(CoverageReportFormat.classes, sut)
+        #expect(sut == CoverageReportFormat.classes)
     }
 
     // MARK: helper functions
@@ -607,7 +661,7 @@ final class XcresultparserTests: XCTestCase {
         let actualXMLDocument = try XMLDocument(data: Data("\(actual.xmlString)\n".utf8), options: [])
         let expectedXMLDocument = try XMLDocument(contentsOf: expectedResultFile, options: [])
 
-        XCTAssertEqual(actualXMLDocument.xmlString, expectedXMLDocument.xmlString, file: file, line: line)
+        #expect(expectedXMLDocument.xmlString == actualXMLDocument.xmlString)
     }
 }
 

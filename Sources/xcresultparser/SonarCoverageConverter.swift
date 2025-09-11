@@ -26,6 +26,11 @@ public class SonarCoverageConverter: CoverageConverter, XmlSerializable {
             guard !isPathExcluded(file) else {
                 continue
             }
+            let relativePath = file.relativePath(relativeTo: projectRoot)
+            if strictPathnames,
+               relativePath == nil {
+                continue
+            }
             let coverage = try fileCoverageXML(for: file, coverageData: lineData, relativeTo: projectRoot)
             coverageXML.addChild(coverage)
         }
@@ -39,7 +44,7 @@ public class SonarCoverageConverter: CoverageConverter, XmlSerializable {
         relativeTo projectRoot: String
     ) throws -> XMLElement {
         let fileElement = XMLElement(name: "file")
-        fileElement.addAttribute(name: "path", stringValue: file.relativePath(relativeTo: projectRoot))
+        fileElement.addAttribute(name: "path", stringValue: file.relativePath(relativeTo: projectRoot) ?? file)
         for lineData in coverageData where lineData.isExecutable {
             let line = XMLElement(name: "lineToCover")
             line.addAttribute(name: "lineNumber", stringValue: String(lineData.line))

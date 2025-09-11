@@ -13,14 +13,14 @@ extension String {
         return String(self[idx1 ..< idx2])
     }
 
-    func relativePath(relativeTo projectRoot: String) -> String {
+    func relativePath(relativeTo projectRoot: String) -> String? {
         guard !projectRoot.isEmpty else {
-            return self
+            return nil
         }
         let projectRootTrimmed = projectRoot.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         let parts = components(separatedBy: "/\(projectRootTrimmed)")
         guard parts.count > 1 else {
-            return self
+            return nil
         }
         let relative = parts[parts.count - 1]
         return relative.starts(with: "/") ?
