@@ -9,7 +9,7 @@ import ArgumentParser
 import Foundation
 import XcresultparserLib
 
-private let marketingVersion = "1.8.5"
+private let marketingVersion = "1.9.0"
 
 struct xcresultparser: ParsableCommand {
     static let configuration = CommandConfiguration(
@@ -37,7 +37,7 @@ struct xcresultparser: ParsableCommand {
     @Flag(name: .shortAndLong, help: "Whether to print coverage data.")
     var coverage: Int
 
-    @Flag(name: .shortAndLong, help: "Omit elements with file pathes, which do not contain 'projectRoot'.")
+    @Flag(name: [.customShort("x"), .customLong("exclude-coverage-not-in-project")], help: "Omit elements with file pathes, which do not contain 'projectRoot'.")
     var strictPathnames: Int
 
     @Flag(name: .shortAndLong, help: "Whether to print test results.")
