@@ -411,7 +411,7 @@ private extension ActionTestSummaryGroup {
             "--include", "*.swift",
             "--include", "*.m",
             "--include", "*.mm",
-            "^(?:public )?(?:final )?(?:public )?(?:(class|\\@implementation) )[a-zA-Z0-9_]+",
+            "^(?:public )?(?:final )?(?:public )?(?:(class|\\@implementation|struct) )[a-zA-Z0-9_]+",
             grepPathArgument
         ]
         guard let filelistData = try? DependencyFactory.createShell().execute(program: program, with: arguments, at: projectRootUrl) else {
@@ -431,7 +431,13 @@ private extension ActionTestSummaryGroup {
                .components(separatedBy: .whitespaces)
                .last,
                !className.isEmpty {
-                Self.cachedPathnames[className] = path.withoutLocalPrefix
+                if let existingPath = Self.cachedPathnames[className] {
+                    if existingPath.components(separatedBy: "est").count <= path.withoutLocalPrefix.components(separatedBy: "est").count {
+                        Self.cachedPathnames[className] = path.withoutLocalPrefix
+                    }
+                } else {
+                    Self.cachedPathnames[className] = path.withoutLocalPrefix
+                }
             }
         }
     }
