@@ -404,13 +404,14 @@ private extension ActionTestSummaryGroup {
     }
 
     private func cacheAllClassNames(in projectRootUrl: URL, relativePathNames: Bool = true) {
-        let program = "/usr/bin/egrep"
+        let program = "/usr/bin/grep"
         let grepPathArgument = relativePathNames ? "." : projectRootUrl.path
         let arguments = [
+            "-E",
             "-rio",
-            "--include", "*.swift",
-            "--include", "*.m",
-            "--include", "*.mm",
+            "--include", "'*.swift'",
+            "--include", "'*.m'",
+            "--include", "'*.mm'",
             "^(?:public )?(?:final )?(?:public )?(?:(class|\\@implementation|struct) )[a-zA-Z0-9_]+",
             grepPathArgument
         ]
