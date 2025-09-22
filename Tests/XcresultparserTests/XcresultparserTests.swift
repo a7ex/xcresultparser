@@ -661,7 +661,12 @@ struct XcresultparserTests {
         let actualXMLDocument = try XMLDocument(data: Data("\(actual.xmlString)\n".utf8), options: [])
         let expectedXMLDocument = try XMLDocument(contentsOf: expectedResultFile, options: [])
 
-        #expect(expectedXMLDocument.xmlString == actualXMLDocument.xmlString)
+        // Use consistent formatting options for comparison
+        let formatOptions: XMLDocument.Options = [.nodePrettyPrint, .nodeCompactEmptyElement]
+        let expectedXMLString = expectedXMLDocument.xmlString(options: formatOptions)
+        let actualXMLString = actualXMLDocument.xmlString(options: formatOptions)
+
+        #expect(expectedXMLString == actualXMLString)
     }
 }
 
