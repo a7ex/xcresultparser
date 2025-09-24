@@ -165,7 +165,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
     private func makeRootElement() -> XMLElement {
         // TODO: some of these values are B.S. - figure out how to calculate, or better to omit if we don't know?
         let testAction = invocationRecord.actions.first { $0.schemeCommandName == "Test" }
-        let timeStamp = (testAction?.startedTime.timeIntervalSince1970) ?? 1672825221.218
+        let timeStamp = (testAction?.startedTime.timeIntervalSince1970) ?? Date().timeIntervalSince1970
         let rootElement = XMLElement(name: "coverage")
         rootElement.addAttribute(
             XMLNode.nodeAttribute(withName: "line-rate", stringValue: "\(codeCoverage.lineCoverage)")
