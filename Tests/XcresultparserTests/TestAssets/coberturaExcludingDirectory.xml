@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" standalone="yes"?>
 <!DOCTYPE coverage SYSTEM "https://github.com/cobertura/cobertura/blob/master/cobertura/src/site/htdocs/xml/coverage-04.dtd" [
     <!ELEMENT coverage (sources?, packages)>
     <!ATTLIST coverage line-rate CDATA #REQUIRED>
@@ -50,10 +50,9 @@
         <source>.</source>
     </sources>
     <packages>
-        <package name="Users.fhaeser.code.xcresultparser.Tests.XcresultparserTests" line-rate="1.0" branch-rate="1.0" complexity="0.0">
+        <package name="Users.fhaeser.code.xcresultparser.Tests.XcresultparserTests" line-rate="0.918239" branch-rate="1.0" complexity="0.0">
             <classes>
-                <class name="Users.fhaeser.code.xcresultparser.Tests.XcresultparserTests./Users/fhaeser/code/xcresultparser/Tests/XcresultparserTests/XcresultparserTests" filename="/Users/fhaeser/code/xcresultparser/Tests/XcresultparserTests/XcresultparserTests.swift" line-rate="0.918239" branch-rate="1.0" complexity="0.0">
-                    <lines>
+                <class name="Users.fhaeser.code.xcresultparser.Tests.XcresultparserTests./Users/fhaeser/code/xcresultparser/Tests/XcresultparserTests/XcresultparserTests" filename="/Users/fhaeser/code/xcresultparser/Tests/XcresultparserTests/XcresultparserTests.swift" line-rate="0.918239" branch-rate="1.0" complexity="0.0"><methods/><lines>
                         <line number="5" branch="false" hits="1"/>
                         <line number="6" branch="false" hits="1"/>
                         <line number="7" branch="false" hits="1"/>
@@ -217,10 +216,9 @@
                 </class>
             </classes>
         </package>
-        <package name="Users.fhaeser.code.xcresultparser.Sources.xcresultparser" line-rate="1.0" branch-rate="1.0" complexity="0.0">
+        <package name="Users.fhaeser.code.xcresultparser.Sources.xcresultparser" line-rate="0.41025642" branch-rate="1.0" complexity="0.0">
             <classes>
-                <class name="Users.fhaeser.code.xcresultparser.Sources.xcresultparser./Users/fhaeser/code/xcresultparser/Sources/xcresultparser/XCResultFormatter" filename="/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/XCResultFormatter.swift" line-rate="0.4760479" branch-rate="1.0" complexity="0.0">
-                    <lines>
+                <class name="Users.fhaeser.code.xcresultparser.Sources.xcresultparser./Users/fhaeser/code/xcresultparser/Sources/xcresultparser/XCResultFormatter" filename="/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/XCResultFormatter.swift" line-rate="0.4760479" branch-rate="1.0" complexity="0.0"><methods/><lines>
                         <line number="18" branch="false" hits="3"/>
                         <line number="19" branch="false" hits="3"/>
                         <line number="20" branch="false" hits="3"/>
@@ -557,8 +555,7 @@
                         <line number="400" branch="false" hits="3"/>
                     </lines>
                 </class>
-                <class name="Users.fhaeser.code.xcresultparser.Sources.xcresultparser./Users/fhaeser/code/xcresultparser/Sources/xcresultparser/SonarCoverageConverter" filename="/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/SonarCoverageConverter.swift" line-rate="0.0" branch-rate="1.0" complexity="0.0">
-                    <lines>
+                <class name="Users.fhaeser.code.xcresultparser.Sources.xcresultparser./Users/fhaeser/code/xcresultparser/Sources/xcresultparser/SonarCoverageConverter" filename="/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/SonarCoverageConverter.swift" line-rate="0.0" branch-rate="1.0" complexity="0.0"><methods/><lines>
                         <line number="12" branch="false" hits="0"/>
                         <line number="13" branch="false" hits="0"/>
                         <line number="14" branch="false" hits="0"/>
@@ -614,8 +611,7 @@
                         <line number="65" branch="false" hits="0"/>
                     </lines>
                 </class>
-                <class name="Users.fhaeser.code.xcresultparser.Sources.xcresultparser./Users/fhaeser/code/xcresultparser/Sources/xcresultparser/Shell" filename="/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/Shell.swift" line-rate="0.0" branch-rate="1.0" complexity="0.0">
-                    <lines>
+                <class name="Users.fhaeser.code.xcresultparser.Sources.xcresultparser./Users/fhaeser/code/xcresultparser/Sources/xcresultparser/Shell" filename="/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/Shell.swift" line-rate="0.0" branch-rate="1.0" complexity="0.0"><methods/><lines>
                         <line number="15" branch="false" hits="0"/>
                         <line number="16" branch="false" hits="0"/>
                         <line number="17" branch="false" hits="0"/>
@@ -647,8 +643,7 @@
         </package>
         <package name="Users.fhaeser.code.xcresultparser.Sources.xcresultparser.OutputFormatting" line-rate="1.0" branch-rate="1.0" complexity="0.0">
             <classes>
-                <class name="Users.fhaeser.code.xcresultparser.Sources.xcresultparser.OutputFormatting./Users/fhaeser/code/xcresultparser/Sources/xcresultparser/OutputFormatting/OutputFormat" filename="/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/OutputFormatting/OutputFormat.swift" line-rate="1.0" branch-rate="1.0" complexity="0.0">
-                    <lines>
+                <class name="Users.fhaeser.code.xcresultparser.Sources.xcresultparser.OutputFormatting./Users/fhaeser/code/xcresultparser/Sources/xcresultparser/OutputFormatting/OutputFormat" filename="/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/OutputFormatting/OutputFormat.swift" line-rate="1.0" branch-rate="1.0" complexity="0.0"><methods/><lines>
                         <line number="13" branch="false" hits="6"/>
                         <line number="14" branch="false" hits="6"/>
                         <line number="15" branch="false" hits="6"/>
@@ -661,10 +656,9 @@
                 </class>
             </classes>
         </package>
-        <package name="Users.fhaeser.code.xcresultparser.Sources.xcresultparser" line-rate="1.0" branch-rate="1.0" complexity="0.0">
+        <package name="Users.fhaeser.code.xcresultparser.Sources.xcresultparser" line-rate="0.41025642" branch-rate="1.0" complexity="0.0">
             <classes>
-                <class name="Users.fhaeser.code.xcresultparser.Sources.xcresultparser./Users/fhaeser/code/xcresultparser/Sources/xcresultparser/JunitXML" filename="/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/JunitXML.swift" line-rate="0.7527675" branch-rate="1.0" complexity="0.0">
-                    <lines>
+                <class name="Users.fhaeser.code.xcresultparser.Sources.xcresultparser./Users/fhaeser/code/xcresultparser/Sources/xcresultparser/JunitXML" filename="/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/JunitXML.swift" line-rate="0.7527675" branch-rate="1.0" complexity="0.0"><methods/><lines>
                         <line number="35" branch="false" hits="0"/>
                         <line number="36" branch="false" hits="0"/>
                         <line number="37" branch="false" hits="0"/>
@@ -938,8 +932,7 @@
                         <line number="361" branch="false" hits="4"/>
                     </lines>
                 </class>
-                <class name="Users.fhaeser.code.xcresultparser.Sources.xcresultparser./Users/fhaeser/code/xcresultparser/Sources/xcresultparser/CoverageConverter" filename="/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/CoverageConverter.swift" line-rate="0.078125" branch-rate="1.0" complexity="0.0">
-                    <lines>
+                <class name="Users.fhaeser.code.xcresultparser.Sources.xcresultparser./Users/fhaeser/code/xcresultparser/Sources/xcresultparser/CoverageConverter" filename="/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/CoverageConverter.swift" line-rate="0.078125" branch-rate="1.0" complexity="0.0"><methods/><lines>
                         <line number="29" branch="false" hits="1"/>
                         <line number="30" branch="false" hits="1"/>
                         <line number="31" branch="false" hits="1"/>
@@ -1006,8 +999,7 @@
                         <line number="102" branch="false" hits="0"/>
                     </lines>
                 </class>
-                <class name="Users.fhaeser.code.xcresultparser.Sources.xcresultparser./Users/fhaeser/code/xcresultparser/Sources/xcresultparser/CoberturaCoverageConverter" filename="/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/CoberturaCoverageConverter.swift" line-rate="0.0" branch-rate="1.0" complexity="0.0">
-                    <lines>
+                <class name="Users.fhaeser.code.xcresultparser.Sources.xcresultparser./Users/fhaeser/code/xcresultparser/Sources/xcresultparser/CoberturaCoverageConverter" filename="/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/CoberturaCoverageConverter.swift" line-rate="0.0" branch-rate="1.0" complexity="0.0"><methods/><lines>
                         <line number="35" branch="false" hits="0"/>
                         <line number="36" branch="false" hits="0"/>
                         <line number="37" branch="false" hits="0"/>

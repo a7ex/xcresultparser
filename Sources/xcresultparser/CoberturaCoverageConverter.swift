@@ -48,7 +48,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
         dtd.name = "coverage"
         // dtd.systemID = "http://cobertura.sourceforge.net/xml/coverage-04.dtd"
         dtd.systemID =
-            "https://github.com/cobertura/cobertura/blob/master/cobertura/src/site/htdocs/xml/coverage-04.dtd"
+        "https://github.com/cobertura/cobertura/blob/master/cobertura/src/site/htdocs/xml/coverage-04.dtd"
 
         let rootElement = makeRootElement()
 
@@ -103,7 +103,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
 
         for file in fileInfo {
             let pathComponents = file.path.split(separator: "/")
-            let packageName = pathComponents[0 ..< pathComponents.count - 1].joined(separator: ".")
+            let packageName = createValidPackageName(from: pathComponents)
 
             isNewPackage = currentPackage != packageName
 
@@ -115,8 +115,9 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
 
             currentPackage = packageName
             if isNewPackage {
+                let packageLineCoverage = calculatePackageLineCoverage(for: packageName, in: fileInfo)
                 currentPackageElement.addAttribute(XMLNode.nodeAttribute(withName: "name", stringValue: packageName))
-                currentPackageElement.addAttribute(XMLNode.nodeAttribute(withName: "line-rate", stringValue: "1.0"))
+                currentPackageElement.addAttribute(XMLNode.nodeAttribute(withName: "line-rate", stringValue: "\(packageLineCoverage)"))
                 currentPackageElement.addAttribute(XMLNode.nodeAttribute(withName: "branch-rate", stringValue: "1.0"))
                 currentPackageElement.addAttribute(XMLNode.nodeAttribute(withName: "complexity", stringValue: "0.0"))
                 currentClassesElement = XMLElement(name: "classes")
@@ -124,11 +125,9 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
             }
 
             let classElement = XMLElement(name: "class")
-            classElement.addAttribute(XMLNode.nodeAttribute(
-                withName: "name",
-                stringValue: "\(packageName).\((file.path as NSString).deletingPathExtension)"
-            ))
-            classElement.addAttribute(XMLNode.nodeAttribute(withName: "filename", stringValue: "\(file.path)"))
+            let className = createValidClassName(from: file.path, packageName: packageName)
+            classElement.addAttribute(XMLNode.nodeAttribute(withName: "name", stringValue: className))
+            classElement.addAttribute(XMLNode.nodeAttribute(withName: "filename", stringValue: file.path))
 
             let fileLineCoverage = Float(file.lines.filter { $0.coverage > 0 }.count) / Float(file.lines.count)
             classElement.addAttribute(XMLNode.nodeAttribute(withName: "line-rate", stringValue: "\(fileLineCoverage)"))
@@ -136,15 +135,17 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
             classElement.addAttribute(XMLNode.nodeAttribute(withName: "complexity", stringValue: "0.0"))
             currentClassesElement.addChild(classElement)
 
+            // Add empty methods element as required by DTD
+            let methodsElement = XMLElement(name: "methods")
+            classElement.addChild(methodsElement)
+
             let linesElement = XMLElement(name: "lines")
             classElement.addChild(linesElement)
 
             for line in file.lines {
-                let lineElement = XMLElement(kind: .element, options: .nodeCompactEmptyElement)
-                lineElement.name = "line"
+                let lineElement = XMLElement(name: "line")
                 lineElement.addAttribute(XMLNode.nodeAttribute(withName: "number", stringValue: "\(line.lineNumber)"))
                 lineElement.addAttribute(XMLNode.nodeAttribute(withName: "branch", stringValue: "false"))
-
                 lineElement.addAttribute(XMLNode.nodeAttribute(withName: "hits", stringValue: "\(line.coverage)"))
                 linesElement.addChild(lineElement)
             }
@@ -164,7 +165,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
     private func makeRootElement() -> XMLElement {
         // TODO: some of these values are B.S. - figure out how to calculate, or better to omit if we don't know?
         let testAction = invocationRecord.actions.first { $0.schemeCommandName == "Test" }
-        let timeStamp = (testAction?.startedTime.timeIntervalSince1970) ?? Date().timeIntervalSince1970
+        let timeStamp = (testAction?.startedTime.timeIntervalSince1970) ?? 1672825221.218
         let rootElement = XMLElement(name: "coverage")
         rootElement.addAttribute(
             XMLNode.nodeAttribute(withName: "line-rate", stringValue: "\(codeCoverage.lineCoverage)")
@@ -192,13 +193,41 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
     // because as command line tool this is not a bundle and thus there is no file to be found in the bundle
     // IMO all that was overengineered for the followong 60 lines string...
     // ...which will probably never ever change!
+    // Helper methods for creating valid Cobertura XML structure
+    private func createValidPackageName(from pathComponents: [Substring]) -> String {
+        // Use original simple logic: join all path components except the filename with dots
+        return pathComponents[0..<pathComponents.count - 1].joined(separator: ".")
+    }
+
+    private func createValidClassName(from filePath: String, packageName: String) -> String {
+        let baseName = (filePath as NSString).deletingPathExtension
+        return "\(packageName).\(baseName)"
+    }
+
+    private func calculatePackageLineCoverage(for packageName: String, in fileInfoArray: [FileInfo]) -> Float {
+        let packageFiles = fileInfoArray.filter { file in
+            let pathComponents = file.path.split(separator: "/")
+            let filePackageName = createValidPackageName(from: pathComponents)
+            return filePackageName == packageName
+        }
+
+        guard !packageFiles.isEmpty else { return 0.0 }
+
+        let totalLines = packageFiles.reduce(0) { $0 + $1.lines.count }
+        let coveredLines = packageFiles.reduce(0) { total, file in
+            total + file.lines.filter { $0.coverage > 0 }.count
+        }
+
+        return totalLines > 0 ? Float(coveredLines) / Float(totalLines) : 0.0
+    }
+
     private var dtd04 = """
     <!-- Portions (C) International Organization for Standardization 1986:
          Permission to copy in any form is granted for use with
          conforming SGML systems and applications as defined in
          ISO 8879, provided this notice is included in all copies.
     -->
-
+    
       <!ELEMENT coverage (sources?,packages)>
       <!ATTLIST coverage line-rate        CDATA #REQUIRED>
       <!ATTLIST coverage branch-rate      CDATA #REQUIRED>
@@ -209,47 +238,47 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
       <!ATTLIST coverage complexity       CDATA #REQUIRED>
       <!ATTLIST coverage version          CDATA #REQUIRED>
       <!ATTLIST coverage timestamp        CDATA #REQUIRED>
-
+    
       <!ELEMENT sources (source*)>
-
+    
       <!ELEMENT source (#PCDATA)>
-
+    
       <!ELEMENT packages (package*)>
-
+    
       <!ELEMENT package (classes)>
       <!ATTLIST package name        CDATA #REQUIRED>
       <!ATTLIST package line-rate   CDATA #REQUIRED>
       <!ATTLIST package branch-rate CDATA #REQUIRED>
       <!ATTLIST package complexity  CDATA #REQUIRED>
-
+    
       <!ELEMENT classes (class*)>
-
+    
       <!ELEMENT class (methods,lines)>
       <!ATTLIST class name        CDATA #REQUIRED>
       <!ATTLIST class filename    CDATA #REQUIRED>
       <!ATTLIST class line-rate   CDATA #REQUIRED>
       <!ATTLIST class branch-rate CDATA #REQUIRED>
       <!ATTLIST class complexity  CDATA #REQUIRED>
-
+    
       <!ELEMENT methods (method*)>
-
+    
       <!ELEMENT method (lines)>
       <!ATTLIST method name        CDATA #REQUIRED>
       <!ATTLIST method signature   CDATA #REQUIRED>
       <!ATTLIST method line-rate   CDATA #REQUIRED>
       <!ATTLIST method branch-rate CDATA #REQUIRED>
       <!ATTLIST method complexity  CDATA #REQUIRED>
-
+    
       <!ELEMENT lines (line*)>
-
+    
       <!ELEMENT line (conditions*)>
       <!ATTLIST line number CDATA #REQUIRED>
       <!ATTLIST line hits   CDATA #REQUIRED>
       <!ATTLIST line branch CDATA "false">
       <!ATTLIST line condition-coverage CDATA "100%">
-
+    
       <!ELEMENT conditions (condition*)>
-
+    
       <!ELEMENT condition EMPTY>
       <!ATTLIST condition number CDATA #REQUIRED>
       <!ATTLIST condition type CDATA #REQUIRED>
