@@ -59,7 +59,9 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
 
         let sourceElement = XMLElement(name: "sources")
         rootElement.addChild(sourceElement)
-        sourceElement.addChild(XMLElement(name: "source", stringValue: projectRoot.isEmpty ? "." : projectRoot))
+        // Use sourcesRoot if provided, otherwise fallback to coverageBasePath or projectRoot
+        let sourceValue = sourcesRoot ?? coverageBasePath ?? (projectRoot.isEmpty ? "." : projectRoot)
+        sourceElement.addChild(XMLElement(name: "source", stringValue: sourceValue))
 
         let packagesElement = XMLElement(name: "packages")
         rootElement.addChild(packagesElement)
@@ -72,7 +74,9 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
             guard !isPathExcluded(fileName) else {
                 continue
             }
-            let relativePath = fileName.relativePath(relativeTo: projectRoot)
+            // Use coverageBasePath for path normalization if provided, otherwise use projectRoot
+            let basePath = coverageBasePath ?? projectRoot
+            let relativePath = fileName.relativePath(relativeTo: basePath)
             if strictPathnames,
                relativePath == nil {
                 continue
@@ -117,9 +121,9 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
             if isNewPackage {
                 let packageLineCoverage = calculatePackageLineCoverage(for: packageName, in: fileInfo)
                 currentPackageElement.addAttribute(XMLNode.nodeAttribute(withName: "name", stringValue: packageName))
-                currentPackageElement.addAttribute(XMLNode.nodeAttribute(withName: "line-rate", stringValue: "\(packageLineCoverage)"))
-                currentPackageElement.addAttribute(XMLNode.nodeAttribute(withName: "branch-rate", stringValue: "1.0"))
-                currentPackageElement.addAttribute(XMLNode.nodeAttribute(withName: "complexity", stringValue: "0.0"))
+                currentPackageElement.addAttribute(XMLNode.nodeAttribute(withName: "line-rate", stringValue: String(format: "%.6f", packageLineCoverage)))
+                currentPackageElement.addAttribute(XMLNode.nodeAttribute(withName: "branch-rate", stringValue: "0.000000"))
+                currentPackageElement.addAttribute(XMLNode.nodeAttribute(withName: "complexity", stringValue: "0"))
                 currentClassesElement = XMLElement(name: "classes")
                 currentPackageElement.addChild(currentClassesElement)
             }
@@ -130,9 +134,9 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
             classElement.addAttribute(XMLNode.nodeAttribute(withName: "filename", stringValue: file.path))
 
             let fileLineCoverage = Float(file.lines.filter { $0.coverage > 0 }.count) / Float(file.lines.count)
-            classElement.addAttribute(XMLNode.nodeAttribute(withName: "line-rate", stringValue: "\(fileLineCoverage)"))
-            classElement.addAttribute(XMLNode.nodeAttribute(withName: "branch-rate", stringValue: "1.0"))
-            classElement.addAttribute(XMLNode.nodeAttribute(withName: "complexity", stringValue: "0.0"))
+            classElement.addAttribute(XMLNode.nodeAttribute(withName: "line-rate", stringValue: String(format: "%.6f", fileLineCoverage)))
+            classElement.addAttribute(XMLNode.nodeAttribute(withName: "branch-rate", stringValue: "0.000000"))
+            classElement.addAttribute(XMLNode.nodeAttribute(withName: "complexity", stringValue: "0"))
             currentClassesElement.addChild(classElement)
 
             // Add empty methods element as required by DTD
@@ -163,25 +167,34 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
     }
 
     private func makeRootElement() -> XMLElement {
-        // TODO: some of these values are B.S. - figure out how to calculate, or better to omit if we don't know?
         let testAction = invocationRecord.actions.first { $0.schemeCommandName == "Test" }
         let timeStamp = (testAction?.startedTime.timeIntervalSince1970) ?? Date().timeIntervalSince1970
         let rootElement = XMLElement(name: "coverage")
+        
+        // DTD-compliant attributes with proper data types
+        let lineRate = String(format: "%.6f", codeCoverage.lineCoverage)
+        let branchRate = "0.000000"  // We don't track branch coverage, so 0
+        let linesValidInt = Int(codeCoverage.executableLines)
+        let linesCoveredInt = Int(codeCoverage.coveredLines)
+        let timestampInt = Int(timeStamp)  // Convert to integer epoch seconds
+        let branchesValidInt = 0  // We don't track branch coverage
+        let branchesCoveredInt = 0  // We don't track branch coverage
+        
         rootElement.addAttribute(
-            XMLNode.nodeAttribute(withName: "line-rate", stringValue: "\(codeCoverage.lineCoverage)")
+            XMLNode.nodeAttribute(withName: "line-rate", stringValue: lineRate)
         )
-        rootElement.addAttribute(XMLNode.nodeAttribute(withName: "branch-rate", stringValue: "1.0"))
+        rootElement.addAttribute(XMLNode.nodeAttribute(withName: "branch-rate", stringValue: branchRate))
         rootElement.addAttribute(
-            XMLNode.nodeAttribute(withName: "lines-covered", stringValue: "\(codeCoverage.coveredLines)")
+            XMLNode.nodeAttribute(withName: "lines-covered", stringValue: "\(linesCoveredInt)")
         )
         rootElement.addAttribute(
-            XMLNode.nodeAttribute(withName: "lines-valid", stringValue: "\(codeCoverage.executableLines)")
+            XMLNode.nodeAttribute(withName: "lines-valid", stringValue: "\(linesValidInt)")
         )
-        rootElement.addAttribute(XMLNode.nodeAttribute(withName: "timestamp", stringValue: "\(timeStamp)"))
-        rootElement.addAttribute(XMLNode.nodeAttribute(withName: "version", stringValue: "diff_coverage 0.1"))
-        rootElement.addAttribute(XMLNode.nodeAttribute(withName: "complexity", stringValue: "0.0"))
-        rootElement.addAttribute(XMLNode.nodeAttribute(withName: "branches-valid", stringValue: "1.0"))
-        rootElement.addAttribute(XMLNode.nodeAttribute(withName: "branches-covered", stringValue: "1.0"))
+        rootElement.addAttribute(XMLNode.nodeAttribute(withName: "timestamp", stringValue: "\(timestampInt)"))
+        rootElement.addAttribute(XMLNode.nodeAttribute(withName: "version", stringValue: "xcresultparser 1.9.3"))
+        rootElement.addAttribute(XMLNode.nodeAttribute(withName: "complexity", stringValue: "0"))
+        rootElement.addAttribute(XMLNode.nodeAttribute(withName: "branches-valid", stringValue: "\(branchesValidInt)"))
+        rootElement.addAttribute(XMLNode.nodeAttribute(withName: "branches-covered", stringValue: "\(branchesCoveredInt)"))
 
         return rootElement
     }

@@ -364,6 +364,132 @@ struct XcresultparserTests {
         }
         try assertXmlTestReportsAreEqual(expectedFileName: "coberturaExcludingDirectory", actual: converter)
     }
+    
+    @Test
+    func testCoberturaDTDCompliance() throws {
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
+        let projectRoot = ""
+
+        guard let converter = CoberturaCoverageConverter(
+            with: xcresultFile,
+            projectRoot: projectRoot,
+            strictPathnames: false
+        ) else {
+            Issue.record("Unable to create CoverageConverter from \(xcresultFile)")
+            return
+        }
+        
+        let xmlString = try converter.xmlString(quiet: true)
+        let xmlDocument = try XMLDocument(data: Data(xmlString.utf8), options: [])
+        
+        // Test root coverage element exists
+        guard let rootElement = xmlDocument.rootElement(), rootElement.name == "coverage" else {
+            Issue.record("Root element should be 'coverage'")
+            return
+        }
+        
+        // Test DTD compliance: integer attributes
+        let linesCovered = rootElement.attribute(forName: "lines-covered")?.stringValue ?? ""
+        let linesValid = rootElement.attribute(forName: "lines-valid")?.stringValue ?? ""
+        let branchesCovered = rootElement.attribute(forName: "branches-covered")?.stringValue ?? ""
+        let branchesValid = rootElement.attribute(forName: "branches-valid")?.stringValue ?? ""
+        
+        // Verify these are integers, not floats like "1.0"
+        #expect(Int(linesCovered) != nil, "lines-covered should be integer, got: \(linesCovered)")
+        #expect(Int(linesValid) != nil, "lines-valid should be integer, got: \(linesValid)")
+        #expect(Int(branchesCovered) != nil, "branches-covered should be integer, got: \(branchesCovered)")
+        #expect(Int(branchesValid) != nil, "branches-valid should be integer, got: \(branchesValid)")
+        
+        // Test DTD compliance: decimal rates with reasonable precision
+        let lineRate = rootElement.attribute(forName: "line-rate")?.stringValue ?? ""
+        let branchRate = rootElement.attribute(forName: "branch-rate")?.stringValue ?? ""
+        
+        #expect(Double(lineRate) != nil, "line-rate should be decimal, got: \(lineRate)")
+        #expect(Double(branchRate) != nil, "branch-rate should be decimal, got: \(branchRate)")
+        
+        // Verify precision is reasonable (not excessive)
+        let linePrecision = lineRate.split(separator: ".").last?.count ?? 0
+        let branchPrecision = branchRate.split(separator: ".").last?.count ?? 0
+        #expect(linePrecision <= 6, "line-rate precision should be <= 6 digits, got: \(linePrecision)")
+        #expect(branchPrecision <= 6, "branch-rate precision should be <= 6 digits, got: \(branchPrecision)")
+        
+        // Test version is sensible (not "diff_coverage 0.1")
+        let version = rootElement.attribute(forName: "version")?.stringValue ?? ""
+        #expect(!version.contains("diff_coverage"), "version should not contain 'diff_coverage', got: \(version)")
+        #expect(version.contains("xcresultparser"), "version should contain 'xcresultparser', got: \(version)")
+        
+        // Test timestamp is integer epoch seconds (not float like 1672825221.218)
+        let timestamp = rootElement.attribute(forName: "timestamp")?.stringValue ?? ""
+        #expect(Int(timestamp) != nil, "timestamp should be integer epoch seconds, got: \(timestamp)")
+        #expect(!timestamp.contains("."), "timestamp should not have decimal point, got: \(timestamp)")
+        
+        // Verify branch values are 0 (since we don't track branches)
+        #expect(branchesCovered == "0", "branches-covered should be 0, got: \(branchesCovered)")
+        #expect(branchesValid == "0", "branches-valid should be 0, got: \(branchesValid)")
+        #expect(branchRate == "0.000000", "branch-rate should be 0.000000, got: \(branchRate)")
+    }
+    
+    @Test
+    func testCoberturaPathNormalizationWithCoverageBasePath() throws {
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
+        let projectRoot = ""
+        let coverageBasePath = "/Users/test/workspace"
+        let sourcesRoot = "."
+
+        guard let converter = CoberturaCoverageConverter(
+            with: xcresultFile,
+            projectRoot: projectRoot,
+            strictPathnames: false,
+            coverageBasePath: coverageBasePath,
+            sourcesRoot: sourcesRoot
+        ) else {
+            Issue.record("Unable to create CoverageConverter with new parameters")
+            return
+        }
+        
+        let xmlString = try converter.xmlString(quiet: true)
+        let xmlDocument = try XMLDocument(data: Data(xmlString.utf8), options: [])
+        
+        // Test sources root is used
+        guard let rootElement = xmlDocument.rootElement(),
+              let sourcesElement = rootElement.elements(forName: "sources").first,
+              let sourceElement = sourcesElement.elements(forName: "source").first,
+              let sourceValue = sourceElement.stringValue else {
+            Issue.record("Could not find sources/source element")
+            return
+        }
+        
+        #expect(sourceValue == sourcesRoot, "source value should match sourcesRoot, got: \(sourceValue)")
+    }
+    
+    @Test
+    func testCoberturaXMLWellFormedness() throws {
+        let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
+        let projectRoot = ""
+
+        guard let converter = CoberturaCoverageConverter(
+            with: xcresultFile,
+            projectRoot: projectRoot,
+            strictPathnames: false
+        ) else {
+            Issue.record("Unable to create CoverageConverter from \(xcresultFile)")
+            return
+        }
+        
+        let xmlString = try converter.xmlString(quiet: true)
+        
+        // Test that XML is well-formed
+        _ = try XMLDocument(data: Data(xmlString.utf8), options: [])
+        
+        // Test that DOCTYPE is present and correct
+        #expect(xmlString.contains("<!DOCTYPE coverage SYSTEM"), "XML should contain DOCTYPE declaration")
+        #expect(xmlString.contains("coverage-04.dtd"), "XML should reference coverage-04.dtd")
+        
+        // Test basic structure is present
+        #expect(xmlString.contains("<coverage"), "XML should contain coverage element")
+        #expect(xmlString.contains("<sources>"), "XML should contain sources element")
+        #expect(xmlString.contains("<packages>"), "XML should contain packages element")
+    }
 
     @Test
     func testJunitXMLSonar() throws {
