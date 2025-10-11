@@ -47,7 +47,6 @@ Furthermore it can extract testdata from the xcresult bundle in junit format, al
 ## How to get it
 ### Using homebrew
 ```
-brew tap a7ex/homebrew-formulae
 brew install xcresultparser
 ```
 ### Download binary
@@ -69,7 +68,6 @@ Or build the tool yourself:
 ## How to install it
 ### Using homebrew
 ```
-brew tap a7ex/homebrew-formulae
 brew install xcresultparser
 ```
 ### Downloaded binary
