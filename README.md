@@ -22,7 +22,9 @@ This tool can read test result data and code coverage data from an .xcarchive us
 
 Parsing the JSON is done using the great [XCResultKit](https://github.com/davidahouse/XCResultKit) package.
 
-## Converting code coverage data
+<details>
+  <summary>More on converting code coverage data</summary>
+  
 ~~Unfortunately converting to the coverage xml format suited for e.g. sonarqube is a tedious task.
 It requires us to invoke the xccov binary for each single file in the project.~~
 
@@ -42,12 +44,11 @@ It my still be useful for you, if you want to just display the contents of the x
 It can also be used for cobertura, thanks to the collaboration of Thibault Wittemberg and maxwell-legrand.
 
 Furthermore it can extract testdata from the xcresult bundle in junit format, also suited for sonarqube.
-
+</details>
 
 ## How to get it
 ### Using homebrew
 ```
-brew tap a7ex/homebrew-formulae
 brew install xcresultparser
 ```
 ### Download binary
@@ -69,7 +70,6 @@ Or build the tool yourself:
 ## How to install it
 ### Using homebrew
 ```
-brew tap a7ex/homebrew-formulae
 brew install xcresultparser
 ```
 ### Downloaded binary
