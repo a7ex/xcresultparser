@@ -1,0 +1,113 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  quick-validation:
+    name: Quick DTD Validation
+    runs-on: macos-latest
+    timeout-minutes: 10
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Cache Swift Build  
+      uses: actions/cache@v4
+      with:
+        path: .build
+        key: ${{ runner.os }}-swift-pr-${{ hashFiles('Package.resolved') }}
+        restore-keys: |
+          ${{ runner.os }}-swift-pr-
+          ${{ runner.os }}-swift-
+    
+    - name: Quick Build & Test
+      run: |
+        echo "⚡ Quick build and validation for PR..."
+        
+        # Fast release build
+        swift build -c release --arch arm64 --arch x86_64
+        
+        # Quick DTD compliance check (essential scenarios only)
+        echo "🧪 Running essential DTD compliance tests..."
+        python3 Tests/validation/validate_cobertura_dtd.py --run-all-tests
+        
+        
+        echo "✅ PR validation completed successfully!"
+    
+    - name: Comment on PR
+      if: success()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const comment = `## ✅ DTD Compliance Validation Passed
+          
+          Your changes maintain DTD compliance:
+          
+          - ✅ Cobertura XML structure is valid
+          - ✅ Attribute types are correct (integers for counters)
+          - ✅ Decimal formatting is proper (no scientific notation)
+          - ✅ Branch coverage is correctly set to zero
+          - ✅ Version string is clean
+          - ✅ Path normalization works correctly
+          
+          The generated XML is DTD compliant and ready for production use.`;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+    
+    - name: Comment on PR (Failure)
+      if: failure()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const comment = `## ❌ DTD Compliance Validation Failed
+          
+          Your changes have introduced issues with DTD compliance:
+          
+          - ❌ One or more validation tests failed
+          - ⚠️  The generated Cobertura XML may not be DTD compliant
+          
+          **Next steps:**
+          1. Check the workflow logs for specific error details
+          2. Review the [validation documentation](Tests/validation/README.md)
+          3. Test locally using: \`python3 Tests/validation/validate_cobertura_dtd.py --run-all-tests\`
+          4. Fix the issues and push new changes
+          
+          The validation must pass before this PR can be merged.`;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  validation-status:
+    name: DTD Validation Status
+    needs: quick-validation
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Set Status
+      run: |
+        if [[ "${{ needs.quick-validation.result }}" == "success" ]]; then
+          echo "✅ DTD Compliance: PASSED"
+          echo "status=success" >> $GITHUB_OUTPUT
+        else
+          echo "❌ DTD Compliance: FAILED" 
+          echo "status=failure" >> $GITHUB_OUTPUT
+          exit 1
+        fi
+      id: status
+    
+    outputs:
+      status: ${{ steps.status.outputs.status }}

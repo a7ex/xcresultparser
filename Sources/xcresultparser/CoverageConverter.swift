@@ -31,6 +31,8 @@ public class CoverageConverter {
     let coverageTargets: Set<String>
     let excludedPaths: Set<String>
     let strictPathnames: Bool
+    let coverageBasePath: String?
+    let sourcesRoot: String?
 
     // MARK: - Dependencies
 
@@ -41,7 +43,9 @@ public class CoverageConverter {
         projectRoot: String = "",
         coverageTargets: [String] = [],
         excludedPaths: [String] = [],
-        strictPathnames: Bool
+        strictPathnames: Bool,
+        coverageBasePath: String? = nil,
+        sourcesRoot: String? = nil
     ) {
         resultFile = XCResultFile(url: url)
         guard let record = resultFile.getCodeCoverage() else {
@@ -56,6 +60,8 @@ public class CoverageConverter {
         self.invocationRecord = invocationRecord
         self.coverageTargets = record.targets(filteredBy: coverageTargets)
         self.excludedPaths = Set(excludedPaths)
+        self.coverageBasePath = coverageBasePath
+        self.sourcesRoot = sourcesRoot
     }
 
     public func xmlString(quiet: Bool) throws -> String {

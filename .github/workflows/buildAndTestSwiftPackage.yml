@@ -8,16 +8,48 @@ on:
 
 jobs:
   build:
-
     runs-on: macos-latest
 
     steps:
     - uses: actions/checkout@v3
-    - name: Build
+    - name: Build Release Binary
       run: swift build -c release --disable-sandbox --arch arm64 --arch x86_64
-    - name: Run tests
+    - name: Run Swift Tests
       run: swift test -v
-    - uses: actions/upload-artifact@v4
+    - name: Install xmllint (for DTD validation)
+      run: |
+        # xmllint is usually pre-installed on macOS runners, but ensure it's available
+        which xmllint || brew install libxml2
+    - name: Run DTD Compliance Validation Tests
+      run: |
+        echo "🧪 Running comprehensive DTD compliance validation tests..."
+        python3 Tests/validation/validate_cobertura_dtd.py --run-all-tests
+    - name: Test Individual File Validation
+      run: |
+        echo "🔍 Testing individual file validation..."
+        # Generate a test XML file
+        .build/release/xcresultparser Tests/XcresultparserTests/TestAssets/test.xcresult -o cobertura \
+          --coverage-base-path "/ci/workspace" \
+          --sources-root "." > test_ci_output.xml
+        
+        # Validate the generated file
+        python3 Tests/validation/validate_cobertura_dtd.py test_ci_output.xml
+        
+        # Clean up
+        rm test_ci_output.xml
+        
+        echo "✅ Individual file validation completed successfully"
+    - name: Upload xcresultparser Binary
+      uses: actions/upload-artifact@v4
       with:
           name: xcresultparser
           path: .build/apple/Products/Release/xcresultparser
+    - name: Upload DTD Validation Scripts
+      uses: actions/upload-artifact@v4
+      if: always()  # Upload even if tests fail for debugging
+      with:
+          name: dtd-validation-scripts
+          path: |
+            Tests/validation/validate_cobertura_dtd.py
+            Tests/validation/coverage-04.dtd
+            Tests/validation/README.md
