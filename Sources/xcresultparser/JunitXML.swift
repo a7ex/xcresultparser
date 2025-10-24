@@ -258,19 +258,11 @@ public struct JunitXML: XmlSerializable {
         ) : group.testSuiteXML(numFormatter: numFormatter)
 
         for thisTest in tests {
-            let testcase = thisTest.xmlNode(
+            let testcase = createTestCase(
+                test: thisTest,
                 classname: group.nameString,
-                numFormatter: numFormatter,
-                format: testReportFormat,
-                nodeNames: nodeNames
+                failureSummaries: failureSummaries
             )
-            if thisTest.isFailed {
-                if let summary = thisTest.failureSummary(in: failureSummaries) {
-                    testcase.addChild(summary.failureXML(projectRoot: projectRoot))
-                } else {
-                    testcase.addChild(failureWithoutSummary)
-                }
-            }
             node.addChild(testcase)
         }
         return node
@@ -281,24 +273,35 @@ public struct JunitXML: XmlSerializable {
     ) -> [XMLElement] {
         var combined = [XMLElement]()
         for thisTest in tests {
-            let testcase = thisTest.xmlNode(
+            let testcase = createTestCase(
+                test: thisTest,
                 classname: name,
-                numFormatter: numFormatter,
-                format: testReportFormat,
-                nodeNames: nodeNames
+                failureSummaries: failureSummaries
             )
-            if thisTest.isFailed {
-                if let summary = thisTest.failureSummary(in: failureSummaries) {
-                    testcase.addChild(summary.failureXML(projectRoot: projectRoot))
-                } else {
-                    testcase.addChild(failureWithoutSummary)
-                }
-            } else if thisTest.isSkipped {
-                testcase.addChild(skippedWithoutSummary)
-            }
             combined.append(testcase)
         }
         return combined
+    }
+
+    private func createTestCase(
+        test: ActionTestMetadata, classname: String, failureSummaries: [TestFailureIssueSummary]
+    ) -> XMLElement {
+        let testcase = test.xmlNode(
+            classname: classname,
+            numFormatter: numFormatter,
+            format: testReportFormat,
+            nodeNames: nodeNames
+        )
+        if test.isFailed {
+            if let summary = test.failureSummary(in: failureSummaries) {
+                testcase.addChild(summary.failureXML(projectRoot: projectRoot))
+            } else {
+                testcase.addChild(failureWithoutSummary)
+            }
+        } else if test.isSkipped {
+            testcase.addChild(skippedWithoutSummary)
+        }
+        return testcase
     }
 
     private var failureWithoutSummary: XMLElement {
