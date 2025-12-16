@@ -293,10 +293,13 @@ public struct JunitXML: XmlSerializable {
             nodeNames: nodeNames
         )
         if test.isFailed {
-            if let summary = test.failureSummary(in: failureSummaries) {
-                testcase.addChild(summary.failureXML(projectRoot: projectRoot))
-            } else {
+            let summaries = test.failureSummaries(in: failureSummaries)
+            if summaries.isEmpty {
                 testcase.addChild(failureWithoutSummary)
+            } else {
+                for summary in summaries {
+                    testcase.addChild(summary.failureXML(projectRoot: projectRoot))
+                }
             }
         } else if test.isSkipped {
             testcase.addChild(skippedWithoutSummary)
@@ -321,7 +324,7 @@ extension XMLElement {
     }
 }
 
-private extension ActionTestMetadata {
+extension ActionTestMetadata {
     func xmlNode(
         classname: String,
         numFormatter: NumberFormatter,
@@ -348,8 +351,8 @@ private extension ActionTestMetadata {
         return testcase
     }
 
-    func failureSummary(in summaries: [TestFailureIssueSummary]) -> TestFailureIssueSummary? {
-        return summaries.first { summary in
+    func failureSummaries(in summaries: [TestFailureIssueSummary]) -> [TestFailureIssueSummary] {
+        return summaries.filter { summary in
             return summary.testCaseName == identifier?.replacingOccurrences(of: "/", with: ".") ||
                 summary.testCaseName == "-[\(identifier?.replacingOccurrences(of: "/", with: " ") ?? "")]"
         }

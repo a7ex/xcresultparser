@@ -1,5 +1,6 @@
 import Foundation
 @testable import XcresultparserLib
+import XCResultKit
 import Testing
 
 @MainActor
@@ -500,6 +501,73 @@ struct XcresultparserTests {
     }
 
     @Test
+    func testFailureSummariesReturnsAllMatchingFailures() throws {
+        let testMetadata = try makeTestMetadata()
+
+        let matchingFailure1 = try makeFailureSummary(
+            testCaseName: "TestClass.testMethod",
+            message: "First assertion failed"
+        )
+        let matchingFailure2 = try makeFailureSummary(
+            testCaseName: "TestClass.testMethod",
+            message: "Second assertion failed"
+        )
+        let nonMatchingFailure = try makeFailureSummary(
+            testCaseName: "OtherClass.otherMethod",
+            message: "Unrelated failure"
+        )
+
+        let result = testMetadata.failureSummaries(in: [matchingFailure1, nonMatchingFailure, matchingFailure2])
+
+        #expect(result.count == 2)
+        #expect(result[0].message == "First assertion failed")
+        #expect(result[1].message == "Second assertion failed")
+    }
+
+    @Test
+    func testFailureSummariesWithBracketNotation() throws {
+        let testMetadata = try makeTestMetadata()
+
+        // Objective-C bracket notation: -[TestClass testMethod]
+        let bracketFailure1 = try makeFailureSummary(
+            testCaseName: "-[TestClass testMethod]",
+            message: "Bracket notation failure 1"
+        )
+        let bracketFailure2 = try makeFailureSummary(
+            testCaseName: "-[TestClass testMethod]",
+            message: "Bracket notation failure 2"
+        )
+
+        let result = testMetadata.failureSummaries(in: [bracketFailure1, bracketFailure2])
+
+        #expect(result.count == 2)
+        #expect(result[0].message == "Bracket notation failure 1")
+        #expect(result[1].message == "Bracket notation failure 2")
+    }
+
+    @Test
+    func testFailureSummariesReturnsEmptyForNoMatches() throws {
+        let testMetadata = try makeTestMetadata()
+        let nonMatchingFailure = try makeFailureSummary(
+            testCaseName: "OtherClass.otherMethod",
+            message: "Unrelated failure"
+        )
+
+        let result = testMetadata.failureSummaries(in: [nonMatchingFailure])
+
+        #expect(result.isEmpty)
+    }
+
+    @Test
+    func testFailureSummariesWithEmptyArray() throws {
+        let testMetadata = try makeTestMetadata()
+
+        let result = testMetadata.failureSummaries(in: [])
+
+        #expect(result.isEmpty)
+    }
+
+    @Test
     func testCleanCodeWarnings() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         guard let converter = IssuesJSON(with: xcresultFile) else {
@@ -649,6 +717,36 @@ struct XcresultparserTests {
     }
 
     // MARK: helper functions
+
+    private func makeTestMetadata(
+        identifier: String = "TestClass/testMethod",
+        name: String = "testMethod",
+        status: String = "Failure",
+        duration: String = "0.5"
+    ) throws -> ActionTestMetadata {
+        let json: [String: AnyObject] = [
+            "_type": ["_name": "ActionTestMetadata"] as AnyObject,
+            "identifier": ["_type": ["_name": "String"], "_value": identifier] as AnyObject,
+            "name": ["_type": ["_name": "String"], "_value": name] as AnyObject,
+            "testStatus": ["_type": ["_name": "String"], "_value": status] as AnyObject,
+            "duration": ["_type": ["_name": "Double"], "_value": duration] as AnyObject
+        ]
+        return try #require(ActionTestMetadata(json))
+    }
+
+    private func makeFailureSummary(
+        testCaseName: String,
+        message: String = "Assertion failed",
+        issueType: String = "Assertion Failure"
+    ) throws -> TestFailureIssueSummary {
+        let json: [String: AnyObject] = [
+            "_type": ["_name": "TestFailureIssueSummary"] as AnyObject,
+            "testCaseName": ["_type": ["_name": "String"], "_value": testCaseName] as AnyObject,
+            "issueType": ["_type": ["_name": "String"], "_value": issueType] as AnyObject,
+            "message": ["_type": ["_name": "String"], "_value": message] as AnyObject
+        ]
+        return try #require(TestFailureIssueSummary(json))
+    }
 
     func assertXmlTestReportsAreEqual(
         expectedFileName: String,
