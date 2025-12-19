@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version 1.9.4 - 2025-12-19
+### CHANGES:
+Previously, we were only ever parsing the first failure for a test and passing that to the JUnit representation.
+However, a test might contain multiple failures and this is fully supported by the JUnit spec.
+To fix the issue, we'll collect all failures from the XCResult file and pass them to the JUnit result a list.
+This will prevent us from losing important diagnostic information from the test result.
+Credit for this change goes to Gordon Fontenot.
+
 ## Version 1.8.5 - 2025-03-18
 ### CHANGES:
 - Fix incorrect JUnit failure message for merged & repeated test case (Merits go to John Szumski)
