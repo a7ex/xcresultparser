@@ -31,6 +31,12 @@ struct xcresultparser: ParsableCommand {
     @Option(name: [.customShort("e"), .customLong("excluded-path")], help: "Specify which path names to exclude. You can use more than one -e option to specify a list of path patterns to exclude. This option only has effect, if the format is either 'cobertura' or 'xml' with the --coverage (-c) option for a code coverage report or if the format is one of 'warnings', 'errors' or 'warnings-and-errors'.")
     var excludedPaths: [String] = []
 
+    @Option(name: .customLong("coverage-base-path"), help: "Base path for normalizing coverage file paths. When specified, all file paths in coverage output are made relative to this base path.")
+    var coverageBasePath: String?
+
+    @Option(name: .customLong("sources-root"), help: "Source root path to emit in the <sources><source> element. Defaults to coverage base path or '.' if not specified.")
+    var sourcesRoot: String?
+
     @Option(name: .shortAndLong, help: "The fields in the summary. Default is all: errors|warnings|analyzerWarnings|tests|failed|skipped")
     var summaryFields: String?
 
@@ -110,7 +116,9 @@ struct xcresultparser: ParsableCommand {
             projectRoot: projectRoot ?? "",
             coverageTargets: coverageTargets,
             excludedPaths: excludedPaths,
-            strictPathnames: strictPathnames == 1
+            strictPathnames: strictPathnames == 1,
+            coverageBasePath: coverageBasePath,
+            sourcesRoot: sourcesRoot
         ) else {
             throw ParseError.argumentError
         }
