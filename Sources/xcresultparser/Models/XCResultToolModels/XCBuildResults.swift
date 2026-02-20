@@ -4,9 +4,10 @@
 //
 //  Created by Alex da Franca on 02.11.25.
 //
+// xcrun xcresulttool get build-results --path example.xcresult
 
 struct XCBuildResults: Codable {
-    let destination: XCDeviceInfo
+    let destination: XCDevice
     let startTime: Double // Date as a UNIX timestamp (seconds since midnight UTC on January 1, 1970)
     let endTime: Double // Date as a UNIX timestamp (seconds since midnight UTC on January 1, 1970)
     let analyzerWarnings: [XCIssue]
@@ -22,7 +23,7 @@ struct XCBuildResults: Codable {
 extension XCBuildResults {
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
-        destination = try values.decode(XCDeviceInfo.self, forKey: .destination)
+        destination = try values.decode(XCDevice.self, forKey: .destination)
         startTime = try values.decode(Double.self, forKey: .startTime)
         endTime = try values.decode(Double.self, forKey: .endTime)
         analyzerWarnings = try values.decode([XCIssue].self, forKey: .analyzerWarnings)

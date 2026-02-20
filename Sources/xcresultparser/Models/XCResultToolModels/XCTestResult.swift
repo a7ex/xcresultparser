@@ -4,6 +4,8 @@
 //
 //  Created by Alex da Franca on 02.11.25.
 //
+// xcrun xcresulttool get test-results summary
+// xcrun xcresulttool get test-results tests
 
 enum XCTestResult: String, Codable {
     case passed = "Passed"

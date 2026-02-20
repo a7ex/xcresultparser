@@ -4,13 +4,14 @@
 //
 //  Created by Alex da Franca on 02.11.25.
 //
+// xcrun xcresulttool get test-results tests
 
 import Foundation
 
 struct XCTestNode: Codable {
-    let children: [XCTestNode]
     let name: String // e.g. "xcresultparser",
     let nodeType: XCTestNodeType // e.g. "Test Plan",
+    let children: [XCTestNode]? 
     let result: XCTestResult? // e.g. "Passed"
     let nodeIdentifier: String? // e.g. "0"
     let nodeIdentifierURL: URL? // e.g. "test://com.apple.xcode/Xcresultparser/XcresultparserTests/XcresultparserTests"

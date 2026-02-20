@@ -4,16 +4,17 @@
 //
 //  Created by Alex da Franca on 02.11.25.
 //
+// xcrun xcresulttool get test-results test-details
 
 struct XCTestDetails: Codable {
     let testIdentifier: String
     let testName: String
     let testDescription: String
     let duration: String
-    let testPlanConfigurations: [XCTestPlanConfiguration]
-    let devices: [XCDeviceInfo]
-    let testRuns: String
-    let testResult: String
+    let testPlanConfigurations: [XCConfiguration]
+    let devices: [XCDevice]
+    let testRuns: [XCTestNode]
+    let testResult: XCTestResult
     let hasPerformanceMetrics: String
     let hasMediaAttachments: String
 
@@ -23,5 +24,10 @@ struct XCTestDetails: Codable {
     let durationInSeconds: Double?
     // Date as a UNIX timestamp (seconds since midnight UTC on January 1, 1970)
     let startTime: Double?
-    let arguments: []
+    let arguments: [XCArgument]?
+
+    // only in 'xcrun xcresulttool get test-results test-details'
+    let functionName: String?
+    let bugs: [XCBug]?
+    let tags: [String]?
 }

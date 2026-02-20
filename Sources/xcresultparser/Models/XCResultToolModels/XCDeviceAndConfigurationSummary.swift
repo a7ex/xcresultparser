@@ -4,10 +4,11 @@
 //
 //  Created by Alex da Franca on 02.11.25.
 //
+// xcrun xcresulttool get test-results summary
 
 struct XCDeviceAndConfigurationSummary: Codable {
-    let device: XCDeviceInfo
-    let testPlanConfiguration: XCTestPlanConfiguration
+    let device: XCDevice
+    let testPlanConfiguration: XCConfiguration
     let passedTests: Int
     let failedTests: Int
     let skippedTests: Int
