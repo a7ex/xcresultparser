@@ -835,6 +835,180 @@ struct XcresultparserTests {
         #expect(insights.longestTestRunsInsights.isEmpty)
     }
 
+    @Test
+    func testXCResultToolBuildResultsModelDecoding() throws {
+        let json = """
+        {
+          "analyzerWarningCount": 0,
+          "analyzerWarnings": [],
+          "destination": {
+            "architecture": "arm64",
+            "deviceId": "00006000-001869EC3623801E",
+            "deviceName": "My Mac",
+            "modelName": "MacBook Pro",
+            "osBuildNumber": "22C65",
+            "osVersion": "13.1",
+            "platform": "macOS"
+          },
+          "endTime": 1672825230.228,
+          "errorCount": 0,
+          "errors": [],
+          "startTime": 1672825221.218,
+          "status": "succeeded",
+          "warningCount": 3,
+          "warnings": [
+            {
+              "className": "DVTTextDocumentLocation",
+              "issueType": "No-usage",
+              "message": "Initialization warning",
+              "sourceURL": "file:///tmp/example.swift#L1"
+            }
+          ]
+        }
+        """
+        let buildResults = try JSONDecoder().decode(XCBuildResults.self, from: Data(json.utf8))
+        #expect(buildResults.warningCount == 3)
+        #expect(buildResults.warnings.count == 1)
+        #expect(buildResults.destination.deviceName == "My Mac")
+    }
+
+    @Test
+    func testXCResultToolTestDetailsModelDecoding() throws {
+        let json = """
+        {
+          "devices": [
+            {
+              "architecture": "arm64",
+              "deviceId": "00006000-001869EC3623801E",
+              "deviceName": "My Mac",
+              "modelName": "MacBook Pro",
+              "osBuildNumber": "22C65",
+              "osVersion": "13.1",
+              "platform": "macOS"
+            }
+          ],
+          "duration": "Ran for 2,8 seconds",
+          "durationInSeconds": 2.8180439472198486,
+          "hasMediaAttachments": false,
+          "hasPerformanceMetrics": false,
+          "testDescription": "Test case with 1 run",
+          "testIdentifier": "XcresultparserTests/testCoverageConverter()",
+          "testIdentifierURL": "test://com.apple.xcode/Xcresultparser/XcresultparserTests/XcresultparserTests/testCoverageConverter",
+          "testName": "testCoverageConverter()",
+          "testPlanConfigurations": [
+            {
+              "configurationId": "1",
+              "configurationName": "Test Scheme Action"
+            }
+          ],
+          "testResult": "Failed",
+          "testRuns": [
+            {
+              "details": "macOS 13.1",
+              "duration": "2s",
+              "durationInSeconds": 2.8180439472198486,
+              "name": "MacBook Pro",
+              "nodeIdentifier": "00006000-001869EC3623801E",
+              "nodeType": "Device",
+              "result": "Failed"
+            }
+          ]
+        }
+        """
+        let details = try JSONDecoder().decode(XCTestDetails.self, from: Data(json.utf8))
+        #expect(details.testIdentifier == "XcresultparserTests/testCoverageConverter()")
+        #expect(details.testRuns.count == 1)
+        #expect(details.hasMediaAttachments == false)
+    }
+
+    @Test
+    func testXCResultToolActivitiesModelDecoding() throws {
+        let json = """
+        {
+          "testIdentifier": "XcresultparserTests/testCoverageConverter()",
+          "testIdentifierURL": "test://com.apple.xcode/Xcresultparser/XcresultparserTests/XcresultparserTests/testCoverageConverter",
+          "testName": "testCoverageConverter()",
+          "testRuns": [
+            {
+              "activities": [
+                {
+                  "attachments": [
+                    {
+                      "lifetime": "",
+                      "name": "Complete Issue Description.txt",
+                      "uuid": "AB4FA017-B76D-490D-87D3-F55A5B9BE79E"
+                    }
+                  ],
+                  "childActivities": [
+                    {
+                      "isAssociatedWithFailure": false,
+                      "title": "Complete Issue Description"
+                    }
+                  ],
+                  "isAssociatedWithFailure": true,
+                  "startTime": 1672825226.088,
+                  "title": "failed - Unable to create CoverageConverter"
+                }
+              ],
+              "device": {
+                "architecture": "arm64",
+                "deviceId": "00006000-001869EC3623801E",
+                "deviceName": "My Mac",
+                "modelName": "MacBook Pro",
+                "osBuildNumber": "22C65",
+                "osVersion": "13.1",
+                "platform": "macOS"
+              },
+              "testPlanConfiguration": {
+                "configurationId": "1",
+                "configurationName": "Test Scheme Action"
+              }
+            }
+          ]
+        }
+        """
+        let activities = try JSONDecoder().decode(XCActivities.self, from: Data(json.utf8))
+        #expect(activities.testRuns.count == 1)
+        #expect(activities.testRuns[0].activities.count == 1)
+        #expect(activities.testRuns[0].device.deviceName == "My Mac")
+    }
+
+    @Test
+    func testXCResultToolMetricsModelDecoding() throws {
+        let json = """
+        {
+          "testIdentifier": "PerfTests/testExample()",
+          "testIdentifierURL": "test://com.apple.xcode/PerfTests/testExample",
+          "testRuns": [
+            {
+              "testPlanConfiguration": {
+                "configurationId": "1",
+                "configurationName": "Test Scheme Action"
+              },
+              "device": {
+                "deviceId": "00006000-001869EC3623801E",
+                "deviceName": "My Mac"
+              },
+              "metrics": [
+                {
+                  "displayName": "Clock Time",
+                  "unitOfMeasurement": "s",
+                  "measurements": [1.2, 1.3]
+                }
+              ]
+            }
+          ]
+        }
+        """
+        let metrics = try JSONDecoder().decode(XCTestWithMetrics.self, from: Data(json.utf8))
+        #expect(metrics.testRuns.count == 1)
+        #expect(metrics.testRuns[0].metrics.count == 1)
+        #expect(metrics.testRuns[0].metrics[0].displayName == "Clock Time")
+
+        let emptyMetrics = try JSONDecoder().decode([XCTestWithMetrics].self, from: Data("[]".utf8))
+        #expect(emptyMetrics.isEmpty)
+    }
+
     // MARK: helper functions
 
     private func makeTestMetadata(
