@@ -9,7 +9,7 @@ import ArgumentParser
 import Foundation
 import XcresultparserLib
 
-private let marketingVersion = "1.9.3"
+private let marketingVersion = "1.9.4"
 
 struct xcresultparser: ParsableCommand {
     static let configuration = CommandConfiguration(
