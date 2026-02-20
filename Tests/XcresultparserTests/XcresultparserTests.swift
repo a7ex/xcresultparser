@@ -716,6 +716,125 @@ struct XcresultparserTests {
         #expect(sut == CoverageReportFormat.classes)
     }
 
+    @Test
+    func testXCResultToolSummaryModelDecoding() throws {
+        let json = """
+        {
+          "devicesAndConfigurations": [
+            {
+              "device": {
+                "architecture": "arm64",
+                "deviceId": "00006000-001869EC3623801E",
+                "deviceName": "My Mac",
+                "modelName": "MacBook Pro",
+                "osBuildNumber": "22C65",
+                "osVersion": "13.1",
+                "platform": "macOS"
+              },
+              "expectedFailures": 0,
+              "failedTests": 1,
+              "passedTests": 6,
+              "skippedTests": 0,
+              "testPlanConfiguration": {
+                "configurationId": "1",
+                "configurationName": "Test Scheme Action"
+              }
+            }
+          ],
+          "environmentDescription": "Xcresultparser-Package · Built with macOS 13.1",
+          "expectedFailures": 0,
+          "failedTests": 1,
+          "finishTime": 1672825230.228,
+          "passedTests": 6,
+          "result": "Failed",
+          "skippedTests": 0,
+          "startTime": 1672825221.218,
+          "statistics": [],
+          "testFailures": [
+            {
+              "failureText": "failed - example",
+              "targetName": "XcresultparserTests",
+              "testIdentifier": 2,
+              "testIdentifierString": "XcresultparserTests/testCoverageConverter()",
+              "testIdentifierURL": "test://com.apple.xcode/Xcresultparser/XcresultparserTests/XcresultparserTests/testCoverageConverter",
+              "testName": "testCoverageConverter()"
+            }
+          ],
+          "title": "Test - Xcresultparser-Package",
+          "topInsights": [],
+          "totalTestCount": 7
+        }
+        """
+        let summary = try JSONDecoder().decode(XCSummary.self, from: Data(json.utf8))
+        #expect(summary.failedTests == 1)
+        #expect(summary.devicesAndConfigurations.count == 1)
+        #expect(summary.testFailures.count == 1)
+    }
+
+    @Test
+    func testXCResultToolTestsModelDecoding() throws {
+        let json = """
+        {
+          "devices": [
+            {
+              "architecture": "arm64",
+              "deviceId": "00006000-001869EC3623801E",
+              "deviceName": "My Mac",
+              "modelName": "MacBook Pro",
+              "osBuildNumber": "22C65",
+              "osVersion": "13.1",
+              "platform": "macOS"
+            }
+          ],
+          "testNodes": [
+            {
+              "children": [
+                {
+                  "children": [],
+                  "duration": "0,31s",
+                  "durationInSeconds": 0.30731201171875,
+                  "name": "testCLIResultFormatter()",
+                  "nodeType": "Test Case",
+                  "result": "Passed"
+                }
+              ],
+              "name": "Test Plan",
+              "nodeType": "Test Plan",
+              "result": "Failed"
+            }
+          ],
+          "testPlanConfigurations": [
+            {
+              "configurationId": "1",
+              "configurationName": "Test Scheme Action"
+            }
+          ]
+        }
+        """
+        let testResults = try JSONDecoder().decode(XCTests.self, from: Data(json.utf8))
+        #expect(testResults.devices.count == 1)
+        #expect(testResults.testNodes.count == 1)
+        let firstNode = try #require(testResults.testNodes.first)
+        let children = firstNode.children ?? []
+        #expect(children.count == 1)
+        #expect(children.first?.nodeType == .testCase)
+    }
+
+    @Test
+    func testXCResultToolInsightsModelDecoding() throws {
+        let json = """
+        {
+          "commonFailureInsights": [],
+          "failureDistributionInsights": [],
+          "longestTestRunsInsights": []
+        }
+        """
+        let insights = try JSONDecoder().decode(XCInsights.self, from: Data(json.utf8))
+        #expect(insights.commonFailureInsights.isEmpty)
+        #expect(insights.failureDistributionInsights.isEmpty)
+        #expect(insights.longestTestRunsInsights.isEmpty)
+    }
+
     // MARK: helper functions
 
     private func makeTestMetadata(

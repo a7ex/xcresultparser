@@ -14,3 +14,11 @@ enum XCTestResult: String, Codable {
     case expectedFailure = "Expected Failure"
     case unknown = "unknown"
 }
+
+extension XCTestResult {
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let value = try container.decode(String.self)
+        self = XCTestResult(rawValue: value) ?? .unknown
+    }
+}

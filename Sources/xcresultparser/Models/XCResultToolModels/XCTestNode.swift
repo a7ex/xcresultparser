@@ -15,6 +15,7 @@ struct XCTestNode: Codable {
     let result: XCTestResult? // e.g. "Passed"
     let nodeIdentifier: String? // e.g. "0"
     let nodeIdentifierURL: URL? // e.g. "test://com.apple.xcode/Xcresultparser/XcresultparserTests/XcresultparserTests"
+    let duration: String?
     let durationInSeconds: TimeInterval? // e.g. 19
     let details: String?
     let tags: [String]
@@ -39,8 +40,9 @@ extension XCTestNode {
             nodeIdentifierURL = nil
         }
         children = (try? values.decode([XCTestNode].self, forKey: .children)) ?? [XCTestNode]()
+        duration = try? values.decode(String.self, forKey: .duration)
         durationInSeconds = try? values.decode(TimeInterval.self, forKey: .durationInSeconds)
         details = try? values.decode(String.self, forKey: .details)
-        tags = (try? values.decode([String].self, forKey: .nodeIdentifier)) ?? [String]()
+        tags = (try? values.decode([String].self, forKey: .tags)) ?? []
     }
 }

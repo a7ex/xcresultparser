@@ -22,5 +22,14 @@ enum XCTestNodeType: String, Codable {
     case attachment = "Attachment"
     case expression = "Expression"
     case testValue = "Test Value"
-    case runtimWarning = "Runtime Warning"
+    case runtimeWarning = "Runtime Warning"
+    case unknown = "unknown"
+}
+
+extension XCTestNodeType {
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let value = try container.decode(String.self)
+        self = XCTestNodeType(rawValue: value) ?? .unknown
+    }
 }

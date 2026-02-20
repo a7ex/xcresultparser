@@ -18,14 +18,14 @@ struct XCSummary: Codable {
     let skippedTests: Int
     let expectedFailures: Int
     let statistics: [XCStatistic]
-    let devicesAndConfigurations: XCDeviceAndConfigurationSummary
-    let testFailures: XCTestFailure
+    let devicesAndConfigurations: [XCDeviceAndConfigurationSummary]
+    let testFailures: [XCTestFailure]
 
     // Optional:
     // Date as a UNIX timestamp (seconds since midnight UTC on January 1, 1970)
-    let startTime: Double
+    let startTime: Double?
     // Date as a UNIX timestamp (seconds since midnight UTC on January 1, 1970)
-    let finishTime: Double
+    let finishTime: Double?
 }
 
 extension XCSummary {
@@ -41,9 +41,9 @@ extension XCSummary {
         skippedTests = try values.decode(Int.self, forKey: .skippedTests)
         expectedFailures = try values.decode(Int.self, forKey: .expectedFailures)
         statistics = try values.decode([XCStatistic].self, forKey: .statistics)
-        devicesAndConfigurations = try values.decode(XCDeviceAndConfigurationSummary.self, forKey: .devicesAndConfigurations)
-        testFailures = try values.decode(XCTestFailure.self, forKey: .testFailures)
-        startTime = (try? values.decode(Double.self, forKey: .startTime)) ?? 0
-        finishTime = (try? values.decode(Double.self, forKey: .finishTime)) ?? 0
+        devicesAndConfigurations = (try? values.decode([XCDeviceAndConfigurationSummary].self, forKey: .devicesAndConfigurations)) ?? []
+        testFailures = (try? values.decode([XCTestFailure].self, forKey: .testFailures)) ?? []
+        startTime = try? values.decode(Double.self, forKey: .startTime)
+        finishTime = try? values.decode(Double.self, forKey: .finishTime)
     }
 }
