@@ -5,7 +5,6 @@
 //
 
 import Foundation
-import XCResultKit
 
 /// Output some infos about warnings and issues
 ///
@@ -13,10 +12,9 @@ import XCResultKit
 /// [Gitlab Code Climate Support](https://docs.gitlab.com/ee/ci/testing/code_quality.html#implement-a-custom-tool)
 ///
 public struct IssuesJSON {
-    let resultFile: XCResultFile
     let projectRoot: String
     let checkName: String
-    let invocationRecord: ActionsInvocationRecord
+    let buildResults: XCBuildResults
     let excludedPaths: Set<String>
 
     public init?(
@@ -24,12 +22,12 @@ public struct IssuesJSON {
         projectRoot: String = "",
         excludedPaths: [String] = []
     ) {
-        resultFile = XCResultFile(url: url)
-        guard let invocationRecord = resultFile.getInvocationRecord(),
+        let client = XCResultToolClient()
+        guard let buildResults = try? client.getBuildResults(path: url),
               let checkdata = try? Data(contentsOf: url.appendingPathComponent("Info.plist")) else {
             return nil
         }
-        self.invocationRecord = invocationRecord
+        self.buildResults = buildResults
         checkName = checkdata.md5()
         self.projectRoot = projectRoot
         self.excludedPaths = Set(excludedPaths)
@@ -40,7 +38,7 @@ public struct IssuesJSON {
         encoder.outputFormatting = .prettyPrinted
         let jsonData: Data
         if format == .errors {
-            let errors = invocationRecord.issues.errorSummaries
+            let errors = buildResults.errors
                 .compactMap {
                     Issue(
                         issueSummary: $0,
@@ -52,7 +50,7 @@ public struct IssuesJSON {
                 }
             jsonData = try encoder.encode(errors)
         } else {
-            let warnings = invocationRecord.issues.warningSummaries
+            let warnings = buildResults.warnings
                 .compactMap {
                     Issue(
                         issueSummary: $0,
@@ -62,7 +60,7 @@ public struct IssuesJSON {
                         excludedPaths: excludedPaths
                     )
                 }
-            let analyzerWarnings = invocationRecord.issues.analyzerWarningSummaries
+            let analyzerWarnings = buildResults.analyzerWarnings
                 .compactMap {
                     Issue(
                         issueSummary: $0,
@@ -74,7 +72,7 @@ public struct IssuesJSON {
                 }
             var combined = warnings + analyzerWarnings
             if format == .warningsAndErrors {
-                let errors = invocationRecord.issues.errorSummaries
+                let errors = buildResults.errors
                     .compactMap {
                         Issue(
                             issueSummary: $0,

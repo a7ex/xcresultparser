@@ -15,9 +15,26 @@ struct CoverageReport: Decodable {
 
 struct CoverageTarget: Decodable {
     let name: String
+    let lineCoverage: Double
+    let executableLines: Int
+    let coveredLines: Int
     let files: [CoverageReportFile]
 }
 
 struct CoverageReportFile: Decodable {
+    let name: String
     let path: String
+    let lineCoverage: Double
+    let executableLines: Int
+    let coveredLines: Int
+    let functions: [CoverageReportFunction]
+}
+
+struct CoverageReportFunction: Decodable {
+    let name: String
+    let lineNumber: Int
+    let lineCoverage: Double
+    let executableLines: Int
+    let coveredLines: Int
+    let executionCount: Int
 }

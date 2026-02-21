@@ -5,7 +5,6 @@
 //
 
 import Foundation
-import XCResultKit
 
 struct Issue: Codable {
     /// Required. A description of the code quality violation.
@@ -37,13 +36,13 @@ struct Issue: Codable {
 
 extension Issue {
     init?(
-        issueSummary: IssueSummary,
+        issueSummary: XCIssue,
         severity: IssueSeverity,
         checkName: String,
         projectRoot: String = "",
         excludedPaths: Set<String> = []
     ) {
-        let issueLocationInfo = IssueLocationInfo(with: issueSummary.documentLocationInCreatingWorkspace)
+        let issueLocationInfo = IssueLocationInfo(with: issueSummary.sourceURL)
         if let filePath = issueLocationInfo?.filePath,
            excludedPaths.isPathExcluded(filePath) {
             return nil
