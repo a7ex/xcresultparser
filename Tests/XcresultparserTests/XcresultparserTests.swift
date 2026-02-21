@@ -1,6 +1,5 @@
 import Foundation
 @testable import XcresultparserLib
-import XCResultKit
 import Testing
 
 @MainActor
@@ -389,17 +388,8 @@ struct XcresultparserTests {
         ./Tests/XcresultparserTests.swift:class XcresultparserTests
         """
         let savedFilemanger = SharedInstances.fileManager
-        let savedShellFactory = DependencyFactory.createShell
-
         SharedInstances.fileManager = MockedFileManager(fileExists: true, isPathDirectory: true)
-
-        let mockedShell = MockedShell(response: Data(cliResult.utf8), error: nil)
-        DependencyFactory.createShell = {
-            mockedShell
-        }
-        mockedShell.argumentValidation = { arguments in
-            return arguments.last == "."
-        }
+        defer { SharedInstances.fileManager = savedFilemanger }
 
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         let projectRoot = "/Users/imaginary/project"
@@ -412,10 +402,15 @@ struct XcresultparserTests {
             Issue.record("Unable to create JunitXML from \(xcresultFile)")
             return
         }
-        try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecutionWithProjectRootRelative", actual: junitXML)
 
-        SharedInstances.fileManager = savedFilemanger
-        DependencyFactory.createShell = savedShellFactory
+        let savedShellFactory = DependencyFactory.createShell
+        let mockedShell = MockedShell(response: Data(cliResult.utf8), error: nil)
+        DependencyFactory.createShell = { mockedShell }
+        defer { DependencyFactory.createShell = savedShellFactory }
+        mockedShell.argumentValidation = { arguments in
+            return arguments.last == "."
+        }
+        try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecutionWithProjectRootRelative", actual: junitXML)
     }
 
     @Test
@@ -426,17 +421,8 @@ struct XcresultparserTests {
         """
 
         let savedFilemanger = SharedInstances.fileManager
-        let savedShellFactory = DependencyFactory.createShell
-
         SharedInstances.fileManager = MockedFileManager(fileExists: true, isPathDirectory: true)
-
-        let mockedShell = MockedShell(response: Data(cliResult.utf8), error: nil)
-        DependencyFactory.createShell = {
-            mockedShell
-        }
-        mockedShell.argumentValidation = { arguments in
-            return arguments.last != "."
-        }
+        defer { SharedInstances.fileManager = savedFilemanger }
 
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         let projectRoot = "/Users/imaginary/project"
@@ -449,10 +435,15 @@ struct XcresultparserTests {
             Issue.record("Unable to create JunitXML from \(xcresultFile)")
             return
         }
-        try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecutionWithProjectRootAbsolute", actual: junitXML)
 
-        SharedInstances.fileManager = savedFilemanger
-        DependencyFactory.createShell = savedShellFactory
+        let savedShellFactory = DependencyFactory.createShell
+        let mockedShell = MockedShell(response: Data(cliResult.utf8), error: nil)
+        DependencyFactory.createShell = { mockedShell }
+        defer { DependencyFactory.createShell = savedShellFactory }
+        mockedShell.argumentValidation = { arguments in
+            return arguments.last != "."
+        }
+        try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecutionWithProjectRootAbsolute", actual: junitXML)
     }
 
     @Test
@@ -502,22 +493,22 @@ struct XcresultparserTests {
 
     @Test
     func testFailureSummariesReturnsAllMatchingFailures() throws {
-        let testMetadata = try makeTestMetadata()
+        let test = makeJunitTest()
 
-        let matchingFailure1 = try makeFailureSummary(
+        let matchingFailure1 = makeJunitFailureSummary(
             testCaseName: "TestClass.testMethod",
             message: "First assertion failed"
         )
-        let matchingFailure2 = try makeFailureSummary(
+        let matchingFailure2 = makeJunitFailureSummary(
             testCaseName: "TestClass.testMethod",
             message: "Second assertion failed"
         )
-        let nonMatchingFailure = try makeFailureSummary(
+        let nonMatchingFailure = makeJunitFailureSummary(
             testCaseName: "OtherClass.otherMethod",
             message: "Unrelated failure"
         )
 
-        let result = testMetadata.failureSummaries(in: [matchingFailure1, nonMatchingFailure, matchingFailure2])
+        let result = test.failureSummaries(in: [matchingFailure1, nonMatchingFailure, matchingFailure2])
 
         #expect(result.count == 2)
         #expect(result[0].message == "First assertion failed")
@@ -526,19 +517,19 @@ struct XcresultparserTests {
 
     @Test
     func testFailureSummariesWithBracketNotation() throws {
-        let testMetadata = try makeTestMetadata()
+        let test = makeJunitTest()
 
         // Objective-C bracket notation: -[TestClass testMethod]
-        let bracketFailure1 = try makeFailureSummary(
+        let bracketFailure1 = makeJunitFailureSummary(
             testCaseName: "-[TestClass testMethod]",
             message: "Bracket notation failure 1"
         )
-        let bracketFailure2 = try makeFailureSummary(
+        let bracketFailure2 = makeJunitFailureSummary(
             testCaseName: "-[TestClass testMethod]",
             message: "Bracket notation failure 2"
         )
 
-        let result = testMetadata.failureSummaries(in: [bracketFailure1, bracketFailure2])
+        let result = test.failureSummaries(in: [bracketFailure1, bracketFailure2])
 
         #expect(result.count == 2)
         #expect(result[0].message == "Bracket notation failure 1")
@@ -547,22 +538,22 @@ struct XcresultparserTests {
 
     @Test
     func testFailureSummariesReturnsEmptyForNoMatches() throws {
-        let testMetadata = try makeTestMetadata()
-        let nonMatchingFailure = try makeFailureSummary(
+        let test = makeJunitTest()
+        let nonMatchingFailure = makeJunitFailureSummary(
             testCaseName: "OtherClass.otherMethod",
             message: "Unrelated failure"
         )
 
-        let result = testMetadata.failureSummaries(in: [nonMatchingFailure])
+        let result = test.failureSummaries(in: [nonMatchingFailure])
 
         #expect(result.isEmpty)
     }
 
     @Test
     func testFailureSummariesWithEmptyArray() throws {
-        let testMetadata = try makeTestMetadata()
+        let test = makeJunitTest()
 
-        let result = testMetadata.failureSummaries(in: [])
+        let result = test.failureSummaries(in: [])
 
         #expect(result.isEmpty)
     }
@@ -1011,34 +1002,32 @@ struct XcresultparserTests {
 
     // MARK: helper functions
 
-    private func makeTestMetadata(
+    private func makeJunitTest(
         identifier: String = "TestClass/testMethod",
         name: String = "testMethod",
-        status: String = "Failure",
-        duration: String = "0.5"
-    ) throws -> ActionTestMetadata {
-        let json: [String: AnyObject] = [
-            "_type": ["_name": "ActionTestMetadata"] as AnyObject,
-            "identifier": ["_type": ["_name": "String"], "_value": identifier] as AnyObject,
-            "name": ["_type": ["_name": "String"], "_value": name] as AnyObject,
-            "testStatus": ["_type": ["_name": "String"], "_value": status] as AnyObject,
-            "duration": ["_type": ["_name": "Double"], "_value": duration] as AnyObject
-        ]
-        return try #require(ActionTestMetadata(json))
+        duration: Double = 0.5
+    ) -> JunitTest {
+        JunitTest(
+            identifier: identifier,
+            name: name,
+            duration: duration,
+            isFailed: true,
+            isSkipped: false
+        )
     }
 
-    private func makeFailureSummary(
+    private func makeJunitFailureSummary(
         testCaseName: String,
         message: String = "Assertion failed",
         issueType: String = "Assertion Failure"
-    ) throws -> TestFailureIssueSummary {
-        let json: [String: AnyObject] = [
-            "_type": ["_name": "TestFailureIssueSummary"] as AnyObject,
-            "testCaseName": ["_type": ["_name": "String"], "_value": testCaseName] as AnyObject,
-            "issueType": ["_type": ["_name": "String"], "_value": issueType] as AnyObject,
-            "message": ["_type": ["_name": "String"], "_value": message] as AnyObject
-        ]
-        return try #require(TestFailureIssueSummary(json))
+    ) -> JunitFailureSummary {
+        JunitFailureSummary(
+            message: message,
+            testCaseName: testCaseName,
+            issueType: issueType,
+            producingTarget: nil,
+            documentLocation: nil
+        )
     }
 
     func assertXmlTestReportsAreEqual(
@@ -1059,6 +1048,7 @@ struct XcresultparserTests {
 
         #expect(expectedXMLString == actualXMLString)
     }
+
 }
 
 class MockedFileManager: FileManaging {

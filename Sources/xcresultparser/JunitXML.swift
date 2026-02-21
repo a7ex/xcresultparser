@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import XCResultKit
 
 public enum TestReportFormat {
     case junit, sonar
@@ -47,9 +46,8 @@ public struct JunitXML: XmlSerializable {
 
     // MARK: - Properties
 
-    private let resultFile: XCResultFile
+    private let dataProvider: JunitXMLDataProviding
     private let projectRoot: URL?
-    private let invocationRecord: ActionsInvocationRecord
     private let testReportFormat: TestReportFormat
     private let relativePathNames: Bool
 
@@ -70,11 +68,23 @@ public struct JunitXML: XmlSerializable {
         format: TestReportFormat = .junit,
         relativePathNames: Bool = true
     ) {
-        resultFile = XCResultFile(url: url)
-        guard let record = resultFile.getInvocationRecord() else {
-            return nil
-        }
+        let dataProvider = XCResultToolJunitXMLDataProvider(url: url)
+        guard let dataProvider else { return nil }
+        self.init(
+            dataProvider: dataProvider,
+            projectRoot: projectRoot,
+            format: format,
+            relativePathNames: relativePathNames
+        )
+    }
 
+    init(
+        dataProvider: JunitXMLDataProviding,
+        projectRoot: String = "",
+        format: TestReportFormat = .junit,
+        relativePathNames: Bool = true
+    ) {
+        self.dataProvider = dataProvider
         var isDirectory: ObjCBool = false
         if SharedInstances.fileManager.fileExists(atPath: projectRoot, isDirectory: &isDirectory),
            isDirectory.boolValue == true {
@@ -83,7 +93,6 @@ public struct JunitXML: XmlSerializable {
             self.projectRoot = nil
         }
 
-        invocationRecord = record
         testReportFormat = format
         if testReportFormat == .sonar {
             nodeNames = NodeNames.sonarNodeNames
@@ -107,28 +116,21 @@ public struct JunitXML: XmlSerializable {
         xml.characterEncoding = "UTF-8"
 
         if testReportFormat != .sonar {
-            let metrics = invocationRecord.metrics
-            let testsCount = metrics.testsCount ?? 0
-            testsuites.addAttribute(name: "tests", stringValue: String(testsCount))
-            let testsFailedCount = metrics.testsFailedCount ?? 0
-            testsuites.addAttribute(name: "failures", stringValue: String(testsFailedCount))
+            let metrics = dataProvider.metrics
+            testsuites.addAttribute(name: "tests", stringValue: String(metrics.testsCount))
+            testsuites.addAttribute(name: "failures", stringValue: String(metrics.testsFailedCount))
             testsuites.addAttribute(name: "errors", stringValue: "0") // apparently Jenkins needs this?!
         }
 
-        let testActions = invocationRecord.actions.filter { $0.schemeCommandName == "Test" }
+        let testActions = dataProvider.testActions
         guard !testActions.isEmpty else {
             return xml.xmlString(options: [.nodePrettyPrint, .nodeCompactEmptyElement])
         }
 
         var overallTestSuiteDuration = 0.0
         for testAction in testActions {
-            guard let testsId = testAction.actionResult.testsRef?.id,
-                  let testPlanRun = resultFile.getTestPlanRunSummaries(id: testsId) else {
-                continue
-            }
-
-            let testPlanRunSummaries = testPlanRun.summaries
-            let failureSummaries = testAction.actionResult.issues.testFailureSummaries
+            let testPlanRunSummaries = testAction.testPlanRunSummaries
+            let failureSummaries = testAction.failureSummaries
 
             if testReportFormat != .sonar {
                 let startDate = testAction.startedTime
@@ -164,31 +166,14 @@ public struct JunitXML: XmlSerializable {
 
     // only used in unit testing
     static func resetCachedPathnames() {
-        ActionTestSummaryGroup.resetCachedPathnames()
+        JunitTestGroup.resetCachedPathnames()
     }
 
     // MARK: - Private interface
 
-    // The XMLElement produced by this function is not allowed in the junit XML format and thus unused.
-    // It is kept in case it serves another format.
-    private func runDestinationXML(_ destination: ActionRunDestinationRecord) -> XMLElement {
-        let properties = XMLElement(name: "properties")
-        if !destination.displayName.isEmpty {
-            properties.addChild(TestrunProperty(name: "destination", value: destination.displayName).xmlNode)
-        }
-        if !destination.targetArchitecture.isEmpty {
-            properties.addChild(TestrunProperty(name: "architecture", value: destination.targetArchitecture).xmlNode)
-        }
-        let record = destination.targetSDKRecord
-        if !record.name.isEmpty {
-            properties.addChild(TestrunProperty(name: "sdk", value: record.name).xmlNode)
-        }
-        return properties
-    }
-
     private func createTestSuite(
-        _ group: ActionTestSummaryGroup,
-        failureSummaries: [TestFailureIssueSummary],
+        _ group: JunitTestGroup,
+        failureSummaries: [JunitFailureSummary],
         configurationName: String,
         testDirectory: String = ""
     ) -> [XMLElement] {
@@ -244,9 +229,9 @@ public struct JunitXML: XmlSerializable {
     }
 
     private func createTestSuiteFinally(
-        _ group: ActionTestSummaryGroup,
-        tests: [ActionTestMetadata],
-        failureSummaries: [TestFailureIssueSummary],
+        _ group: JunitTestGroup,
+        tests: [JunitTest],
+        failureSummaries: [JunitFailureSummary],
         testDirectory: String = "",
         configurationName: String
     ) -> XMLElement {
@@ -269,7 +254,7 @@ public struct JunitXML: XmlSerializable {
     }
 
     private func createTestCases(
-        for name: String, tests: [ActionTestMetadata], failureSummaries: [TestFailureIssueSummary]
+        for name: String, tests: [JunitTest], failureSummaries: [JunitFailureSummary]
     ) -> [XMLElement] {
         var combined = [XMLElement]()
         for thisTest in tests {
@@ -284,7 +269,7 @@ public struct JunitXML: XmlSerializable {
     }
 
     private func createTestCase(
-        test: ActionTestMetadata, classname: String, failureSummaries: [TestFailureIssueSummary]
+        test: JunitTest, classname: String, failureSummaries: [JunitFailureSummary]
     ) -> XMLElement {
         let testcase = test.xmlNode(
             classname: classname,
@@ -324,7 +309,7 @@ extension XMLElement {
     }
 }
 
-extension ActionTestMetadata {
+extension JunitTest {
     func xmlNode(
         classname: String,
         numFormatter: NumberFormatter,
@@ -351,7 +336,7 @@ extension ActionTestMetadata {
         return testcase
     }
 
-    func failureSummaries(in summaries: [TestFailureIssueSummary]) -> [TestFailureIssueSummary] {
+    func failureSummaries(in summaries: [JunitFailureSummary]) -> [JunitFailureSummary] {
         return summaries.filter { summary in
             return summary.testCaseName == identifier?.replacingOccurrences(of: "/", with: ".") ||
                 summary.testCaseName == "-[\(identifier?.replacingOccurrences(of: "/", with: " ") ?? "")]"
@@ -359,7 +344,7 @@ extension ActionTestMetadata {
     }
 }
 
-private extension ActionTestSummaryGroup {
+private extension JunitTestGroup {
     private static var cachedPathnames = [String: String]()
 
     struct TestMetrics {
@@ -369,6 +354,10 @@ private extension ActionTestSummaryGroup {
 
     var identifierString: String {
         return identifier ?? ""
+    }
+
+    var nameString: String {
+        return name ?? "No-name"
     }
 
     func testSuiteXML(numFormatter: NumberFormatter) -> XMLElement {
@@ -395,6 +384,19 @@ private extension ActionTestSummaryGroup {
     // only used in unit testing
     static func resetCachedPathnames() {
         cachedPathnames.removeAll()
+    }
+
+    static func resolvePathFromCachedClassMap(for fileName: String) -> String? {
+        guard !fileName.contains("/") else {
+            return fileName
+        }
+        let candidates = cachedPathnames.values.filter { $0.hasSuffix("/\(fileName)") || $0 == fileName }
+        guard !candidates.isEmpty else {
+            return nil
+        }
+        return candidates.max { lhs, rhs in
+            lhs.components(separatedBy: "est").count < rhs.components(separatedBy: "est").count
+        }
     }
 
     // MARK: - Private interface
@@ -478,12 +480,12 @@ private extension String {
     }
 }
 
-private extension TestFailureIssueSummary {
+private extension JunitFailureSummary {
     func failureXML(projectRoot: URL? = nil) -> XMLElement {
         let failure = XMLElement(name: "failure")
         var value = message
-        if let loc = documentLocationInCreatingWorkspace?.url {
-            if let url = URL(string: loc) {
+        if let loc = documentLocation {
+            if loc.contains("://"), let url = URL(string: loc) {
                 let relative = relativePart(of: url, relativeTo: projectRoot)
                 if let comps = URLComponents(url: url, resolvingAgainstBaseURL: false),
                    let line = comps.fragment?.components(separatedBy: "&").first(
@@ -494,7 +496,7 @@ private extension TestFailureIssueSummary {
                     value += " (\(loc))"
                 }
             } else {
-                value += " (\(loc))"
+                value += " (\(resolvedDocumentLocation(loc, projectRoot: projectRoot)))"
             }
         }
         if !value.isEmpty {
@@ -511,6 +513,22 @@ private extension TestFailureIssueSummary {
             failure.addAttribute(name: "type", stringValue: issueType)
         }
         return failure
+    }
+
+    private func resolvedDocumentLocation(_ location: String, projectRoot: URL?) -> String {
+        guard projectRoot != nil else {
+            return location
+        }
+        let components = location.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
+        guard components.count == 2 else {
+            return location
+        }
+        let file = String(components[0])
+        let linePart = String(components[1])
+        guard let resolvedPath = JunitTestGroup.resolvePathFromCachedClassMap(for: file) else {
+            return location
+        }
+        return "\(resolvedPath):\(linePart)"
     }
 
     private func relativePart(of url: URL, relativeTo projectRoot: URL?) -> String {

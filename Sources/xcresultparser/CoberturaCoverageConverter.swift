@@ -69,6 +69,9 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
 
         var fileInfo: [FileInfo] = []
         for (fileName, value) in coverageJson.files {
+            guard isTargetIncluded(forFile: fileName) else {
+                continue
+            }
             guard !isPathExcluded(fileName) else {
                 continue
             }
@@ -164,18 +167,17 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
 
     private func makeRootElement() -> XMLElement {
         // TODO: some of these values are B.S. - figure out how to calculate, or better to omit if we don't know?
-        let testAction = invocationRecord.actions.first { $0.schemeCommandName == "Test" }
-        let timeStamp = (testAction?.startedTime.timeIntervalSince1970) ?? Date().timeIntervalSince1970
+        let timeStamp = startTime ?? Date().timeIntervalSince1970
         let rootElement = XMLElement(name: "coverage")
         rootElement.addAttribute(
-            XMLNode.nodeAttribute(withName: "line-rate", stringValue: "\(codeCoverage.lineCoverage)")
+            XMLNode.nodeAttribute(withName: "line-rate", stringValue: "\(lineCoverage)")
         )
         rootElement.addAttribute(XMLNode.nodeAttribute(withName: "branch-rate", stringValue: "1.0"))
         rootElement.addAttribute(
-            XMLNode.nodeAttribute(withName: "lines-covered", stringValue: "\(codeCoverage.coveredLines)")
+            XMLNode.nodeAttribute(withName: "lines-covered", stringValue: "\(coveredLines)")
         )
         rootElement.addAttribute(
-            XMLNode.nodeAttribute(withName: "lines-valid", stringValue: "\(codeCoverage.executableLines)")
+            XMLNode.nodeAttribute(withName: "lines-valid", stringValue: "\(executableLines)")
         )
         rootElement.addAttribute(XMLNode.nodeAttribute(withName: "timestamp", stringValue: "\(timeStamp)"))
         rootElement.addAttribute(XMLNode.nodeAttribute(withName: "version", stringValue: "diff_coverage 0.1"))
