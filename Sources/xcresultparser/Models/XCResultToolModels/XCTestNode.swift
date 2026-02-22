@@ -34,10 +34,10 @@ extension XCTestNode {
         result = try? values.decode(XCTestResult.self, forKey: .result)
         nodeIdentifier = try? values.decode(String.self, forKey: .nodeIdentifier)
         let nodeIdentifierURLString = try? values.decode(String.self, forKey: .nodeIdentifierURL)
-        if let nodeIdentifierURLString {
-            nodeIdentifierURL = URL(string: nodeIdentifierURLString)
+        nodeIdentifierURL = if let nodeIdentifierURLString {
+            URL(string: nodeIdentifierURLString)
         } else {
-            nodeIdentifierURL = nil
+            nil
         }
         children = (try? values.decode([XCTestNode].self, forKey: .children)) ?? [XCTestNode]()
         duration = try? values.decode(String.self, forKey: .duration)

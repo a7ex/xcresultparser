@@ -7,11 +7,11 @@
 public enum CoverageReportFormat: String {
     case methods, classes, targets, totals
     public init(string: String?) {
-        if let input = string?.lowercased(),
-           let fmt = CoverageReportFormat(rawValue: input) {
-            self = fmt
+        self = if let input = string?.lowercased(),
+                  let fmt = CoverageReportFormat(rawValue: input) {
+            fmt
         } else {
-            self = .methods
+            .methods
         }
     }
 }

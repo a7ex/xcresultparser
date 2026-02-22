@@ -131,6 +131,5 @@
 --xcode-indentation disabled
 --xctest-symbols 
 --yoda-swap always
---disable redundantMemberwiseInit,redundantProperty,conditionalAssignment
 --disable docComments,docCommentsBeforeModifiers,fileHeader,opaqueGenericParameters,preferKeyPath,redundantReturn,trailingCommas,wrapMultilineStatementBraces
---enable isEmpty,privateStateVariables # ,propertyTypes,unusedPrivateDeclarations
+--enable isEmpty,privateStateVariables,propertyTypes,unusedPrivateDeclarations

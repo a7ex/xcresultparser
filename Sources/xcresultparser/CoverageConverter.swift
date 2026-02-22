@@ -96,10 +96,10 @@ public class CoverageConverter {
             projectRoot: projectRoot
         )
         self.excludedPaths = Set(excludedPaths)
-        if let summary = try? resolvedXCResultToolClient.getTestSummary(path: url) {
-            startTime = summary.startTime
+        startTime = if let summary = try? resolvedXCResultToolClient.getTestSummary(path: url) {
+            summary.startTime
         } else {
-            startTime = nil
+            nil
         }
     }
 

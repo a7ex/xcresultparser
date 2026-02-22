@@ -14,11 +14,10 @@ extension XCTestNode {
     }
 
     func mapArgumentTest(argument: XCTestNode, testClassName: String?) -> MappedArgumentTest {
-        let baseIdentifier: String
-        if let testClassName {
-            baseIdentifier = "\(testClassName)/\(name)"
+        let baseIdentifier: String = if let testClassName {
+            "\(testClassName)/\(name)"
         } else {
-            baseIdentifier = name
+            name
         }
         return MappedArgumentTest(
             identifier: baseIdentifier.formatWithParameter(argument.name),

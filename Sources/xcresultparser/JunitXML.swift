@@ -86,18 +86,18 @@ public struct JunitXML: XmlSerializable {
     ) {
         self.dataProvider = dataProvider
         var isDirectory: ObjCBool = false
-        if SharedInstances.fileManager.fileExists(atPath: projectRoot, isDirectory: &isDirectory),
-           isDirectory.boolValue == true {
-            self.projectRoot = URL(fileURLWithPath: projectRoot)
+        self.projectRoot = if SharedInstances.fileManager.fileExists(atPath: projectRoot, isDirectory: &isDirectory),
+                              isDirectory.boolValue == true {
+            URL(fileURLWithPath: projectRoot)
         } else {
-            self.projectRoot = nil
+            nil
         }
 
         testReportFormat = format
-        if testReportFormat == .sonar {
-            nodeNames = NodeNames.sonarNodeNames
+        nodeNames = if testReportFormat == .sonar {
+            NodeNames.sonarNodeNames
         } else {
-            nodeNames = NodeNames.defaultNodeNames
+            NodeNames.defaultNodeNames
         }
         self.relativePathNames = relativePathNames
     }
@@ -504,11 +504,10 @@ private extension JunitFailureSummary {
             let textNode = XMLNode(kind: .text)
             textNode.objectValue = value
             failure.addChild(textNode)
-            let shortMessage: String
-            if let producingTarget {
-                shortMessage = "\(issueType) in \(producingTarget): \(testCaseName)"
+            let shortMessage = if let producingTarget {
+                "\(issueType) in \(producingTarget): \(testCaseName)"
             } else {
-                shortMessage = "\(issueType): \(testCaseName)"
+                "\(issueType): \(testCaseName)"
             }
             failure.addAttribute(name: "message", stringValue: shortMessage)
             failure.addAttribute(name: "type", stringValue: issueType)

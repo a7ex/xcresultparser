@@ -627,11 +627,10 @@ public struct XCResultFormatter {
 
     private func mapTest(node: XCTestNode, testClassName: String?) -> FormattedTest {
         let result = node.result ?? .unknown
-        let identifier: String
-        if let testClassName {
-            identifier = "\(testClassName)/\(node.name)"
+        let identifier: String = if let testClassName {
+            "\(testClassName)/\(node.name)"
         } else {
-            identifier = node.name
+            node.name
         }
         return FormattedTest(
             identifier: identifier,

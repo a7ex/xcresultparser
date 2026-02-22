@@ -24,13 +24,13 @@ extension XCFailureDistributionInsight {
         title = try values.decode(String.self, forKey: .title)
         distributionPercent = try values.decode(Double.self, forKey: .distributionPercent)
         associatedTestIdentifiers = try values.decode([String].self, forKey: .associatedTestIdentifiers)
-        if let intImpact = try? values.decode(Int.self, forKey: .impact) {
-            impact = intImpact
+        impact = if let intImpact = try? values.decode(Int.self, forKey: .impact) {
+            intImpact
         } else if let stringImpact = try? values.decode(String.self, forKey: .impact),
                   let parsedImpact = Int(stringImpact) {
-            impact = parsedImpact
+            parsedImpact
         } else {
-            impact = 0
+            0
         }
         bug = try? values.decode(String.self, forKey: .bug)
         tag = try? values.decode(String.self, forKey: .tag)

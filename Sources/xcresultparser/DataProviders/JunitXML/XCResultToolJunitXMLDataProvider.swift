@@ -167,11 +167,10 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
 
     private func mapTest(node: XCTestNode, testClassName: String?) -> JunitTest {
         let result = node.result ?? .unknown
-        let identifier: String
-        if let testClassName {
-            identifier = "\(testClassName)/\(node.name)"
+        let identifier: String = if let testClassName {
+            "\(testClassName)/\(node.name)"
         } else {
-            identifier = node.name
+            node.name
         }
         return JunitTest(
             identifier: identifier,

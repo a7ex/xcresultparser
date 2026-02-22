@@ -41,15 +41,15 @@ extension XCTestDetails {
         devices = try values.decode([XCDevice].self, forKey: .devices)
         testRuns = try values.decode([XCTestNode].self, forKey: .testRuns)
         testResult = try values.decode(XCTestResult.self, forKey: .testResult)
-        if let performanceFlag = try? values.decode(Bool.self, forKey: .hasPerformanceMetrics) {
-            hasPerformanceMetrics = performanceFlag
+        hasPerformanceMetrics = if let performanceFlag = try? values.decode(Bool.self, forKey: .hasPerformanceMetrics) {
+            performanceFlag
         } else {
-            hasPerformanceMetrics = (try? values.decode(String.self, forKey: .hasPerformanceMetrics)) == "true"
+            (try? values.decode(String.self, forKey: .hasPerformanceMetrics)) == "true"
         }
-        if let mediaFlag = try? values.decode(Bool.self, forKey: .hasMediaAttachments) {
-            hasMediaAttachments = mediaFlag
+        hasMediaAttachments = if let mediaFlag = try? values.decode(Bool.self, forKey: .hasMediaAttachments) {
+            mediaFlag
         } else {
-            hasMediaAttachments = (try? values.decode(String.self, forKey: .hasMediaAttachments)) == "true"
+            (try? values.decode(String.self, forKey: .hasMediaAttachments)) == "true"
         }
         testIdentifierURL = try? values.decode(String.self, forKey: .testIdentifierURL)
         durationInSeconds = try? values.decode(Double.self, forKey: .durationInSeconds)

@@ -12,11 +12,11 @@ public enum OutputFormat: String {
     case warningsAndErrors = "warnings-and-errors"
 
     public init(string: String?) {
-        if let input = string?.lowercased(),
-           let fmt = OutputFormat(rawValue: input) {
-            self = fmt
+        self = if let input = string?.lowercased(),
+                  let fmt = OutputFormat(rawValue: input) {
+            fmt
         } else {
-            self = .cli
+            .cli
         }
     }
 }

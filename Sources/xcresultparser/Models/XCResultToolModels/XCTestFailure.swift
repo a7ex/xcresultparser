@@ -26,10 +26,10 @@ extension XCTestFailure {
         testIdentifier = try values.decode(Int64.self, forKey: .testIdentifier)
         testIdentifierString = try values.decode(String.self, forKey: .testIdentifierString)
         let testIdentifierURLString = try? values.decode(String.self, forKey: .testIdentifierURL)
-        if let testIdentifierURLString {
-            testIdentifierURL = URL(string: testIdentifierURLString)
+        testIdentifierURL = if let testIdentifierURLString {
+            URL(string: testIdentifierURLString)
         } else {
-            testIdentifierURL = nil
+            nil
         }
     }
 }
