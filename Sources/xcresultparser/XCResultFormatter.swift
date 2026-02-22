@@ -9,7 +9,7 @@ import Foundation
 
 public struct XCResultFormatter {
     private enum SummaryField: String {
-        case errors, warnings, analyzerWarnings, tests, failed, skipped
+        case errors, warnings, analyzerWarnings, tests, failed, skipped, duration, date
     }
 
     private struct SummaryFields {
@@ -44,15 +44,33 @@ public struct XCResultFormatter {
         }
     }
 
+    private enum FormattedTestStatus {
+        case passed
+        case failed
+        case skipped
+        case expectedFailure
+    }
+
     private struct FormattedTest {
         let identifier: String
         let name: String
         let duration: Double?
-        let isFailed: Bool
-        let isSkipped: Bool
+        let status: FormattedTestStatus
+
+        var isFailed: Bool {
+            status == .failed
+        }
+
+        var isSkipped: Bool {
+            status == .skipped
+        }
+
+        var isExpectedFailure: Bool {
+            status == .expectedFailure
+        }
 
         var isSuccessful: Bool {
-            !isFailed && !isSkipped
+            status == .passed
         }
     }
 
@@ -72,22 +90,20 @@ public struct XCResultFormatter {
     private let failedTestsOnly: Bool
     private let summaryFields: SummaryFields
     private let coverageReportFormat: CoverageReportFormat
-    private let failureLocationRegex = try? NSRegularExpression(
-        pattern: #"^(.+?):([0-9]+):\s*(.+)$"#,
-        options: []
+
+    private static let numberStyle = FloatingPointFormatStyle<Double>
+        .number
+        .locale(Locale(identifier: "en_US_POSIX"))
+        .precision(.fractionLength(0 ... 4))
+
+    private static let percentStyle = FloatingPointFormatStyle<Double>
+        .number
+        .locale(Locale(identifier: "en_US_POSIX"))
+        .precision(.fractionLength(0 ... 1))
+
+    private static let iso8601UTCStyle = Date.ISO8601FormatStyle(
+        timeZone: TimeZone(secondsFromGMT: 0)!
     )
-
-    private var numFormatter: NumberFormatter = {
-        let numFormatter = NumberFormatter()
-        numFormatter.maximumFractionDigits = 4
-        return numFormatter
-    }()
-
-    private var percentFormatter: NumberFormatter = {
-        let numFormatter = NumberFormatter()
-        numFormatter.maximumFractionDigits = 1
-        return numFormatter
-    }()
 
     // MARK: - Initializer
 
@@ -96,13 +112,16 @@ public struct XCResultFormatter {
         formatter: XCResultFormatting,
         coverageTargets: [String] = [],
         failedTestsOnly: Bool = false,
-        summaryFields: String = "errors|warnings|analyzerWarnings|tests|failed|skipped",
+        summaryFields: String = "errors|warnings|analyzerWarnings|tests|failed|skipped|duration|date",
         coverageReportFormat: CoverageReportFormat = .methods
     ) {
-        let client = XCResultToolClient()
-        guard let buildResults = try? client.getBuildResults(path: url),
-              let summary = try? client.getTestSummary(path: url),
-              let tests = try? client.getTests(path: url) else {
+        let shell = DependencyFactory.createShell()
+        let resolvedXCResultToolClient = DependencyFactory.createXCResultToolClient(shell)
+        let resolvedXCCovClient = DependencyFactory.createXCCovClient(shell)
+
+        guard let buildResults = try? resolvedXCResultToolClient.getBuildResults(path: url),
+              let summary = try? resolvedXCResultToolClient.getTestSummary(path: url),
+              let tests = try? resolvedXCResultToolClient.getTests(path: url) else {
             return nil
         }
 
@@ -110,8 +129,15 @@ public struct XCResultFormatter {
         self.testSummary = summary
         self.tests = tests
         outputFormatter = formatter
-        self.coverageReport = try? Self.getCoverageReportAsJSON(resultFileURL: url, shell: DependencyFactory.createShell())
-        self.coverageTargets = Self.targets(filteredBy: coverageTargets, availableTargets: coverageReport?.targets.map(\.name) ?? [])
+        self.coverageReport = try? resolvedXCCovClient.getCoverageReport(path: url)
+        let targetSelection = CoverageTargetSelection(
+            with: coverageTargets,
+            from: coverageReport?.targets.map(\.name) ?? []
+        )
+        guard targetSelection.unmatchedRequested.isEmpty else {
+            return nil
+        }
+        self.coverageTargets = targetSelection.selectedTargets
         self.failedTestsOnly = failedTestsOnly
         self.summaryFields = SummaryFields(specifiers: summaryFields)
         self.coverageReportFormat = coverageReportFormat
@@ -198,6 +224,24 @@ public struct XCResultFormatter {
                 )
             )
         }
+        if summaryFields.enabledFields.contains(.duration),
+           let durationString = executionDurationString() {
+            lines.append(
+                outputFormatter.resultSummaryLine(
+                    "Execution time = \(durationString)s",
+                    failed: false
+                )
+            )
+        }
+        if summaryFields.enabledFields.contains(.date),
+           let executionDateString = executionDateString() {
+            lines.append(
+                outputFormatter.resultSummaryLine(
+                    "Execution date = \(executionDateString)",
+                    failed: false
+                )
+            )
+        }
         return lines
     }
 
@@ -228,7 +272,33 @@ public struct XCResultFormatter {
         if summaryFields.enabledFields.contains(.skipped) {
             summary += "; Skipped: \(testsSkippedCount)"
         }
+        if summaryFields.enabledFields.contains(.duration),
+           let durationString = executionDurationString() {
+            summary += "; Execution time = \(durationString)s"
+        }
+        if summaryFields.enabledFields.contains(.date),
+           let executionDateString = executionDateString() {
+            summary += "; Execution date = \(executionDateString)"
+        }
         return summary
+    }
+
+    private func executionDurationString() -> String? {
+        guard let start = testSummary.startTime,
+              let finish = testSummary.finishTime else {
+            return nil
+        }
+        let duration = max(0, finish - start)
+        let formatted = duration.formatted(Self.numberStyle)
+        return formatted.isEmpty ? nil : formatted
+    }
+
+    private func executionDateString() -> String? {
+        guard let start = testSummary.startTime else {
+            return nil
+        }
+        let date = Date(timeIntervalSince1970: start)
+        return date.formatted(Self.iso8601UTCStyle)
     }
 
     private func createTestDetailsString() -> [String] {
@@ -297,7 +367,7 @@ public struct XCResultFormatter {
            !group.hasFailedTests {
             return lines
         }
-        let header = "\(group.name) (\(numFormatter.unwrappedString(for: group.duration)))"
+        let header = "\(group.name) (\(formattedDurationString(for: group.duration)))"
 
         switch level {
         case 0:
@@ -342,7 +412,7 @@ public struct XCResultFormatter {
         failureSummaries: [XCTestFailure],
         failureMessageDetails: [String: [FailureMessageDetail]]
     ) -> String {
-        let duration = numFormatter.unwrappedString(for: testData.duration)
+        let duration = formattedDurationString(for: testData.duration)
         let icon = actionTestFileStatusStringIcon(testData: testData)
         let testTitle = "\(icon) \(testData.name) (\(duration))"
         let testCaseName = testData.identifier
@@ -368,6 +438,10 @@ public struct XCResultFormatter {
             return outputFormatter.testPassIcon
         }
 
+        if testData.isExpectedFailure {
+            return outputFormatter.testExpectedFailureIcon
+        }
+
         if testData.isSkipped {
             return outputFormatter.testSkipIcon
         }
@@ -377,6 +451,24 @@ public struct XCResultFormatter {
 
     private func actionTestFailureStatusString(with header: String, message: String) -> String {
         return outputFormatter.failedTestItem(header, message: message)
+    }
+
+    private func formattedDurationString(for duration: Double?) -> String {
+        guard let duration else {
+            return ""
+        }
+        let totalSeconds = max(0, Int(duration.rounded()))
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let seconds = totalSeconds % 60
+
+        if hours > 0 {
+            return "\(hours)h \(minutes)m \(seconds)s"
+        }
+        if minutes > 0 {
+            return "\(minutes)m \(seconds)s"
+        }
+        return "\(seconds)s"
     }
 
     private func createCoverageReport() -> [String] {
@@ -397,7 +489,7 @@ public struct XCResultFormatter {
 
         guard executableLines > 0 else { return lines }
         let fraction = Double(coveredLines) / Double(executableLines)
-        let covPercent = percentFormatter.unwrappedString(for: fraction * 100)
+        let covPercent = (fraction * 100).formatted(Self.percentStyle)
         let line = outputFormatter.codeCoverageTargetSummary("Total coverage: \(covPercent)% (\(coveredLines)/\(executableLines))")
         lines.insert(line, at: 1)
         return lines
@@ -411,7 +503,7 @@ public struct XCResultFormatter {
             return CodeCoverageParseResult(lines: lines, executableLines: executableLines, coveredLines: coveredLines)
         }
 
-        let covPercent = percentFormatter.unwrappedString(for: target.lineCoverage * 100)
+        let covPercent = (target.lineCoverage * 100).formatted(Self.percentStyle)
         executableLines += target.executableLines
         coveredLines += target.coveredLines
         guard coverageReportFormat != .totals else {
@@ -440,7 +532,7 @@ public struct XCResultFormatter {
 
     private func createCoverageReportFor(file: CoverageReportFile) -> [String] {
         var lines = [String]()
-        let covPercent = percentFormatter.unwrappedString(for: file.lineCoverage * 100)
+        let covPercent = (file.lineCoverage * 100).formatted(Self.percentStyle)
         lines.append(
             outputFormatter.codeCoverageFileSummary(
                 "\(file.name): \(covPercent)% (\(file.coveredLines)/\(file.executableLines))"
@@ -454,7 +546,7 @@ public struct XCResultFormatter {
                 lines.append(outputFormatter.tableOpenTag)
             }
             for function in file.functions {
-                let covPercentLine = percentFormatter.unwrappedString(for: function.lineCoverage * 100)
+                let covPercentLine = (function.lineCoverage * 100).formatted(Self.percentStyle)
                 lines.append(
                     outputFormatter.codeCoverageFunctionSummary(
                         [
@@ -506,9 +598,18 @@ public struct XCResultFormatter {
         }
 
         let children = node.children ?? []
-        let tests = children
-            .filter { $0.nodeType == .testCase }
-            .map { mapTest(node: $0, testClassName: nextTestClassName) }
+        let tests = children.mapTests(
+            testClassName: nextTestClassName,
+            mapTest: mapTest(node:testClassName:),
+            mapArgumentTest: { mappedArgumentTest in
+                FormattedTest(
+                    identifier: mappedArgumentTest.identifier,
+                    name: mappedArgumentTest.name,
+                    duration: mappedArgumentTest.duration,
+                    status: testStatus(for: mappedArgumentTest.result)
+                )
+            }
+        )
 
         let groups = children.compactMap { child in
             mapGroup(node: child, currentTestClassName: nextTestClassName)
@@ -536,9 +637,21 @@ public struct XCResultFormatter {
             identifier: identifier,
             name: node.name,
             duration: node.durationInSeconds,
-            isFailed: result == .failed,
-            isSkipped: result == .skipped || result == .expectedFailure
+            status: testStatus(for: result)
         )
+    }
+
+    private func testStatus(for result: XCTestResult) -> FormattedTestStatus {
+        switch result {
+        case .failed:
+            return .failed
+        case .skipped:
+            return .skipped
+        case .expectedFailure:
+            return .expectedFailure
+        case .passed, .unknown:
+            return .passed
+        }
     }
 
     private func mappedGroupName(for node: XCTestNode) -> String {
@@ -548,24 +661,6 @@ public struct XCResultFormatter {
         default:
             return node.name
         }
-    }
-
-    private static func targets(filteredBy filter: [String], availableTargets: [String]) -> Set<String> {
-        guard !filter.isEmpty else {
-            return Set(availableTargets)
-        }
-        let filterSet = Set(filter)
-        let filtered = availableTargets.filter { thisTarget in
-            guard let stripped = thisTarget.split(separator: ".").first else { return true }
-            return filterSet.contains(String(stripped))
-        }
-        return Set(filtered)
-    }
-
-    private static func getCoverageReportAsJSON(resultFileURL: URL, shell: Commandline) throws -> CoverageReport {
-        let arguments = ["xccov", "view", "--report", "--json", resultFileURL.path]
-        let coverageData = try shell.execute(program: "/usr/bin/xcrun", with: arguments)
-        return try JSONDecoder().decode(CoverageReport.self, from: coverageData)
     }
 
     private func failureMessageDetailsByTestIdentifier() -> [String: [FailureMessageDetail]] {
@@ -621,20 +716,19 @@ public struct XCResultFormatter {
     }
 
     private func parseFailureMessage(_ raw: String) -> FailureMessageDetail? {
-        guard let failureLocationRegex else {
+        let parts = raw.split(separator: ":", maxSplits: 2, omittingEmptySubsequences: false)
+        guard parts.count == 3 else {
             return nil
         }
-        let range = NSRange(raw.startIndex..<raw.endIndex, in: raw)
-        guard let match = failureLocationRegex.firstMatch(in: raw, options: [], range: range),
-              match.numberOfRanges == 4,
-              let fileRange = Range(match.range(at: 1), in: raw),
-              let lineRange = Range(match.range(at: 2), in: raw),
-              let messageRange = Range(match.range(at: 3), in: raw) else {
+        let file = String(parts[0])
+        let line = String(parts[1]).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !line.isEmpty, line.allSatisfy(\.isNumber) else {
             return nil
         }
-        let file = String(raw[fileRange])
-        let line = String(raw[lineRange])
-        let message = String(raw[messageRange])
+        let message = String(parts[2]).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !file.isEmpty, !message.isEmpty else {
+            return nil
+        }
         return FailureMessageDetail(
             message: message,
             documentLocation: "\(file):\(line)"

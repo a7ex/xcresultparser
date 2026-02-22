@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "Xcresultparser",
     platforms: [
-        .macOS(.v11),
+        .macOS(.v12),
     ],
     products: [
         .executable(
@@ -55,7 +55,8 @@ let package = Package(
                 .copy("TestAssets/warnings.json"),
                 .copy("TestAssets/resultWithCompileError.xcresult"),
                 .copy("TestAssets/sonarTestExecutionWithProjectRootAbsolute.xml"),
-                .copy("TestAssets/sonarTestExecutionWithProjectRootRelative.xml")
+                .copy("TestAssets/sonarTestExecutionWithProjectRootRelative.xml"),
+                .copy("TestAssets/parametrized.xcresult")
             ]
         )
     ]

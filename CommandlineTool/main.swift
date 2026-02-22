@@ -31,7 +31,7 @@ struct xcresultparser: ParsableCommand {
     @Option(name: [.customShort("e"), .customLong("excluded-path")], help: "Specify which path names to exclude. You can use more than one -e option to specify a list of path patterns to exclude. This option only has effect, if the format is either 'cobertura' or 'xml' with the --coverage (-c) option for a code coverage report or if the format is one of 'warnings', 'errors' or 'warnings-and-errors'.")
     var excludedPaths: [String] = []
 
-    @Option(name: .shortAndLong, help: "The fields in the summary. Default is all: errors|warnings|analyzerWarnings|tests|failed|skipped")
+    @Option(name: .shortAndLong, help: "The fields in the summary. Default is all: errors|warnings|analyzerWarnings|tests|failed|skipped|duration|date")
     var summaryFields: String?
 
     @Flag(name: .shortAndLong, help: "Whether to print coverage data.")
@@ -91,29 +91,25 @@ struct xcresultparser: ParsableCommand {
     }
 
     private func outputSonarXML(for xcresult: String) throws {
-        guard let converter = SonarCoverageConverter(
+        let converter = try SonarCoverageConverter(
             with: URL(fileURLWithPath: xcresult),
             projectRoot: projectRoot ?? "",
             coverageTargets: coverageTargets,
             excludedPaths: excludedPaths,
             strictPathnames: strictPathnames == 1
-        ) else {
-            throw ParseError.argumentError
-        }
+        )
         let rslt = try converter.xmlString(quiet: quiet == 1)
         writeToStdOut(rslt)
     }
 
     private func outputCoberturaXML(for xcresult: String) throws {
-        guard let converter = CoberturaCoverageConverter(
+        let converter = try CoberturaCoverageConverter(
             with: URL(fileURLWithPath: xcresult),
             projectRoot: projectRoot ?? "",
             coverageTargets: coverageTargets,
             excludedPaths: excludedPaths,
             strictPathnames: strictPathnames == 1
-        ) else {
-            throw ParseError.argumentError
-        }
+        )
         let rslt = try converter.xmlString(quiet: quiet == 1)
         writeToStdOut(rslt)
     }
@@ -131,14 +127,12 @@ struct xcresultparser: ParsableCommand {
     }
 
     private func outputTargetNames(for xcresult: String) throws {
-        guard let converter = SonarCoverageConverter(
+        let converter = try SonarCoverageConverter(
             with: URL(fileURLWithPath: xcresult),
             projectRoot: projectRoot ?? "",
-            coverageTargets: coverageTargets,
+            coverageTargets: [],
             strictPathnames: strictPathnames == 1
-        ) else {
-            throw ParseError.argumentError
-        }
+        )
         writeToStdOut(converter.targetsInfo)
     }
 
@@ -162,7 +156,7 @@ struct xcresultparser: ParsableCommand {
             formatter: outputFormatter,
             coverageTargets: coverageTargets,
             failedTestsOnly: failedTestsOnly == 1,
-            summaryFields: summaryFields ?? "errors|warnings|analyzerWarnings|tests|failed|skipped",
+            summaryFields: summaryFields ?? "errors|warnings|analyzerWarnings|tests|failed|skipped|duration|date",
             coverageReportFormat: CoverageReportFormat(string: coverageReportFormat)
         ) else {
             throw ParseError.argumentError

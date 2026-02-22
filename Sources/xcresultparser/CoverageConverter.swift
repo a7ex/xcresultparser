@@ -7,6 +7,22 @@
 
 import Foundation
 
+public enum CoverageConverterError: LocalizedError, Equatable {
+    case couldNotLoadCoverageReport
+    case unknownCoverageTargets(requested: [String], available: [String])
+
+    public var errorDescription: String? {
+        switch self {
+        case .couldNotLoadCoverageReport:
+            return "Could not load coverage report from xcresult archive."
+        case let .unknownCoverageTargets(requested, available):
+            let requestedList = requested.joined(separator: ", ")
+            let availableList = available.joined(separator: ", ")
+            return "Unknown coverage target(s): \(requestedList). Available targets: \(availableList)"
+        }
+    }
+}
+
 /// Convert coverage data in a xcresult archive to xml (exact format determined by subclass)
 ///
 /// ~~ Unfortunately converting to the coverage xml format suited for e.g. sonarqube is a tedious task.
@@ -34,40 +50,53 @@ public class CoverageConverter {
 
     // MARK: - Dependencies
 
-    let shell: Commandline
-    let xcresultToolClient: XCResultToolClient
+    let xcresultToolClient: XCResultToolProviding
+    let xccovClient: XCCovProviding
 
-    public init?(
+    public init(
         with url: URL,
         projectRoot: String = "",
         coverageTargets: [String] = [],
         excludedPaths: [String] = [],
         strictPathnames: Bool
-    ) {
-        let shell = Shell()
-        let xcresultToolClient = XCResultToolClient(shell: shell)
-        guard let report = try? CoverageConverter.getCoverageReportAsJSON(resultFileURL: url, shell: shell) else {
-            return nil
+    ) throws {
+        let shell = DependencyFactory.createShell()
+        let resolvedXCResultToolClient = DependencyFactory.createXCResultToolClient(shell)
+        let resolvedXCCovClient = DependencyFactory.createXCCovClient(shell)
+        let report: CoverageReport
+        do {
+            report = try resolvedXCCovClient.getCoverageReport(path: url)
+        } catch {
+            throw CoverageConverterError.couldNotLoadCoverageReport
         }
 
-        self.shell = shell
-        self.xcresultToolClient = xcresultToolClient
+        self.xcresultToolClient = resolvedXCResultToolClient
+        self.xccovClient = resolvedXCCovClient
         resultFileURL = url
         coverageReport = report
         self.projectRoot = projectRoot
         self.strictPathnames = projectRoot.isEmpty ? false : strictPathnames
-        let selectedCoverageTargets = CoverageConverter.targets(
-            filteredBy: coverageTargets,
-            availableTargets: report.targets.map(\.name)
+        let targetSelection = CoverageTargetSelection(
+            with: coverageTargets,
+            from: report.targets.map(\.name)
         )
+        let selectedCoverageTargets = targetSelection.selectedTargets
         self.coverageTargets = selectedCoverageTargets
-        filesForIncludedTargets = Set(
-            report.targets
-                .filter { selectedCoverageTargets.contains($0.name) }
-                .flatMap { $0.files.map(\.path) }
+        if !targetSelection.unmatchedRequested.isEmpty {
+            throw CoverageConverterError.unknownCoverageTargets(
+                requested: targetSelection.unmatchedRequested.sorted(),
+                available: targetSelection.availableTargets.sorted()
+            )
+        }
+        let includedTargetFiles = report.targets
+            .filter { selectedCoverageTargets.contains($0.name) }
+            .flatMap { $0.files.map(\.path) }
+        filesForIncludedTargets = CoverageConverter.normalizedFilePaths(
+            for: includedTargetFiles,
+            projectRoot: projectRoot
         )
         self.excludedPaths = Set(excludedPaths)
-        if let summary = try? xcresultToolClient.getTestSummary(path: url) {
+        if let summary = try? resolvedXCResultToolClient.getTestSummary(path: url) {
             startTime = summary.startTime
         } else {
             startTime = nil
@@ -110,18 +139,15 @@ public class CoverageConverter {
 
     // Use the xccov commandline tool to get results as JSON.
     func getCoverageDataAsJSON() throws -> FileCoverage {
-        var arguments = ["xccov", "view"]
-        if resultFileURL.pathExtension == "xcresult" {
-            arguments.append("--archive")
-        }
-        arguments.append("--json")
-        arguments.append(resultFileURL.path)
-        let coverageData = try shell.execute(program: "/usr/bin/xcrun", with: arguments)
-        return try CoverageConverter.decodeJSON(FileCoverage.self, from: coverageData)
+        try xccovClient.getCoverageData(path: resultFileURL)
     }
 
     func isTargetIncluded(forFile file: String) -> Bool {
-        filesForIncludedTargets.contains(file)
+        if filesForIncludedTargets.contains(file) {
+            return true
+        }
+        let normalized = CoverageConverter.normalizedFilePaths(for: [file], projectRoot: projectRoot)
+        return !filesForIncludedTargets.isDisjoint(with: normalized)
     }
 
     func isPathExcluded(_ path: String) -> Bool {
@@ -133,52 +159,34 @@ public class CoverageConverter {
 
     // Maintained to support the public API used by tests and existing consumers.
     func coverageForFile(path: String) throws -> String {
-        var arguments = ["xccov", "view"]
-        if resultFileURL.pathExtension == "xcresult" {
-            arguments.append("--archive")
-        }
-        arguments.append("--file")
-        arguments.append(path)
-        arguments.append(resultFileURL.path)
-        let coverageData = try shell.execute(program: "/usr/bin/xcrun", with: arguments)
-        return String(decoding: coverageData, as: UTF8.self)
+        try xccovClient.getCoverageForFile(path: resultFileURL, filePath: path)
     }
 
     // Maintained to support the public API used by tests and existing consumers.
     func coverageFileList() throws -> [String] {
-        var arguments = ["xccov", "view"]
-        if resultFileURL.pathExtension == "xcresult" {
-            arguments.append("--archive")
-        }
-        arguments.append("--file-list")
-        arguments.append(resultFileURL.path)
-        let filelistData = try shell.execute(program: "/usr/bin/xcrun", with: arguments)
-        return String(decoding: filelistData, as: UTF8.self).components(separatedBy: "\n")
+        try xccovClient.getCoverageFileList(path: resultFileURL)
     }
 
-    private static func getCoverageReportAsJSON(resultFileURL: URL, shell: Commandline) throws -> CoverageReport {
-        var arguments = ["xccov", "view"]
-        arguments.append("--report")
-        arguments.append("--json")
-        arguments.append(resultFileURL.path)
-        let coverageData = try shell.execute(program: "/usr/bin/xcrun", with: arguments)
-        return try decodeJSON(CoverageReport.self, from: coverageData)
-    }
-
-    private static func targets(filteredBy filter: [String], availableTargets: [String]) -> Set<String> {
-        guard !filter.isEmpty else {
-            return Set(availableTargets)
+    static func normalizedFilePaths(for paths: [String], projectRoot: String) -> Set<String> {
+        var result = Set<String>()
+        for path in paths {
+            result.insert(path)
+            guard !projectRoot.isEmpty else {
+                continue
+            }
+            if path.hasPrefix(projectRoot) {
+                var relative = String(path.dropFirst(projectRoot.count))
+                if relative.hasPrefix("/") {
+                    relative.removeFirst()
+                }
+                if !relative.isEmpty {
+                    result.insert(relative)
+                }
+            } else if !path.hasPrefix("/") {
+                let joined = (projectRoot as NSString).appendingPathComponent(path)
+                result.insert(joined)
+            }
         }
-        let filterSet = Set(filter)
-        let filtered = availableTargets.filter { thisTarget in
-            guard let stripped = thisTarget.split(separator: ".").first else { return true }
-            return filterSet.contains(String(stripped))
-        }
-        return Set(filtered)
-    }
-
-    private static func decodeJSON<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
-        let decoder = JSONDecoder()
-        return try decoder.decode(type, from: data)
+        return result
     }
 }

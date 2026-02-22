@@ -127,6 +127,105 @@ struct XCResultToolJunitXMLDataProviderTests {
     }
 
     @Test
+    func testProviderAddsFailureDocumentLocation() throws {
+        let summaryJSON = """
+        {
+          "title": "Test - Demo",
+          "environmentDescription": "Demo",
+          "topInsights": [],
+          "result": "Failed",
+          "totalTestCount": 1,
+          "passedTests": 0,
+          "failedTests": 1,
+          "skippedTests": 0,
+          "expectedFailures": 0,
+          "statistics": [],
+          "devicesAndConfigurations": [],
+          "testFailures": [
+            {
+              "failureText": "failed - expected true",
+              "targetName": "DemoTests",
+              "testIdentifier": 1,
+              "testIdentifierString": "DemoTests/testFail()",
+              "testIdentifierURL": "test://com.apple.xcode/Demo/DemoTests/testFail",
+              "testName": "testFail()"
+            }
+          ],
+          "startTime": 100.0,
+          "finishTime": 120.0
+        }
+        """
+
+        let testsJSON = """
+        {
+          "testPlanConfigurations": [
+            {
+              "configurationId": "1",
+              "configurationName": "Default"
+            }
+          ],
+          "devices": [],
+          "testNodes": [
+            {
+              "name": "Test Plan",
+              "nodeType": "Test Plan",
+              "children": [
+                {
+                  "name": "Default",
+                  "nodeType": "Test Plan Configuration",
+                  "children": [
+                    {
+                      "name": "DemoTests.xctest",
+                      "nodeType": "Unit test bundle",
+                      "children": [
+                        {
+                          "name": "DemoTests",
+                          "nodeType": "Test Suite",
+                          "children": [
+                            {
+                              "name": "testFail()",
+                              "nodeType": "Test Case",
+                              "result": "Failed",
+                              "children": [
+                                {
+                                  "name": "DemoTests.swift:42: failed - expected true",
+                                  "nodeType": "Failure Message"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+        """
+
+        let shell = LookupShell(
+            responses: [
+                "xcresulttool get test-results summary --path /tmp/test.xcresult": .success(Data(summaryJSON.utf8)),
+                "xcresulttool get test-results tests --path /tmp/test.xcresult": .success(Data(testsJSON.utf8))
+            ]
+        )
+        let client = XCResultToolClient(shell: shell)
+        guard let provider = XCResultToolJunitXMLDataProvider(
+            url: URL(fileURLWithPath: "/tmp/test.xcresult"),
+            client: client
+        ) else {
+            Issue.record("Expected provider initialization to succeed")
+            return
+        }
+
+        let action = try #require(provider.testActions.first)
+        let summary = try #require(action.failureSummaries.first)
+        #expect(summary.documentLocation == "DemoTests.swift:42")
+    }
+
+    @Test
     func testProviderInitFailsIfXCResultToolFails() {
         let shell = LookupShell(
             responses: [
@@ -141,6 +240,212 @@ struct XCResultToolJunitXMLDataProviderTests {
         )
 
         #expect(provider == nil)
+    }
+
+    @Test
+    func testProviderMapsParameterizedTests() throws {
+        let summaryJSON = """
+        {
+          "title": "Test - Demo",
+          "environmentDescription": "Demo",
+          "topInsights": [],
+          "result": "Failed",
+          "totalTestCount": 2,
+          "passedTests": 2,
+          "failedTests": 0,
+          "skippedTests": 0,
+          "expectedFailures": 0,
+          "statistics": [],
+          "devicesAndConfigurations": [],
+          "testFailures": [],
+          "startTime": 100.0,
+          "finishTime": 120.0
+        }
+        """
+
+        let testsJSON = """
+        {
+          "testPlanConfigurations": [
+            {
+              "configurationId": "1",
+              "configurationName": "Default"
+            }
+          ],
+          "devices": [],
+          "testNodes": [
+            {
+              "name": "Test Plan",
+              "nodeType": "Test Plan",
+              "children": [
+                {
+                  "name": "Default",
+                  "nodeType": "Test Plan Configuration",
+                  "children": [
+                    {
+                      "name": "DemoTests.xctest",
+                      "nodeType": "Unit test bundle",
+                      "children": [
+                        {
+                          "name": "DemoTests",
+                          "nodeType": "Test Suite",
+                          "children": [
+                            {
+                              "name": "testParametrized(value:)",
+                              "nodeType": "Test Case",
+                              "result": "Passed",
+                              "children": [
+                                {
+                                  "name": "false",
+                                  "nodeType": "Arguments",
+                                  "result": "Passed",
+                                  "durationInSeconds": 1.0
+                                },
+                                {
+                                  "name": "true",
+                                  "nodeType": "Arguments",
+                                  "result": "Passed",
+                                  "durationInSeconds": 2.0
+                                }
+                              ]
+                            },
+                            {
+                              "name": "testMultiParam(value:count:)",
+                              "nodeType": "Test Case",
+                              "result": "Passed",
+                              "children": [
+                                {
+                                  "name": "false, 3",
+                                  "nodeType": "Arguments",
+                                  "result": "Passed",
+                                  "durationInSeconds": 1.0
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+        """
+
+        let shell = LookupShell(
+            responses: [
+                "xcresulttool get test-results summary --path /tmp/test.xcresult": .success(Data(summaryJSON.utf8)),
+                "xcresulttool get test-results tests --path /tmp/test.xcresult": .success(Data(testsJSON.utf8))
+            ]
+        )
+        let client = XCResultToolClient(shell: shell)
+        guard let provider = XCResultToolJunitXMLDataProvider(
+            url: URL(fileURLWithPath: "/tmp/test.xcresult"),
+            client: client
+        ) else {
+            Issue.record("Expected provider initialization to succeed")
+            return
+        }
+
+        let action = try #require(provider.testActions.first)
+        let plan = try #require(action.testPlanRunSummaries.first)
+        let rootGroup = try #require(plan.testableSummaries.first?.tests.first)
+        let suite = try #require(rootGroup.subtestGroups.first)
+        #expect(suite.subtests.count == 3)
+        #expect(suite.subtests[0].name == "testParametrized(value: false)")
+        #expect(suite.subtests[1].name == "testParametrized(value: true)")
+        #expect(suite.subtests[2].name == "testMultiParam(value: false, count: 3)")
+    }
+
+    @Test
+    func testProviderDoesNotMapExpectedFailureAsSkipped() throws {
+        let summaryJSON = """
+        {
+          "title": "Test - Demo",
+          "environmentDescription": "Demo",
+          "topInsights": [],
+          "result": "Passed",
+          "totalTestCount": 1,
+          "passedTests": 1,
+          "failedTests": 0,
+          "skippedTests": 0,
+          "expectedFailures": 1,
+          "statistics": [],
+          "devicesAndConfigurations": [],
+          "testFailures": [],
+          "startTime": 100.0,
+          "finishTime": 101.0
+        }
+        """
+
+        let testsJSON = """
+        {
+          "testPlanConfigurations": [
+            {
+              "configurationId": "1",
+              "configurationName": "Default"
+            }
+          ],
+          "devices": [],
+          "testNodes": [
+            {
+              "name": "Test Plan",
+              "nodeType": "Test Plan",
+              "children": [
+                {
+                  "name": "Default",
+                  "nodeType": "Test Plan Configuration",
+                  "children": [
+                    {
+                      "name": "DemoTests.xctest",
+                      "nodeType": "Unit test bundle",
+                      "children": [
+                        {
+                          "name": "DemoTests",
+                          "nodeType": "Test Suite",
+                          "children": [
+                            {
+                              "name": "testExpected()",
+                              "nodeType": "Test Case",
+                              "result": "Expected Failure",
+                              "durationInSeconds": 1.0
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+        """
+
+        let shell = LookupShell(
+            responses: [
+                "xcresulttool get test-results summary --path /tmp/test.xcresult": .success(Data(summaryJSON.utf8)),
+                "xcresulttool get test-results tests --path /tmp/test.xcresult": .success(Data(testsJSON.utf8))
+            ]
+        )
+        let client = XCResultToolClient(shell: shell)
+        guard let provider = XCResultToolJunitXMLDataProvider(
+            url: URL(fileURLWithPath: "/tmp/test.xcresult"),
+            client: client
+        ) else {
+            Issue.record("Expected provider initialization to succeed")
+            return
+        }
+
+        let action = try #require(provider.testActions.first)
+        let plan = try #require(action.testPlanRunSummaries.first)
+        let rootGroup = try #require(plan.testableSummaries.first?.tests.first)
+        let suite = try #require(rootGroup.subtestGroups.first)
+        let expectedFailureTest = try #require(suite.subtests.first)
+
+        #expect(expectedFailureTest.isFailed == false)
+        #expect(expectedFailureTest.isSkipped == false)
     }
 }
 

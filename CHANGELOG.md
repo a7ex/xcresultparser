@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove XCResultKit as a package dependency from `Package.swift`.
 - Migrate JUnit, summary/test formatting, coverage formatting, and issues JSON paths to the new model/tooling layer.
 - Keep output compatibility where possible while aligning with modern `xcresulttool` payloads.
+- Raise the minimum supported platform to macOS 12.
+- Keep expected failures as a distinct state in human-readable outputs, while emitting them as passing test cases in JUnit/Sonar XML for compatibility.
+- Treat unknown `--coverage-targets` values as an error instead of silently producing empty coverage output.
 
 ## Version 1.9.4 - 2025-12-19
 ### CHANGES:

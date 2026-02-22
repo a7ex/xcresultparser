@@ -7,7 +7,16 @@
 
 import Foundation
 
-struct XCResultToolClient {
+protocol XCResultToolProviding {
+    func getBuildResults(path: URL) throws -> XCBuildResults
+    func getTestSummary(path: URL) throws -> XCSummary
+    func getTests(path: URL) throws -> XCTests
+    func getTestDetails(path: URL, testId: String) throws -> XCTestDetails
+    func getActivities(path: URL, testId: String) throws -> XCActivities
+    func getMetrics(path: URL, testId: String) throws -> [XCTestWithMetrics]
+}
+
+struct XCResultToolClient: XCResultToolProviding {
     enum ToolClientError: Error, Equatable {
         case invalidUTF8
         case unexpectedRootValue(String)

@@ -12,6 +12,7 @@ public struct MDResultFormatter: XCResultFormatting {
     public let testFailIcon = "🔴&nbsp;&nbsp;"
     public let testPassIcon = "🟢&nbsp;&nbsp;"
     public let testSkipIcon = "⚪️&nbsp;&nbsp;"
+    public let testExpectedFailureIcon = "🟡&nbsp;&nbsp;"
 
     public init() {}
 

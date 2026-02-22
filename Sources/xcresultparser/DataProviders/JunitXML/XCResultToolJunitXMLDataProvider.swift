@@ -10,10 +10,6 @@ import Foundation
 struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
     private let summary: XCSummary
     private let tests: XCTests
-    private let failureLocationRegex = try? NSRegularExpression(
-        pattern: #"^(.+?):([0-9]+):\s*(.+)$"#,
-        options: []
-    )
 
     init?(url: URL, client: XCResultToolClient = XCResultToolClient()) {
         guard let summary = try? client.getTestSummary(path: url),
@@ -137,9 +133,19 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
             currentTestClassName
         }
         let children = node.children ?? []
-        let tests = children
-            .filter { $0.nodeType == .testCase }
-            .map { mapTest(node: $0, testClassName: nextTestClassName) }
+        let tests = children.mapTests(
+            testClassName: nextTestClassName,
+            mapTest: mapTest(node:testClassName:),
+            mapArgumentTest: { mappedArgumentTest in
+                JunitTest(
+                    identifier: mappedArgumentTest.identifier,
+                    name: mappedArgumentTest.name,
+                    duration: mappedArgumentTest.duration,
+                    isFailed: mappedArgumentTest.result == .failed,
+                    isSkipped: mappedArgumentTest.result == .skipped
+                )
+            }
+        )
 
         let groups = children.compactMap { child in
             mapGroup(
@@ -172,7 +178,7 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
             name: node.name,
             duration: node.durationInSeconds,
             isFailed: result == .failed,
-            isSkipped: result == .skipped || result == .expectedFailure
+            isSkipped: result == .skipped
         )
     }
 
@@ -206,7 +212,12 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
     private func failureMessageDetailsByTestIdentifier() -> [String: [FailureMessageDetail]] {
         var result = [String: [FailureMessageDetail]]()
         for node in tests.testNodes {
-            collectFailureMessages(in: node, currentTestIdentifier: nil, into: &result)
+            collectFailureMessages(
+                in: node,
+                currentTestIdentifier: nil,
+                currentTestClassName: nil,
+                into: &result
+            )
         }
         return result
     }
@@ -214,11 +225,16 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
     private func collectFailureMessages(
         in node: XCTestNode,
         currentTestIdentifier: String?,
+        currentTestClassName: String?,
         into result: inout [String: [FailureMessageDetail]]
     ) {
         var currentIdentifier = currentTestIdentifier
+        var currentClassName = currentTestClassName
+        if node.nodeType == .testSuite {
+            currentClassName = node.name
+        }
         if node.nodeType == .testCase {
-            currentIdentifier = node.nodeIdentifier
+            currentIdentifier = testIdentifierString(for: node, testClassName: currentClassName)
         }
 
         if node.nodeType == .failureMessage,
@@ -231,26 +247,33 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
             collectFailureMessages(
                 in: child,
                 currentTestIdentifier: currentIdentifier,
+                currentTestClassName: currentClassName,
                 into: &result
             )
         }
     }
 
+    private func testIdentifierString(for node: XCTestNode, testClassName: String?) -> String {
+        if let testClassName, !testClassName.isEmpty {
+            return "\(testClassName)/\(node.name)"
+        }
+        return node.name
+    }
+
     private func parseFailureMessage(_ raw: String) -> FailureMessageDetail? {
-        guard let failureLocationRegex else {
+        let parts = raw.split(separator: ":", maxSplits: 2, omittingEmptySubsequences: false)
+        guard parts.count == 3 else {
             return nil
         }
-        let range = NSRange(raw.startIndex..<raw.endIndex, in: raw)
-        guard let match = failureLocationRegex.firstMatch(in: raw, options: [], range: range),
-              match.numberOfRanges == 4,
-              let fileRange = Range(match.range(at: 1), in: raw),
-              let lineRange = Range(match.range(at: 2), in: raw),
-              let messageRange = Range(match.range(at: 3), in: raw) else {
+        let file = String(parts[0])
+        let line = String(parts[1]).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !line.isEmpty, line.allSatisfy(\.isNumber) else {
             return nil
         }
-        let file = String(raw[fileRange])
-        let line = String(raw[lineRange])
-        let message = String(raw[messageRange])
+        let message = String(parts[2]).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !file.isEmpty, !message.isEmpty else {
+            return nil
+        }
         return FailureMessageDetail(
             message: message,
             documentLocation: "\(file):\(line)"
