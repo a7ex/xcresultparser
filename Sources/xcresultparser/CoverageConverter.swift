@@ -131,13 +131,7 @@ public class CoverageConverter {
         return false
     }
 
-    // MARK: - unused and only here for reference
-
-    // This method was replaced by getCoverageDataAsJSON()
-    // Instead of requiring to get the coverage data for each single code file
-    // we now can obtain all information for all targets and all files in one call to xccov
-    // That is of course much faster, than calling xccov for each file, as we needed to in older times
-    // It is not used at the moment, but is left here just to cover this xccov function
+    // Maintained to support the public API used by tests and existing consumers.
     func coverageForFile(path: String) throws -> String {
         var arguments = ["xccov", "view"]
         if resultFileURL.pathExtension == "xcresult" {
@@ -150,9 +144,7 @@ public class CoverageConverter {
         return String(decoding: coverageData, as: UTF8.self)
     }
 
-    // This method was replaced by going through all files in all targets
-    // That allows us to filter by targets easier
-    // It is not used at the moment, but is left here just to cover this xccov function
+    // Maintained to support the public API used by tests and existing consumers.
     func coverageFileList() throws -> [String] {
         var arguments = ["xccov", "view"]
         if resultFileURL.pathExtension == "xcresult" {

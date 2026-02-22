@@ -56,6 +56,11 @@ public struct XCResultFormatter {
         }
     }
 
+    private struct FailureMessageDetail {
+        let message: String
+        let documentLocation: String
+    }
+
     // MARK: - Properties
 
     private let outputFormatter: XCResultFormatting
@@ -67,6 +72,10 @@ public struct XCResultFormatter {
     private let failedTestsOnly: Bool
     private let summaryFields: SummaryFields
     private let coverageReportFormat: CoverageReportFormat
+    private let failureLocationRegex = try? NSRegularExpression(
+        pattern: #"^(.+?):([0-9]+):\s*(.+)$"#,
+        options: []
+    )
 
     private var numFormatter: NumberFormatter = {
         let numFormatter = NumberFormatter()
@@ -225,6 +234,7 @@ public struct XCResultFormatter {
     private func createTestDetailsString() -> [String] {
         var lines = [String]()
         let runDestination = tests.devices.first?.deviceName ?? "Unknown destination"
+        let failureMessageDetails = failureMessageDetailsByTestIdentifier()
 
         let configuredNodes = tests.testPlanConfigurations.map { config in
             (
@@ -254,7 +264,12 @@ public struct XCResultFormatter {
                 lines.append("No test failures")
             } else {
                 for group in groups {
-                    lines += createTestSummaryInfo(group, level: 0, failureSummaries: testSummary.testFailures)
+                    lines += createTestSummaryInfo(
+                        group,
+                        level: 0,
+                        failureSummaries: testSummary.testFailures,
+                        failureMessageDetails: failureMessageDetails
+                    )
                 }
             }
 
@@ -274,7 +289,8 @@ public struct XCResultFormatter {
     private func createTestSummaryInfo(
         _ group: FormattedTestGroup,
         level: Int,
-        failureSummaries: [XCTestFailure]
+        failureSummaries: [XCTestFailure],
+        failureMessageDetails: [String: [FailureMessageDetail]]
     ) -> [String] {
         var lines = [String]()
         if failedTestsOnly,
@@ -294,14 +310,25 @@ public struct XCResultFormatter {
             lines.append(outputFormatter.testClass(header, failed: group.hasFailedTests))
         }
         for subGroup in group.subtestGroups {
-            lines += createTestSummaryInfo(subGroup, level: level + 1, failureSummaries: failureSummaries)
+            lines += createTestSummaryInfo(
+                subGroup,
+                level: level + 1,
+                failureSummaries: failureSummaries,
+                failureMessageDetails: failureMessageDetails
+            )
         }
         if !outputFormatter.accordionOpenTag.isEmpty {
             lines.append(outputFormatter.accordionOpenTag)
         }
         for thisTest in group.subtests {
             if !failedTestsOnly || thisTest.isFailed {
-                lines.append(actionTestFileStatusString(for: thisTest, failureSummaries: failureSummaries))
+                lines.append(
+                    actionTestFileStatusString(
+                        for: thisTest,
+                        failureSummaries: failureSummaries,
+                        failureMessageDetails: failureMessageDetails
+                    )
+                )
             }
         }
         if !outputFormatter.accordionCloseTag.isEmpty {
@@ -312,14 +339,26 @@ public struct XCResultFormatter {
 
     private func actionTestFileStatusString(
         for testData: FormattedTest,
-        failureSummaries: [XCTestFailure]
+        failureSummaries: [XCTestFailure],
+        failureMessageDetails: [String: [FailureMessageDetail]]
     ) -> String {
         let duration = numFormatter.unwrappedString(for: testData.duration)
         let icon = actionTestFileStatusStringIcon(testData: testData)
         let testTitle = "\(icon) \(testData.name) (\(duration))"
-        let testCaseName = testData.identifier.replacingOccurrences(of: "/", with: ".")
-        if let summary = failureSummaries.first(where: { $0.testIdentifierString == testCaseName }) {
-            return actionTestFailureStatusString(with: testTitle, and: summary)
+        let testCaseName = testData.identifier
+        if let summary = failureSummaries.first(where: {
+            $0.testIdentifierString == testCaseName ||
+                $0.testIdentifierString.replacingOccurrences(of: "/", with: ".") == testCaseName
+        }) {
+            let candidates = failureMessageDetails[summary.testIdentifierString] ??
+                failureMessageDetails[summary.testIdentifierString.replacingOccurrences(of: "/", with: ".")] ?? []
+            let matchingDetail = bestFailureMessage(for: summary, in: candidates)
+            let enrichedMessage = if let matchingDetail {
+                "\(matchingDetail.documentLocation): \(matchingDetail.message)"
+            } else {
+                summary.failureText
+            }
+            return actionTestFailureStatusString(with: testTitle, message: enrichedMessage)
         }
         return outputFormatter.singleTestItem(testTitle, failed: testData.isFailed)
     }
@@ -336,11 +375,8 @@ public struct XCResultFormatter {
         return outputFormatter.testFailIcon
     }
 
-    private func actionTestFailureStatusString(
-        with header: String,
-        and failure: XCTestFailure
-    ) -> String {
-        return outputFormatter.failedTestItem(header, message: failure.failureText)
+    private func actionTestFailureStatusString(with header: String, message: String) -> String {
+        return outputFormatter.failedTestItem(header, message: message)
     }
 
     private func createCoverageReport() -> [String] {
@@ -530,6 +566,87 @@ public struct XCResultFormatter {
         let arguments = ["xccov", "view", "--report", "--json", resultFileURL.path]
         let coverageData = try shell.execute(program: "/usr/bin/xcrun", with: arguments)
         return try JSONDecoder().decode(CoverageReport.self, from: coverageData)
+    }
+
+    private func failureMessageDetailsByTestIdentifier() -> [String: [FailureMessageDetail]] {
+        var result = [String: [FailureMessageDetail]]()
+        for node in tests.testNodes {
+            collectFailureMessages(
+                in: node,
+                currentTestIdentifier: nil,
+                currentTestClassName: nil,
+                into: &result
+            )
+        }
+        return result
+    }
+
+    private func collectFailureMessages(
+        in node: XCTestNode,
+        currentTestIdentifier: String?,
+        currentTestClassName: String?,
+        into result: inout [String: [FailureMessageDetail]]
+    ) {
+        var currentIdentifier = currentTestIdentifier
+        let nextTestClassName: String? = if node.nodeType == .testSuite {
+            node.name
+        } else {
+            currentTestClassName
+        }
+        if node.nodeType == .testCase {
+            currentIdentifier = node.nodeIdentifier ?? {
+                if let nextTestClassName {
+                    return "\(nextTestClassName)/\(node.name)"
+                }
+                return node.name
+            }()
+        }
+
+        if node.nodeType == .failureMessage,
+           let currentIdentifier,
+           let detail = parseFailureMessage(node.name) {
+            result[currentIdentifier, default: []].append(detail)
+            let dotKey = currentIdentifier.replacingOccurrences(of: "/", with: ".")
+            result[dotKey, default: []].append(detail)
+        }
+
+        for child in node.children ?? [] {
+            collectFailureMessages(
+                in: child,
+                currentTestIdentifier: currentIdentifier,
+                currentTestClassName: nextTestClassName,
+                into: &result
+            )
+        }
+    }
+
+    private func parseFailureMessage(_ raw: String) -> FailureMessageDetail? {
+        guard let failureLocationRegex else {
+            return nil
+        }
+        let range = NSRange(raw.startIndex..<raw.endIndex, in: raw)
+        guard let match = failureLocationRegex.firstMatch(in: raw, options: [], range: range),
+              match.numberOfRanges == 4,
+              let fileRange = Range(match.range(at: 1), in: raw),
+              let lineRange = Range(match.range(at: 2), in: raw),
+              let messageRange = Range(match.range(at: 3), in: raw) else {
+            return nil
+        }
+        let file = String(raw[fileRange])
+        let line = String(raw[lineRange])
+        let message = String(raw[messageRange])
+        return FailureMessageDetail(
+            message: message,
+            documentLocation: "\(file):\(line)"
+        )
+    }
+
+    private func bestFailureMessage(for failure: XCTestFailure, in candidates: [FailureMessageDetail]) -> FailureMessageDetail? {
+        candidates.first {
+            $0.message == failure.failureText ||
+                $0.message.contains(failure.failureText) ||
+                failure.failureText.contains($0.message)
+        } ?? candidates.first
     }
 
     struct CodeCoverageParseResult {

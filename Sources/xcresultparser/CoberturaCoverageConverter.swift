@@ -166,7 +166,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
     }
 
     private func makeRootElement() -> XMLElement {
-        // TODO: some of these values are B.S. - figure out how to calculate, or better to omit if we don't know?
+        // Cobertura requires these attributes; branch/complexity values are placeholders for now.
         let timeStamp = startTime ?? Date().timeIntervalSince1970
         let rootElement = XMLElement(name: "coverage")
         rootElement.addAttribute(
@@ -188,13 +188,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
         return rootElement
     }
 
-    // this ised to be fetched online from http://cobertura.sourceforge.net/xml/coverage-04.dtd
-    // that broke, when the URL changed to:
-    // https://github.com/cobertura/cobertura/blob/master/cobertura/src/site/htdocs/xml/coverage-04.dtd
-    // In case we couldn't download the data, we had a file as fallback. However that file could never be read
-    // because as command line tool this is not a bundle and thus there is no file to be found in the bundle
-    // IMO all that was overengineered for the followong 60 lines string...
-    // ...which will probably never ever change!
+    // Keep DTD inline to avoid runtime fetches and bundle/file lookup issues.
     // Helper methods for creating valid Cobertura XML structure
     private func createValidPackageName(from pathComponents: [Substring]) -> String {
         // Use original simple logic: join all path components except the filename with dots

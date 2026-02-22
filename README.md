@@ -18,9 +18,8 @@ In case of 'xml' JUnit format for test results and generic format (Sonarqube) fo
 
 You can also specify the name of the project root. Paths and urls are then relative to the specified directory. (used for urls in xml output)
 
-This tool can read test result data and code coverage data from an .xcarchive using the developer tools included in `Xcode 13`. Namely here: xcresulttool and xccov to get json data from .xcresult bundles.
-
-Parsing the JSON is done using the great [XCResultKit](https://github.com/davidahouse/XCResultKit) package.
+This tool can read test result data and code coverage data from an `.xcresult` bundle using `xcresulttool` and `xccov`.
+All JSON parsing is done with native `Codable` models in this project.
 
 <details>
   <summary>More on converting code coverage data</summary>
@@ -87,7 +86,7 @@ You should see the tool respond like this:
 ```
 Error: Missing expected argument '<xcresult-file>'
 
-OVERVIEW: xcresultparser 1.9.4
+OVERVIEW: xcresultparser 2.0.0-beta
 Interpret binary .xcresult files and print summary in different formats: txt,
 xml, html or colored cli output.
 
