@@ -48,7 +48,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
         dtd.name = "coverage"
         // dtd.systemID = "http://cobertura.sourceforge.net/xml/coverage-04.dtd"
         dtd.systemID =
-        "https://github.com/cobertura/cobertura/blob/master/cobertura/src/site/htdocs/xml/coverage-04.dtd"
+            "https://github.com/cobertura/cobertura/blob/master/cobertura/src/site/htdocs/xml/coverage-04.dtd"
 
         let rootElement = makeRootElement()
 
@@ -91,7 +91,6 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
                 fileLines.append(line)
             }
 
-
             let fileInfoInst = FileInfo(path: relativePath ?? fileName, lines: fileLines)
             fileInfo.append(fileInfoInst)
         }
@@ -132,7 +131,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
             classElement.addAttribute(XMLNode.nodeAttribute(withName: "name", stringValue: className))
             classElement.addAttribute(XMLNode.nodeAttribute(withName: "filename", stringValue: file.path))
 
-            let fileLineCoverage = Float(file.lines.filter { $0.coverage > 0 }.count) / Float(file.lines.count)
+            let fileLineCoverage = Float(file.lines.count(where: { $0.coverage > 0 })) / Float(file.lines.count)
             classElement.addAttribute(XMLNode.nodeAttribute(withName: "line-rate", stringValue: "\(fileLineCoverage)"))
             classElement.addAttribute(XMLNode.nodeAttribute(withName: "branch-rate", stringValue: "1.0"))
             classElement.addAttribute(XMLNode.nodeAttribute(withName: "complexity", stringValue: "0.0"))
@@ -192,7 +191,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
     // Helper methods for creating valid Cobertura XML structure
     private func createValidPackageName(from pathComponents: [Substring]) -> String {
         // Use original simple logic: join all path components except the filename with dots
-        return pathComponents[0..<pathComponents.count - 1].joined(separator: ".")
+        return pathComponents[0 ..< pathComponents.count - 1].joined(separator: ".")
     }
 
     private func createValidClassName(from filePath: String, packageName: String) -> String {
@@ -211,7 +210,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
 
         let totalLines = packageFiles.reduce(0) { $0 + $1.lines.count }
         let coveredLines = packageFiles.reduce(0) { total, file in
-            total + file.lines.filter { $0.coverage > 0 }.count
+            total + file.lines.count(where: { $0.coverage > 0 })
         }
 
         return totalLines > 0 ? Float(coveredLines) / Float(totalLines) : 0.0
@@ -223,7 +222,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
          conforming SGML systems and applications as defined in
          ISO 8879, provided this notice is included in all copies.
     -->
-    
+
       <!ELEMENT coverage (sources?,packages)>
       <!ATTLIST coverage line-rate        CDATA #REQUIRED>
       <!ATTLIST coverage branch-rate      CDATA #REQUIRED>
@@ -234,47 +233,47 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
       <!ATTLIST coverage complexity       CDATA #REQUIRED>
       <!ATTLIST coverage version          CDATA #REQUIRED>
       <!ATTLIST coverage timestamp        CDATA #REQUIRED>
-    
+
       <!ELEMENT sources (source*)>
-    
+
       <!ELEMENT source (#PCDATA)>
-    
+
       <!ELEMENT packages (package*)>
-    
+
       <!ELEMENT package (classes)>
       <!ATTLIST package name        CDATA #REQUIRED>
       <!ATTLIST package line-rate   CDATA #REQUIRED>
       <!ATTLIST package branch-rate CDATA #REQUIRED>
       <!ATTLIST package complexity  CDATA #REQUIRED>
-    
+
       <!ELEMENT classes (class*)>
-    
+
       <!ELEMENT class (methods,lines)>
       <!ATTLIST class name        CDATA #REQUIRED>
       <!ATTLIST class filename    CDATA #REQUIRED>
       <!ATTLIST class line-rate   CDATA #REQUIRED>
       <!ATTLIST class branch-rate CDATA #REQUIRED>
       <!ATTLIST class complexity  CDATA #REQUIRED>
-    
+
       <!ELEMENT methods (method*)>
-    
+
       <!ELEMENT method (lines)>
       <!ATTLIST method name        CDATA #REQUIRED>
       <!ATTLIST method signature   CDATA #REQUIRED>
       <!ATTLIST method line-rate   CDATA #REQUIRED>
       <!ATTLIST method branch-rate CDATA #REQUIRED>
       <!ATTLIST method complexity  CDATA #REQUIRED>
-    
+
       <!ELEMENT lines (line*)>
-    
+
       <!ELEMENT line (conditions*)>
       <!ATTLIST line number CDATA #REQUIRED>
       <!ATTLIST line hits   CDATA #REQUIRED>
       <!ATTLIST line branch CDATA "false">
       <!ATTLIST line condition-coverage CDATA "100%">
-    
+
       <!ELEMENT conditions (condition*)>
-    
+
       <!ELEMENT condition EMPTY>
       <!ATTLIST condition number CDATA #REQUIRED>
       <!ATTLIST condition type CDATA #REQUIRED>

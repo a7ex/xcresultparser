@@ -12,7 +12,7 @@ enum XCTestResult: String, Codable {
     case failed = "Failed"
     case skipped = "Skipped"
     case expectedFailure = "Expected Failure"
-    case unknown = "unknown"
+    case unknown
 }
 
 extension XCTestResult {

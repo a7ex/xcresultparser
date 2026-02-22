@@ -11,4 +11,3 @@ struct XCBug: Codable {
     let identifier: String?
     let title: String?
 }
-

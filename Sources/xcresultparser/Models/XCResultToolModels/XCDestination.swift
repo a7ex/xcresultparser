@@ -9,5 +9,3 @@ struct XCDestination: Codable {
     let deviceName: String
     let configurationName: String
 }
-
-

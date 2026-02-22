@@ -14,4 +14,3 @@ struct XCActivityNode: Codable {
     let attachments: [XCAttachment]?
     let childActivities: [XCActivityNode]?
 }
-

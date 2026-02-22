@@ -12,4 +12,3 @@ struct XCCommonFailureInsight: Codable {
     let description: String
     let associatedTestIdentifiers: [String]
 }
-

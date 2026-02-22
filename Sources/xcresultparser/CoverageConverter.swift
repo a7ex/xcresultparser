@@ -70,8 +70,8 @@ public class CoverageConverter {
             throw CoverageConverterError.couldNotLoadCoverageReport
         }
 
-        self.xcresultToolClient = resolvedXCResultToolClient
-        self.xccovClient = resolvedXCCovClient
+        xcresultToolClient = resolvedXCResultToolClient
+        xccovClient = resolvedXCCovClient
         resultFileURL = url
         coverageReport = report
         self.projectRoot = projectRoot

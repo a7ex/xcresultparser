@@ -180,7 +180,7 @@ public struct JunitXML: XmlSerializable {
         guard group.identifierString.hasSuffix(".xctest") || group.subtestGroups.isEmpty else {
             return group.subtestGroups.reduce([XMLElement]()) {
                 rslt,
-                subGroup in
+                    subGroup in
                 return rslt + createTestSuite(
                     subGroup,
                     failureSummaries: failureSummaries,
@@ -236,11 +236,11 @@ public struct JunitXML: XmlSerializable {
         configurationName: String
     ) -> XMLElement {
         let node = testReportFormat == .sonar ?
-        group.sonarFileXML(
-            projectRoot: projectRoot,
-            configurationName: configurationName,
-            relativePathNames: relativePathNames
-        ) : group.testSuiteXML(numFormatter: numFormatter)
+            group.sonarFileXML(
+                projectRoot: projectRoot,
+                configurationName: configurationName,
+                relativePathNames: relativePathNames
+            ) : group.testSuiteXML(numFormatter: numFormatter)
 
         for thisTest in tests {
             let testcase = createTestCase(
@@ -489,7 +489,8 @@ private extension JunitFailureSummary {
                 let relative = relativePart(of: url, relativeTo: projectRoot)
                 if let comps = URLComponents(url: url, resolvingAgainstBaseURL: false),
                    let line = comps.fragment?.components(separatedBy: "&").first(
-                       where: { $0.starts(with: "StartingLineNumber") }),
+                       where: { $0.starts(with: "StartingLineNumber") }
+                   ),
                    let num = line.components(separatedBy: "=").last {
                     value += " (\(relative):\(num))"
                 } else {

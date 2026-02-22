@@ -17,4 +17,3 @@ struct XCLongestTestRunsInsight: Codable {
     let durationOfSlowTests: Double
     let meanTime: String
 }
-

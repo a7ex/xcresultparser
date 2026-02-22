@@ -10,4 +10,3 @@ struct XCStatistic: Codable {
     let title: String
     let subtitle: String
 }
-

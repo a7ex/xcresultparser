@@ -126,10 +126,10 @@ public struct XCResultFormatter {
         }
 
         self.buildResults = buildResults
-        self.testSummary = summary
+        testSummary = summary
         self.tests = tests
         outputFormatter = formatter
-        self.coverageReport = try? resolvedXCCovClient.getCoverageReport(path: url)
+        coverageReport = try? resolvedXCCovClient.getCoverageReport(path: url)
         let targetSelection = CoverageTargetSelection(
             with: coverageTargets,
             from: coverageReport?.targets.map(\.name) ?? []
@@ -577,8 +577,8 @@ public struct XCResultFormatter {
     }
 
     private func findConfigurationChildren(in node: XCTestNode, configuration: XCConfiguration) -> [XCTestNode] {
-        if node.nodeType == .testPlanConfiguration &&
-            (node.name == configuration.configurationName || node.nodeIdentifier == configuration.configurationId) {
+        if node.nodeType == .testPlanConfiguration,
+           node.name == configuration.configurationName || node.nodeIdentifier == configuration.configurationId {
             return node.children ?? []
         }
 

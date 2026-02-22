@@ -58,7 +58,7 @@ private extension String {
             return "\(self) [\(parameterValue)]"
         }
 
-        let signature = String(self[index(after: openParenIndex)..<closeParenIndex])
+        let signature = String(self[index(after: openParenIndex) ..< closeParenIndex])
         let labels = parameterLabels(from: signature)
         guard !labels.isEmpty else {
             return "\(self) [\(parameterValue)]"
@@ -114,7 +114,7 @@ private extension String {
                 continue
             }
 
-            if character == "," && !isInQuotes {
+            if character == ",", !isInQuotes {
                 let trimmed = current.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !trimmed.isEmpty {
                     values.append(trimmed)

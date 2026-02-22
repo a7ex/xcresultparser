@@ -83,6 +83,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "/Users/alex/Work/__OwnProjects/myGithub/xcresultparser/Tests/XcresultparserTests/TestAssets/parametrized.xcresult"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-d"
             isEnabled = "NO">
          </CommandLineArgument>

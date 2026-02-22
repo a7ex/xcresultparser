@@ -14,4 +14,3 @@ struct XCDeviceAndConfigurationSummary: Codable {
     let skippedTests: Int
     let expectedFailures: Int
 }
-

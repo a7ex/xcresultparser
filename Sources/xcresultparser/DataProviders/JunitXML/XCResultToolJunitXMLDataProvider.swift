@@ -107,8 +107,8 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
     }
 
     private func findConfigurationChildren(in node: XCTestNode, configuration: XCConfiguration) -> [XCTestNode] {
-        if node.nodeType == .testPlanConfiguration &&
-            (node.name == configuration.configurationName || node.nodeIdentifier == configuration.configurationId) {
+        if node.nodeType == .testPlanConfiguration,
+           node.name == configuration.configurationName || node.nodeIdentifier == configuration.configurationId {
             return node.children ?? []
         }
 

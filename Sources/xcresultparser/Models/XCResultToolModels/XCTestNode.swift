@@ -11,7 +11,7 @@ import Foundation
 struct XCTestNode: Codable {
     let name: String // e.g. "xcresultparser",
     let nodeType: XCTestNodeType // e.g. "Test Plan",
-    let children: [XCTestNode]? 
+    let children: [XCTestNode]?
     let result: XCTestResult? // e.g. "Passed"
     let nodeIdentifier: String? // e.g. "0"
     let nodeIdentifierURL: URL? // e.g. "test://com.apple.xcode/Xcresultparser/XcresultparserTests/XcresultparserTests"

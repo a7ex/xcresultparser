@@ -23,7 +23,7 @@ enum XCTestNodeType: String, Codable {
     case expression = "Expression"
     case testValue = "Test Value"
     case runtimeWarning = "Runtime Warning"
-    case unknown = "unknown"
+    case unknown
 }
 
 extension XCTestNodeType {
