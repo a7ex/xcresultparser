@@ -19,7 +19,7 @@ struct XCResultToolClientTests {
           "errors": []
         }
         """
-        let shell = CapturingShell(response: Data(json.utf8))
+        let shell = CapturingCommandline(response: Data(json.utf8))
         let client = XCResultToolClient(shell: shell)
         let path = URL(fileURLWithPath: "/tmp/test.xcresult")
 
@@ -46,7 +46,7 @@ struct XCResultToolClientTests {
           "hasMediaAttachments": false
         }
         """
-        let shell = CapturingShell(response: Data(json.utf8))
+        let shell = CapturingCommandline(response: Data(json.utf8))
         let client = XCResultToolClient(shell: shell)
         let path = URL(fileURLWithPath: "/tmp/test.xcresult")
 
@@ -86,7 +86,7 @@ struct XCResultToolClientTests {
           ]
         }
         """
-        let shell = CapturingShell(response: Data(json.utf8))
+        let shell = CapturingCommandline(response: Data(json.utf8))
         let client = XCResultToolClient(shell: shell)
 
         let result = try client.getMetrics(path: URL(fileURLWithPath: "/tmp/test.xcresult"), testId: "PerfTests/testExample()")
@@ -98,7 +98,7 @@ struct XCResultToolClientTests {
 
     @Test
     func testGetMetricsDecodesEmptyArray() throws {
-        let shell = CapturingShell(response: Data("[]".utf8))
+        let shell = CapturingCommandline(response: Data("[]".utf8))
         let client = XCResultToolClient(shell: shell)
 
         let result = try client.getMetrics(path: URL(fileURLWithPath: "/tmp/test.xcresult"), testId: "NoPerf/test")
@@ -108,7 +108,7 @@ struct XCResultToolClientTests {
 
     @Test
     func testGetMetricsThrowsForUnexpectedPayload() throws {
-        let shell = CapturingShell(response: Data("{\"foo\":\"bar\"}".utf8))
+        let shell = CapturingCommandline(response: Data("{\"foo\":\"bar\"}".utf8))
         let client = XCResultToolClient(shell: shell)
 
         do {
@@ -124,21 +124,5 @@ struct XCResultToolClientTests {
         } catch {
             Issue.record("Unexpected error type: \(error)")
         }
-    }
-}
-
-private final class CapturingShell: Commandline {
-    let response: Data
-    var lastProgram: String = ""
-    var lastArguments: [String] = []
-
-    init(response: Data) {
-        self.response = response
-    }
-
-    func execute(program: String, with arguments: [String], at executionPath: URL?) throws -> Data {
-        lastProgram = program
-        lastArguments = arguments
-        return response
     }
 }

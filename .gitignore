@@ -93,6 +93,7 @@ iOSInjectionProject/
 # Compiled app, ready for notarization
 product/
 AgentNotes/
+TestResults/
 
 
 .scannerwork/

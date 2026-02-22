@@ -17,7 +17,7 @@ struct XCCovClientTests {
           ]
         }
         """
-        let shell = CapturingXCCovShell(response: Data(json.utf8))
+        let shell = CapturingCommandline(response: Data(json.utf8))
         let client = XCCovClient(shell: shell)
         let path = URL(fileURLWithPath: "/tmp/test.xcresult")
 
@@ -64,7 +64,7 @@ struct XCCovClientTests {
           ]
         }
         """
-        let shell = CapturingXCCovShell(response: Data(json.utf8))
+        let shell = CapturingCommandline(response: Data(json.utf8))
         let client = XCCovClient(shell: shell)
         let path = URL(fileURLWithPath: "/tmp/test.xcresult")
 
@@ -77,7 +77,7 @@ struct XCCovClientTests {
 
     @Test
     func testGetCoverageForFileUsesExpectedCommand() throws {
-        let shell = CapturingXCCovShell(response: Data("  1: 1\n".utf8))
+        let shell = CapturingCommandline(response: Data("  1: 1\n".utf8))
         let client = XCCovClient(shell: shell)
         let path = URL(fileURLWithPath: "/tmp/test.xcresult")
 
@@ -90,7 +90,7 @@ struct XCCovClientTests {
 
     @Test
     func testGetCoverageFileListUsesExpectedCommand() throws {
-        let shell = CapturingXCCovShell(response: Data("/tmp/Foo.swift\n/tmp/Bar.swift\n".utf8))
+        let shell = CapturingCommandline(response: Data("/tmp/Foo.swift\n/tmp/Bar.swift\n".utf8))
         let client = XCCovClient(shell: shell)
         let path = URL(fileURLWithPath: "/tmp/test.xcresult")
 
@@ -99,21 +99,5 @@ struct XCCovClientTests {
         #expect(result == ["/tmp/Foo.swift", "/tmp/Bar.swift", ""])
         #expect(shell.lastProgram == "/usr/bin/xcrun")
         #expect(shell.lastArguments == ["xccov", "view", "--archive", "--file-list", "/tmp/test.xcresult"])
-    }
-}
-
-private final class CapturingXCCovShell: Commandline {
-    let response: Data
-    var lastProgram: String = ""
-    var lastArguments: [String] = []
-
-    init(response: Data) {
-        self.response = response
-    }
-
-    func execute(program: String, with arguments: [String], at executionPath: URL?) throws -> Data {
-        lastProgram = program
-        lastArguments = arguments
-        return response
     }
 }
