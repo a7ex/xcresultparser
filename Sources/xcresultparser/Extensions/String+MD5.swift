@@ -12,4 +12,9 @@ extension String {
         let digest = Insecure.MD5.hash(data: Data(utf8))
         return digest.map { String(format: "%02hhx", $0) }.joined()
     }
+
+    func sha256() -> String {
+        let digest = SHA256.hash(data: Data(utf8))
+        return digest.map { String(format: "%02hhx", $0) }.joined()
+    }
 }

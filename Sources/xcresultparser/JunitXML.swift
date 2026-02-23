@@ -345,6 +345,7 @@ extension JunitTest {
 }
 
 private extension JunitTestGroup {
+    private static let cacheLock = NSLock()
     private static var cachedPathnames = [String: String]()
 
     struct TestMetrics {
@@ -383,6 +384,8 @@ private extension JunitTestGroup {
 
     // only used in unit testing
     static func resetCachedPathnames() {
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
         cachedPathnames.removeAll()
     }
 
@@ -390,6 +393,8 @@ private extension JunitTestGroup {
         guard !fileName.contains("/") else {
             return fileName
         }
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
         let candidates = cachedPathnames.values.filter { $0.hasSuffix("/\(fileName)") || $0 == fileName }
         guard !candidates.isEmpty else {
             return nil
@@ -405,6 +410,8 @@ private extension JunitTestGroup {
         guard let projectRootUrl else {
             return identifierString
         }
+        Self.cacheLock.lock()
+        defer { Self.cacheLock.unlock() }
         if Self.cachedPathnames.isEmpty {
             cacheAllClassNames(in: projectRootUrl, relativePathNames: relativePathNames)
         }

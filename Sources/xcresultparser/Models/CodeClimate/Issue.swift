@@ -52,7 +52,7 @@ extension Issue {
         self.severity = severity
         engineName = "Xcode Result Bundle Tool"
         location = IssueLocation(issueLocationInfo: issueLocationInfo, projectRoot: projectRoot)
-        fingerprint = "\(issueSummary.issueType)-\(issueSummary.message)-\(location.fingerprint)".md5()
+        fingerprint = "\(issueSummary.issueType)-\(issueSummary.message)-\(location.fingerprint)".sha256()
         type = .issue
         categories = []
         content = IssueContent(body: "\(issueSummary.issueType) • \(issueSummary.message)")

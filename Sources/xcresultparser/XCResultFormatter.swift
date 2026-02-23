@@ -74,11 +74,6 @@ public struct XCResultFormatter {
         }
     }
 
-    private struct FailureMessageDetail {
-        let message: String
-        let documentLocation: String
-    }
-
     // MARK: - Properties
 
     private let outputFormatter: XCResultFormatting
@@ -102,7 +97,7 @@ public struct XCResultFormatter {
         .precision(.fractionLength(0 ... 1))
 
     private static let iso8601UTCStyle = Date.ISO8601FormatStyle(
-        timeZone: TimeZone(secondsFromGMT: 0)!
+        timeZone: TimeZone(secondsFromGMT: 0) ?? .current
     )
 
     // MARK: - Initializer
@@ -698,7 +693,7 @@ public struct XCResultFormatter {
 
         if node.nodeType == .failureMessage,
            let currentIdentifier,
-           let detail = parseFailureMessage(node.name) {
+           let detail = FailureMessageDetail(from: node.name) {
             result[currentIdentifier, default: []].append(detail)
             let dotKey = currentIdentifier.replacingOccurrences(of: "/", with: ".")
             result[dotKey, default: []].append(detail)
@@ -712,26 +707,6 @@ public struct XCResultFormatter {
                 into: &result
             )
         }
-    }
-
-    private func parseFailureMessage(_ raw: String) -> FailureMessageDetail? {
-        let parts = raw.split(separator: ":", maxSplits: 2, omittingEmptySubsequences: false)
-        guard parts.count == 3 else {
-            return nil
-        }
-        let file = String(parts[0])
-        let line = String(parts[1]).trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !line.isEmpty, line.allSatisfy(\.isNumber) else {
-            return nil
-        }
-        let message = String(parts[2]).trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !file.isEmpty, !message.isEmpty else {
-            return nil
-        }
-        return FailureMessageDetail(
-            message: message,
-            documentLocation: "\(file):\(line)"
-        )
     }
 
     private func bestFailureMessage(for failure: XCTestFailure, in candidates: [FailureMessageDetail]) -> FailureMessageDetail? {

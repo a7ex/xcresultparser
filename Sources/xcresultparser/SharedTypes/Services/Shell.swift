@@ -34,6 +34,10 @@ struct Shell: Commandline {
             task.standardError = errorPipe
             let outPipe = Pipe()
             task.standardOutput = outPipe
+            defer {
+                try? outPipe.fileHandleForReading.close()
+                try? errorPipe.fileHandleForReading.close()
+            }
             try task.run()
             let fileHandle = outPipe.fileHandleForReading
             let data = fileHandle.readDataToEndOfFile()

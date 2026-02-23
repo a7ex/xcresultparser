@@ -144,6 +144,14 @@ public struct HTMLResultFormatter: XCResultFormatting {
         return node
     }
 
+    private func htmlEncoded(_ string: String) -> String {
+        string
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "\"", with: "&quot;")
+    }
+
     // swiftlint:disable:next function_body_length
     private func htmlDocStart(with title: String) -> String {
         """
@@ -151,7 +159,7 @@ public struct HTMLResultFormatter: XCResultFormatting {
         <html lang="en">
         <head>
             <meta charset="utf-8">
-            <title>\(title)</title>
+            <title>\(htmlEncoded(title))</title>
             <style type='text/css'>
                 .resultSummaryLineFailed {
                     color: red;

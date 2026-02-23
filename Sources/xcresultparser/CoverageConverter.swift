@@ -10,6 +10,7 @@ import Foundation
 public enum CoverageConverterError: LocalizedError, Equatable {
     case couldNotLoadCoverageReport
     case unknownCoverageTargets(requested: [String], available: [String])
+    case notImplemented
 
     public var errorDescription: String? {
         switch self {
@@ -19,6 +20,8 @@ public enum CoverageConverterError: LocalizedError, Equatable {
             let requestedList = requested.joined(separator: ", ")
             let availableList = available.joined(separator: ", ")
             return "Unknown coverage target(s): \(requestedList). Available targets: \(availableList)"
+        case .notImplemented:
+            return "xmlString(quiet:) must be implemented by a CoverageConverter subclass."
         }
     }
 }
@@ -104,7 +107,7 @@ public class CoverageConverter {
     }
 
     public func xmlString(quiet: Bool) throws -> String {
-        fatalError("xmlString is not implemented")
+        throw CoverageConverterError.notImplemented
     }
 
     public var targetsInfo: String {

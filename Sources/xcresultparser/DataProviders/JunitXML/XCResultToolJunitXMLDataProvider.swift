@@ -238,7 +238,7 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
 
         if node.nodeType == .failureMessage,
            let currentIdentifier,
-           let detail = parseFailureMessage(node.name) {
+           let detail = FailureMessageDetail(from: node.name) {
             result[currentIdentifier, default: []].append(detail)
         }
 
@@ -259,26 +259,6 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
         return node.name
     }
 
-    private func parseFailureMessage(_ raw: String) -> FailureMessageDetail? {
-        let parts = raw.split(separator: ":", maxSplits: 2, omittingEmptySubsequences: false)
-        guard parts.count == 3 else {
-            return nil
-        }
-        let file = String(parts[0])
-        let line = String(parts[1]).trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !line.isEmpty, line.allSatisfy(\.isNumber) else {
-            return nil
-        }
-        let message = String(parts[2]).trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !file.isEmpty, !message.isEmpty else {
-            return nil
-        }
-        return FailureMessageDetail(
-            message: message,
-            documentLocation: "\(file):\(line)"
-        )
-    }
-
     private func bestFailureMessage(
         for failure: XCTestFailure,
         in candidates: [FailureMessageDetail]
@@ -291,7 +271,3 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
     }
 }
 
-private struct FailureMessageDetail {
-    let message: String
-    let documentLocation: String
-}
