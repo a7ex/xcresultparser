@@ -92,6 +92,9 @@ iOSInjectionProject/
 
 # Compiled app, ready for notarization
 product/
+AgentNotes/
+TestResults/
+CLAUDE.md
 
 
 .scannerwork/

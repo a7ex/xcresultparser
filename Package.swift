@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "Xcresultparser",
     platforms: [
-        .macOS(.v11),
+        .macOS(.v12),
     ],
     products: [
         .executable(
@@ -20,10 +20,6 @@ let package = Package(
         .package(
             url: "https://github.com/apple/swift-argument-parser.git",
             .upToNextMajor(from: "1.6.0")
-        ),
-        .package(
-            url: "https://github.com/davidahouse/XCResultKit.git",
-            .upToNextMajor(from: "1.2.2")
         )
     ],
     targets: [
@@ -38,10 +34,6 @@ let package = Package(
                 .product(
                     name: "ArgumentParser",
                     package: "swift-argument-parser"
-                ),
-                .product(
-                    name: "XCResultKit",
-                    package: "XCResultKit"
                 ),
             ],
             path: "Sources"
@@ -63,7 +55,8 @@ let package = Package(
                 .copy("TestAssets/warnings.json"),
                 .copy("TestAssets/resultWithCompileError.xcresult"),
                 .copy("TestAssets/sonarTestExecutionWithProjectRootAbsolute.xml"),
-                .copy("TestAssets/sonarTestExecutionWithProjectRootRelative.xml")
+                .copy("TestAssets/sonarTestExecutionWithProjectRootRelative.xml"),
+                .copy("TestAssets/parametrized.xcresult")
             ]
         )
     ]

@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version 2.0.0-beta - 2026-02-21
+### CHANGES:
+- Replace XCResultKit usage with direct `xcresulttool` and `xccov` parsing using local `Codable` models.
+- Remove XCResultKit as a package dependency from `Package.swift`.
+- Migrate JUnit, summary/test formatting, coverage formatting, and issues JSON paths to the new model/tooling layer.
+- Keep output compatibility where possible while aligning with modern `xcresulttool` payloads.
+- Raise the minimum supported platform to macOS 12.
+- Keep expected failures as a distinct state in human-readable outputs, while emitting them as passing test cases in JUnit/Sonar XML for compatibility.
+- Treat unknown `--coverage-targets` values as an error instead of silently producing empty coverage output.
+
 ## Version 1.9.4 - 2025-12-19
 ### CHANGES:
 Previously, we were only ever parsing the first failure for a test and passing that to the JUnit representation.

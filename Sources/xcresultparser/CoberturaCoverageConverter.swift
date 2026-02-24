@@ -48,7 +48,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
         dtd.name = "coverage"
         // dtd.systemID = "http://cobertura.sourceforge.net/xml/coverage-04.dtd"
         dtd.systemID =
-        "https://github.com/cobertura/cobertura/blob/master/cobertura/src/site/htdocs/xml/coverage-04.dtd"
+            "https://github.com/cobertura/cobertura/blob/master/cobertura/src/site/htdocs/xml/coverage-04.dtd"
 
         let rootElement = makeRootElement()
 
@@ -67,8 +67,11 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
         // Get the xccov results as a JSON.
         let coverageJson = try getCoverageDataAsJSON()
 
-        var fileInfo: [FileInfo] = []
+        var fileInfo = [FileInfo]()
         for (fileName, value) in coverageJson.files {
+            guard isTargetIncluded(forFile: fileName) else {
+                continue
+            }
             guard !isPathExcluded(fileName) else {
                 continue
             }
@@ -87,7 +90,6 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
                 let line = LineInfo(lineNumber: String(lineNum), coverage: covered)
                 fileLines.append(line)
             }
-
 
             let fileInfoInst = FileInfo(path: relativePath ?? fileName, lines: fileLines)
             fileInfo.append(fileInfoInst)
@@ -129,7 +131,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
             classElement.addAttribute(XMLNode.nodeAttribute(withName: "name", stringValue: className))
             classElement.addAttribute(XMLNode.nodeAttribute(withName: "filename", stringValue: file.path))
 
-            let fileLineCoverage = Float(file.lines.filter { $0.coverage > 0 }.count) / Float(file.lines.count)
+            let fileLineCoverage = Float(file.lines.count(where: { $0.coverage > 0 })) / Float(file.lines.count)
             classElement.addAttribute(XMLNode.nodeAttribute(withName: "line-rate", stringValue: "\(fileLineCoverage)"))
             classElement.addAttribute(XMLNode.nodeAttribute(withName: "branch-rate", stringValue: "1.0"))
             classElement.addAttribute(XMLNode.nodeAttribute(withName: "complexity", stringValue: "0.0"))
@@ -163,19 +165,18 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
     }
 
     private func makeRootElement() -> XMLElement {
-        // TODO: some of these values are B.S. - figure out how to calculate, or better to omit if we don't know?
-        let testAction = invocationRecord.actions.first { $0.schemeCommandName == "Test" }
-        let timeStamp = (testAction?.startedTime.timeIntervalSince1970) ?? Date().timeIntervalSince1970
+        // Cobertura requires these attributes; branch/complexity values are placeholders for now.
+        let timeStamp = startTime ?? Date().timeIntervalSince1970
         let rootElement = XMLElement(name: "coverage")
         rootElement.addAttribute(
-            XMLNode.nodeAttribute(withName: "line-rate", stringValue: "\(codeCoverage.lineCoverage)")
+            XMLNode.nodeAttribute(withName: "line-rate", stringValue: "\(lineCoverage)")
         )
         rootElement.addAttribute(XMLNode.nodeAttribute(withName: "branch-rate", stringValue: "1.0"))
         rootElement.addAttribute(
-            XMLNode.nodeAttribute(withName: "lines-covered", stringValue: "\(codeCoverage.coveredLines)")
+            XMLNode.nodeAttribute(withName: "lines-covered", stringValue: "\(coveredLines)")
         )
         rootElement.addAttribute(
-            XMLNode.nodeAttribute(withName: "lines-valid", stringValue: "\(codeCoverage.executableLines)")
+            XMLNode.nodeAttribute(withName: "lines-valid", stringValue: "\(executableLines)")
         )
         rootElement.addAttribute(XMLNode.nodeAttribute(withName: "timestamp", stringValue: "\(timeStamp)"))
         rootElement.addAttribute(XMLNode.nodeAttribute(withName: "version", stringValue: "diff_coverage 0.1"))
@@ -186,17 +187,11 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
         return rootElement
     }
 
-    // this ised to be fetched online from http://cobertura.sourceforge.net/xml/coverage-04.dtd
-    // that broke, when the URL changed to:
-    // https://github.com/cobertura/cobertura/blob/master/cobertura/src/site/htdocs/xml/coverage-04.dtd
-    // In case we couldn't download the data, we had a file as fallback. However that file could never be read
-    // because as command line tool this is not a bundle and thus there is no file to be found in the bundle
-    // IMO all that was overengineered for the followong 60 lines string...
-    // ...which will probably never ever change!
+    // Keep DTD inline to avoid runtime fetches and bundle/file lookup issues.
     // Helper methods for creating valid Cobertura XML structure
     private func createValidPackageName(from pathComponents: [Substring]) -> String {
         // Use original simple logic: join all path components except the filename with dots
-        return pathComponents[0..<pathComponents.count - 1].joined(separator: ".")
+        return pathComponents[0 ..< pathComponents.count - 1].joined(separator: ".")
     }
 
     private func createValidClassName(from filePath: String, packageName: String) -> String {
@@ -215,7 +210,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
 
         let totalLines = packageFiles.reduce(0) { $0 + $1.lines.count }
         let coveredLines = packageFiles.reduce(0) { total, file in
-            total + file.lines.filter { $0.coverage > 0 }.count
+            total + file.lines.count(where: { $0.coverage > 0 })
         }
 
         return totalLines > 0 ? Float(coveredLines) / Float(totalLines) : 0.0
@@ -227,7 +222,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
          conforming SGML systems and applications as defined in
          ISO 8879, provided this notice is included in all copies.
     -->
-    
+
       <!ELEMENT coverage (sources?,packages)>
       <!ATTLIST coverage line-rate        CDATA #REQUIRED>
       <!ATTLIST coverage branch-rate      CDATA #REQUIRED>
@@ -238,47 +233,47 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
       <!ATTLIST coverage complexity       CDATA #REQUIRED>
       <!ATTLIST coverage version          CDATA #REQUIRED>
       <!ATTLIST coverage timestamp        CDATA #REQUIRED>
-    
+
       <!ELEMENT sources (source*)>
-    
+
       <!ELEMENT source (#PCDATA)>
-    
+
       <!ELEMENT packages (package*)>
-    
+
       <!ELEMENT package (classes)>
       <!ATTLIST package name        CDATA #REQUIRED>
       <!ATTLIST package line-rate   CDATA #REQUIRED>
       <!ATTLIST package branch-rate CDATA #REQUIRED>
       <!ATTLIST package complexity  CDATA #REQUIRED>
-    
+
       <!ELEMENT classes (class*)>
-    
+
       <!ELEMENT class (methods,lines)>
       <!ATTLIST class name        CDATA #REQUIRED>
       <!ATTLIST class filename    CDATA #REQUIRED>
       <!ATTLIST class line-rate   CDATA #REQUIRED>
       <!ATTLIST class branch-rate CDATA #REQUIRED>
       <!ATTLIST class complexity  CDATA #REQUIRED>
-    
+
       <!ELEMENT methods (method*)>
-    
+
       <!ELEMENT method (lines)>
       <!ATTLIST method name        CDATA #REQUIRED>
       <!ATTLIST method signature   CDATA #REQUIRED>
       <!ATTLIST method line-rate   CDATA #REQUIRED>
       <!ATTLIST method branch-rate CDATA #REQUIRED>
       <!ATTLIST method complexity  CDATA #REQUIRED>
-    
+
       <!ELEMENT lines (line*)>
-    
+
       <!ELEMENT line (conditions*)>
       <!ATTLIST line number CDATA #REQUIRED>
       <!ATTLIST line hits   CDATA #REQUIRED>
       <!ATTLIST line branch CDATA "false">
       <!ATTLIST line condition-coverage CDATA "100%">
-    
+
       <!ELEMENT conditions (condition*)>
-    
+
       <!ELEMENT condition EMPTY>
       <!ATTLIST condition number CDATA #REQUIRED>
       <!ATTLIST condition type CDATA #REQUIRED>

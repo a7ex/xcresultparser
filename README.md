@@ -18,9 +18,15 @@ In case of 'xml' JUnit format for test results and generic format (Sonarqube) fo
 
 You can also specify the name of the project root. Paths and urls are then relative to the specified directory. (used for urls in xml output)
 
-This tool can read test result data and code coverage data from an .xcarchive using the developer tools included in `Xcode 13`. Namely here: xcresulttool and xccov to get json data from .xcresult bundles.
+This tool can read test result data and code coverage data from an `.xcresult` bundle using `xcresulttool` and `xccov`.
+All JSON parsing is done with native `Codable` models in this project.
 
-Parsing the JSON is done using the great [XCResultKit](https://github.com/davidahouse/XCResultKit) package.
+## Requirements
+- macOS 12 or newer
+
+## Expected Failure Semantics
+- For `txt`, `cli`, `html`, and `md`, expected failures are represented as a distinct test state.
+- For `junit` and sonar test execution `xml`, expected failures are emitted as regular passing test cases for schema compatibility.
 
 <details>
   <summary>More on converting code coverage data</summary>
@@ -87,7 +93,7 @@ You should see the tool respond like this:
 ```
 Error: Missing expected argument '<xcresult-file>'
 
-OVERVIEW: xcresultparser 1.9.4
+OVERVIEW: xcresultparser 2.0.0-beta
 Interpret binary .xcresult files and print summary in different formats: txt,
 xml, html or colored cli output.
 
@@ -126,7 +132,7 @@ OPTIONS:
                           'warnings-and-errors'.
   -s, --summary-fields <summary-fields>
                           The fields in the summary. Default is all:
-                          errors|warnings|analyzerWarnings|tests|failed|skipped
+                          errors|warnings|analyzerWarnings|tests|failed|skipped|duration|date
   -c, --coverage          Whether to print coverage data.
   -x, --exclude-coverage-not-in-project
                           Omit elements with file pathes, which do not contain
@@ -201,6 +207,8 @@ Create an xml file in generic code coverage xml format, but only for two of the 
 ```
 xcresultparser -c -o xml test.xcresult -t foo -t baz > sonarCoverage.xml
 ```
+
+If one of the targets passed with `-t/--coverage-targets` does not exist in the result bundle, the command now exits with an error.
 
 ### Cobertura XML output
 Create xml file in [Cobertura](https://cobertura.github.io/cobertura/) format:

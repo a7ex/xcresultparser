@@ -24,6 +24,7 @@ usage()
 
 ## Default values for this app, so I can invoke this script without parameters
 productName="xcresultparser"
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 while [ "$1" != "" ]; do
     case $1 in
@@ -54,6 +55,8 @@ then
 	echo "Please provide a profile name of the profile in your keychain, which was created using `notarytool store-credentials`"
 	exit 1
 fi
+
+cd "$ROOT_DIR"
 
 # build the project for M1 and Intel:
 swift build -c release --arch arm64 --arch x86_64

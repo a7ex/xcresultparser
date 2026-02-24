@@ -1,20 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites tests="7" failures="1" errors="0" time="18.02">
-  <testsuite name="XcresultparserTests.xctest" tests="7" failures="1" errors="0" time="4.327">
+<testsuites tests="7" failures="1" errors="0" time="9.01">
+  <testsuite name="XcresultparserTests.xctest" tests="7" failures="1" errors="0" time="4.325">
     <testcase name="testCLIResultFormatter()" time="0.307" classname="XcresultparserTests"/>
     <testcase name="testCoverageConverter()" time="2.818" classname="XcresultparserTests">
-      <failure message="Uncategorized: XcresultparserTests.testCoverageConverter()" type="Uncategorized">failed - Unable to create CoverageConverter from /Users/fhaeser/Library/Developer/Xcode/DerivedData/xcresultparser-ebyquorsyljyyuchjpndxzpxmxvo/Build/Products/Debug/XcresultparserTests.xctest/Contents/Resources/Xcresultparser_XcresultparserTests.bundle/Contents/Resources/test.xcresult (/Users/fhaeser/code/xcresultparser/Tests/XcresultparserTests/XcresultparserTests.swift:108)</failure>
-    </testcase>
-    <testcase name="testHTMLResultFormatter()" time="0.332" classname="XcresultparserTests"/>
-    <testcase name="testJunitXMLJunit()" time="0.256" classname="XcresultparserTests"/>
-    <testcase name="testJunitXMLSonar()" time="0.266" classname="XcresultparserTests"/>
-    <testcase name="testOutputFormat()" time="0.001" classname="XcresultparserTests"/>
-    <testcase name="testTextResultFormatter()" time="0.345" classname="XcresultparserTests"/>
-  </testsuite>
-  <testsuite name="XcresultparserTests.xctest" tests="7" failures="1" errors="0" time="4.327">
-    <testcase name="testCLIResultFormatter()" time="0.307" classname="XcresultparserTests"/>
-    <testcase name="testCoverageConverter()" time="2.818" classname="XcresultparserTests">
-      <failure message="Uncategorized: XcresultparserTests.testCoverageConverter()" type="Uncategorized">failed - Unable to create CoverageConverter from /Users/fhaeser/Library/Developer/Xcode/DerivedData/xcresultparser-ebyquorsyljyyuchjpndxzpxmxvo/Build/Products/Debug/XcresultparserTests.xctest/Contents/Resources/Xcresultparser_XcresultparserTests.bundle/Contents/Resources/test.xcresult (/Users/fhaeser/code/xcresultparser/Tests/XcresultparserTests/XcresultparserTests.swift:108)</failure>
+      <failure message="Uncategorized: XcresultparserTests.testCoverageConverter()" type="Uncategorized">failed - Unable to create CoverageConverter from /Users/fhaeser/Library/Developer/Xcode/DerivedData/xcresultparser-ebyquorsyljyyuchjpndxzpxmxvo/Build/Products/Debug/XcresultparserTests.xctest/Contents/Resources/Xcresultparser_XcresultparserTests.bundle/Contents/Resources/test.xcresult (XcresultparserTests.swift:109)</failure>
     </testcase>
     <testcase name="testHTMLResultFormatter()" time="0.332" classname="XcresultparserTests"/>
     <testcase name="testJunitXMLJunit()" time="0.256" classname="XcresultparserTests"/>

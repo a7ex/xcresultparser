@@ -6,7 +6,25 @@
 //
 
 import Foundation
-import XCResultKit
+
+public enum CoverageConverterError: LocalizedError, Equatable {
+    case couldNotLoadCoverageReport
+    case unknownCoverageTargets(requested: [String], available: [String])
+    case notImplemented
+
+    public var errorDescription: String? {
+        switch self {
+        case .couldNotLoadCoverageReport:
+            return "Could not load coverage report from xcresult archive."
+        case let .unknownCoverageTargets(requested, available):
+            let requestedList = requested.joined(separator: ", ")
+            let availableList = available.joined(separator: ", ")
+            return "Unknown coverage target(s): \(requestedList). Available targets: \(availableList)"
+        case .notImplemented:
+            return "xmlString(quiet:) must be implemented by a CoverageConverter subclass."
+        }
+    }
+}
 
 /// Convert coverage data in a xcresult archive to xml (exact format determined by subclass)
 ///
@@ -24,48 +42,107 @@ import XCResultKit
 /// Read the Readme for further info on this.
 ///
 public class CoverageConverter {
-    let resultFile: XCResultFile
+    let resultFileURL: URL
     let projectRoot: String
-    let codeCoverage: CodeCoverage
-    let invocationRecord: ActionsInvocationRecord
     let coverageTargets: Set<String>
+    let coverageReport: CoverageReport
+    let filesForIncludedTargets: Set<String>
     let excludedPaths: Set<String>
     let strictPathnames: Bool
+    let startTime: Double?
 
     // MARK: - Dependencies
 
-    let shell = DependencyFactory.createShell()
+    let xcresultToolClient: XCResultToolProviding
+    let xccovClient: XCCovProviding
 
-    public init?(
+    public convenience init(
         with url: URL,
         projectRoot: String = "",
         coverageTargets: [String] = [],
         excludedPaths: [String] = [],
         strictPathnames: Bool
-    ) {
-        resultFile = XCResultFile(url: url)
-        guard let record = resultFile.getCodeCoverage() else {
-            return nil
+    ) throws {
+        try self.init(
+            with: url,
+            projectRoot: projectRoot,
+            coverageTargets: coverageTargets,
+            excludedPaths: excludedPaths,
+            strictPathnames: strictPathnames,
+            xcResultToolClient: XCResultToolClient(),
+            xcCovClient: XCCovClient()
+        )
+    }
+
+    init(
+        with url: URL,
+        projectRoot: String = "",
+        coverageTargets: [String] = [],
+        excludedPaths: [String] = [],
+        strictPathnames: Bool,
+        xcResultToolClient: XCResultToolProviding,
+        xcCovClient: XCCovProviding
+    ) throws {
+        let report: CoverageReport
+        do {
+            report = try xcCovClient.getCoverageReport(path: url)
+        } catch {
+            throw CoverageConverterError.couldNotLoadCoverageReport
         }
+
+        self.xcresultToolClient = xcResultToolClient
+        xccovClient = xcCovClient
+        resultFileURL = url
+        coverageReport = report
         self.projectRoot = projectRoot
         self.strictPathnames = projectRoot.isEmpty ? false : strictPathnames
-        codeCoverage = record
-        guard let invocationRecord = resultFile.getInvocationRecord() else {
-            return nil
+        let targetSelection = CoverageTargetSelection(
+            with: coverageTargets,
+            from: report.targets.map(\.name)
+        )
+        let selectedCoverageTargets = targetSelection.selectedTargets
+        self.coverageTargets = selectedCoverageTargets
+        if !targetSelection.unmatchedRequested.isEmpty {
+            throw CoverageConverterError.unknownCoverageTargets(
+                requested: targetSelection.unmatchedRequested.sorted(),
+                available: targetSelection.availableTargets.sorted()
+            )
         }
-        self.invocationRecord = invocationRecord
-        self.coverageTargets = record.targets(filteredBy: coverageTargets)
+        let includedTargetFiles = report.targets
+            .filter { selectedCoverageTargets.contains($0.name) }
+            .flatMap { $0.files.map(\.path) }
+        filesForIncludedTargets = CoverageConverter.normalizedFilePaths(
+            for: includedTargetFiles,
+            projectRoot: projectRoot
+        )
         self.excludedPaths = Set(excludedPaths)
+        startTime = if let summary = try? xcResultToolClient.getTestSummary(path: url) {
+            summary.startTime
+        } else {
+            nil
+        }
     }
 
     public func xmlString(quiet: Bool) throws -> String {
-        fatalError("xmlString is not implemented")
+        throw CoverageConverterError.notImplemented
     }
 
     public var targetsInfo: String {
-        return codeCoverage.targets.reduce("") { rslt, item in
+        return coverageReport.targets.reduce("") { rslt, item in
             return "\(rslt)\n\(item.name)"
         }
+    }
+
+    var lineCoverage: Double {
+        coverageReport.lineCoverage
+    }
+
+    var coveredLines: Int {
+        coverageReport.coveredLines
+    }
+
+    var executableLines: Int {
+        coverageReport.executableLines
     }
 
     func writeToStdErrorLn(_ str: String) {
@@ -82,14 +159,15 @@ public class CoverageConverter {
 
     // Use the xccov commandline tool to get results as JSON.
     func getCoverageDataAsJSON() throws -> FileCoverage {
-        var arguments = ["xccov", "view"]
-        if resultFile.url.pathExtension == "xcresult" {
-            arguments.append("--archive")
+        try xccovClient.getCoverageData(path: resultFileURL)
+    }
+
+    func isTargetIncluded(forFile file: String) -> Bool {
+        if filesForIncludedTargets.contains(file) {
+            return true
         }
-        arguments.append("--json")
-        arguments.append(resultFile.url.path)
-        let coverageData = try shell.execute(program: "/usr/bin/xcrun", with: arguments)
-        return try JSONDecoder().decode(FileCoverage.self, from: coverageData)
+        let normalized = CoverageConverter.normalizedFilePaths(for: [file], projectRoot: projectRoot)
+        return !filesForIncludedTargets.isDisjoint(with: normalized)
     }
 
     func isPathExcluded(_ path: String) -> Bool {
@@ -99,36 +177,36 @@ public class CoverageConverter {
         return false
     }
 
-    // MARK: - unused and only here for reference
-
-    // This method was replaced by getCoverageDataAsJSON()
-    // Instead of requiring to get the coverage data for each single code file
-    // we now can obtain all information for all targets and all files in one call to xccov
-    // That is of course much faster, than calling xccov for each file, as we needed to in older times
-    // It is not used at the moment, but is left here just to cover this xccov function
+    // Maintained to support the public API used by tests and existing consumers.
     func coverageForFile(path: String) throws -> String {
-        var arguments = ["xccov", "view"]
-        if resultFile.url.pathExtension == "xcresult" {
-            arguments.append("--archive")
-        }
-        arguments.append("--file")
-        arguments.append(path)
-        arguments.append(resultFile.url.path)
-        let coverageData = try shell.execute(program: "/usr/bin/xcrun", with: arguments)
-        return String(decoding: coverageData, as: UTF8.self)
+        try xccovClient.getCoverageForFile(path: resultFileURL, filePath: path)
     }
 
-    // This method was replaced by going through all files in all targets
-    // That allows us to filter by targets easier
-    // It is not used at the moment, but is left here just to cover this xccov function
+    // Maintained to support the public API used by tests and existing consumers.
     func coverageFileList() throws -> [String] {
-        var arguments = ["xccov", "view"]
-        if resultFile.url.pathExtension == "xcresult" {
-            arguments.append("--archive")
+        try xccovClient.getCoverageFileList(path: resultFileURL)
+    }
+
+    static func normalizedFilePaths(for paths: [String], projectRoot: String) -> Set<String> {
+        var result = Set<String>()
+        for path in paths {
+            result.insert(path)
+            guard !projectRoot.isEmpty else {
+                continue
+            }
+            if path.hasPrefix(projectRoot) {
+                var relative = String(path.dropFirst(projectRoot.count))
+                if relative.hasPrefix("/") {
+                    relative.removeFirst()
+                }
+                if !relative.isEmpty {
+                    result.insert(relative)
+                }
+            } else if !path.hasPrefix("/") {
+                let joined = (projectRoot as NSString).appendingPathComponent(path)
+                result.insert(joined)
+            }
         }
-        arguments.append("--file-list")
-        arguments.append(resultFile.url.path)
-        let filelistData = try shell.execute(program: "/usr/bin/xcrun", with: arguments)
-        return String(decoding: filelistData, as: UTF8.self).components(separatedBy: "\n")
+        return result
     }
 }

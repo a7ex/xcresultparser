@@ -5,9 +5,8 @@
 //
 
 import Foundation
-import XCResultKit
 
-/// Helper object to convert from InvocationRecoord.DocumentLocation to Code Climate objects
+/// Helper object to convert from xcresult issue source URL to Code Climate objects
 ///
 struct IssueLocationInfo {
     let filePath: String
@@ -16,12 +15,11 @@ struct IssueLocationInfo {
     let startColumn: Int
     let endColumn: Int
 
-    init?(with documentLocation: DocumentLocation?) {
-        guard let documentLocation,
-              let url = URL(string: documentLocation.url) else {
+    init?(with sourceURL: String?) {
+        guard let sourceURL,
+              let url = URL(string: sourceURL) else {
             return nil
         }
-        // documentLocation.concreteTypeName: "DVTTextDocumentLocation"
         filePath = url.path
         guard let fragment = url.fragment else {
             startLine = 0

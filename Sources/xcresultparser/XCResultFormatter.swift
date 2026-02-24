@@ -6,11 +6,10 @@
 //
 
 import Foundation
-import XCResultKit
 
 public struct XCResultFormatter {
     private enum SummaryField: String {
-        case errors, warnings, analyzerWarnings, tests, failed, skipped
+        case errors, warnings, analyzerWarnings, tests, failed, skipped, duration, date
     }
 
     private struct SummaryFields {
@@ -24,59 +23,134 @@ public struct XCResultFormatter {
         }
     }
 
+    private struct FormattedTestGroup {
+        let name: String
+        let duration: Double
+        let subtests: [FormattedTest]
+        let subtestGroups: [FormattedTestGroup]
+
+        var hasFailedTests: Bool {
+            if subtests.contains(where: \.isFailed) {
+                return true
+            }
+            if subtestGroups.contains(where: \.hasFailedTests) {
+                return true
+            }
+            return false
+        }
+
+        var hasNoFailedTests: Bool {
+            !hasFailedTests
+        }
+    }
+
+    private enum FormattedTestStatus {
+        case passed
+        case failed
+        case skipped
+        case expectedFailure
+    }
+
+    private struct FormattedTest {
+        let identifier: String
+        let name: String
+        let duration: Double?
+        let status: FormattedTestStatus
+
+        var isFailed: Bool {
+            status == .failed
+        }
+
+        var isSkipped: Bool {
+            status == .skipped
+        }
+
+        var isExpectedFailure: Bool {
+            status == .expectedFailure
+        }
+
+        var isSuccessful: Bool {
+            status == .passed
+        }
+    }
+
     // MARK: - Properties
 
-    private let resultFile: XCResultFile
-    private let invocationRecord: ActionsInvocationRecord
-    private let codeCoverage: CodeCoverage?
     private let outputFormatter: XCResultFormatting
+    private let coverageReport: CoverageReport?
+    private let buildResults: XCBuildResults
+    private let testSummary: XCSummary
+    private let tests: XCTests
     private let coverageTargets: Set<String>
     private let failedTestsOnly: Bool
     private let summaryFields: SummaryFields
     private let coverageReportFormat: CoverageReportFormat
 
-    private var numFormatter: NumberFormatter = {
-        let numFormatter = NumberFormatter()
-        numFormatter.maximumFractionDigits = 4
-        return numFormatter
-    }()
+    private static let numberStyle = FloatingPointFormatStyle<Double>
+        .number
+        .locale(Locale(identifier: "en_US_POSIX"))
+        .precision(.fractionLength(0 ... 4))
 
-    private var percentFormatter: NumberFormatter = {
-        let numFormatter = NumberFormatter()
-        numFormatter.maximumFractionDigits = 1
-        return numFormatter
-    }()
+    private static let percentStyle = FloatingPointFormatStyle<Double>
+        .number
+        .locale(Locale(identifier: "en_US_POSIX"))
+        .precision(.fractionLength(0 ... 1))
+
+    private static let iso8601UTCStyle = Date.ISO8601FormatStyle(
+        timeZone: TimeZone(secondsFromGMT: 0) ?? .current
+    )
 
     // MARK: - Initializer
 
-    public init?(
+    public init(
         with url: URL,
         formatter: XCResultFormatting,
         coverageTargets: [String] = [],
         failedTestsOnly: Bool = false,
-        summaryFields: String = "errors|warnings|analyzerWarnings|tests|failed|skipped",
+        summaryFields: String = "errors|warnings|analyzerWarnings|tests|failed|skipped|duration|date",
         coverageReportFormat: CoverageReportFormat = .methods
-    ) {
-        resultFile = XCResultFile(url: url)
-        guard let record = resultFile.getInvocationRecord() else {
-            return nil
-        }
-        invocationRecord = record
+    ) throws {
+        try self.init(
+            with: url,
+            formatter: formatter,
+            coverageTargets: coverageTargets,
+            failedTestsOnly: failedTestsOnly,
+            summaryFields: summaryFields,
+            coverageReportFormat: coverageReportFormat,
+            xcResultToolClient: XCResultToolClient(),
+            xcCovClient: XCCovClient()
+        )
+    }
+
+    init(
+        with url: URL,
+        formatter: XCResultFormatting,
+        coverageTargets: [String] = [],
+        failedTestsOnly: Bool = false,
+        summaryFields: String = "errors|warnings|analyzerWarnings|tests|failed|skipped|duration|date",
+        coverageReportFormat: CoverageReportFormat = .methods,
+        xcResultToolClient: XCResultToolProviding,
+        xcCovClient: XCCovProviding
+    ) throws {
+        buildResults = try xcResultToolClient.getBuildResults(path: url)
+        testSummary = try xcResultToolClient.getTestSummary(path: url)
+        tests = try xcResultToolClient.getTests(path: url)
         outputFormatter = formatter
-        codeCoverage = resultFile.getCodeCoverage()
-        self.coverageTargets = codeCoverage?.targets(filteredBy: coverageTargets) ?? []
+        coverageReport = try? xcCovClient.getCoverageReport(path: url)
+        let targetSelection = CoverageTargetSelection(
+            with: coverageTargets,
+            from: coverageReport?.targets.map(\.name) ?? []
+        )
+        guard targetSelection.unmatchedRequested.isEmpty else {
+            throw CoverageConverterError.unknownCoverageTargets(
+                requested: targetSelection.unmatchedRequested.sorted(),
+                available: targetSelection.availableTargets.sorted()
+            )
+        }
+        self.coverageTargets = targetSelection.selectedTargets
         self.failedTestsOnly = failedTestsOnly
         self.summaryFields = SummaryFields(specifiers: summaryFields)
         self.coverageReportFormat = coverageReportFormat
-
-        // if let logsId = invocationRecord?.actions.last?.actionResult.logRef?.id {
-        //    let testLogs = resultFile.getLogs(id: logsId)
-        // }
-        //
-        //        let testSummary = resultFile.getActionTestSummary(id: "xxx")
-
-        // let payload = resultFile.getPayload(id: "123")
-        // let exportedPath = resultFile.exportPayload(id: "123")
     }
 
     // MARK: - Public API
@@ -112,24 +186,18 @@ public struct XCResultFormatter {
     // MARK: - Private API
 
     private func createSummary() -> [String] {
-        let metrics = invocationRecord.metrics
-
-        let analyzerWarningCount = metrics.analyzerWarningCount ?? 0
-        let errorCount = metrics.errorCount ?? 0
-        let testsCount = metrics.testsCount ?? 0
-        let testsFailedCount = metrics.testsFailedCount ?? 0
-        let warningCount = metrics.warningCount ?? 0
-        let testsSkippedCount = metrics.testsSkippedCount ?? 0
+        let analyzerWarningCount = buildResults.analyzerWarningCount
+        let errorCount = buildResults.errorCount
+        let testsCount = testSummary.totalTestCount
+        let testsFailedCount = testSummary.failedTests
+        let warningCount = buildResults.warningCount
+        let testsSkippedCount = testSummary.skippedTests
 
         var lines = [String]()
 
-        lines.append(
-            outputFormatter.testConfiguration("Summary")
-        )
+        lines.append(outputFormatter.testConfiguration("Summary"))
         if summaryFields.enabledFields.contains(.errors) {
-            lines.append(
-                outputFormatter.resultSummaryLine("Number of errors = \(errorCount)", failed: errorCount != 0)
-            )
+            lines.append(outputFormatter.resultSummaryLine("Number of errors = \(errorCount)", failed: errorCount != 0))
         }
         if summaryFields.enabledFields.contains(.warnings) {
             lines.append(
@@ -148,9 +216,7 @@ public struct XCResultFormatter {
             )
         }
         if summaryFields.enabledFields.contains(.tests) {
-            lines.append(
-                outputFormatter.resultSummaryLine("Number of tests = \(testsCount)", failed: false)
-            )
+            lines.append(outputFormatter.resultSummaryLine("Number of tests = \(testsCount)", failed: false))
         }
         if summaryFields.enabledFields.contains(.failed) {
             lines.append(
@@ -168,18 +234,34 @@ public struct XCResultFormatter {
                 )
             )
         }
+        if summaryFields.enabledFields.contains(.duration),
+           let durationString = executionDurationString() {
+            lines.append(
+                outputFormatter.resultSummaryLine(
+                    "Execution time = \(durationString)s",
+                    failed: false
+                )
+            )
+        }
+        if summaryFields.enabledFields.contains(.date),
+           let executionDateString = executionDateString() {
+            lines.append(
+                outputFormatter.resultSummaryLine(
+                    "Execution date = \(executionDateString)",
+                    failed: false
+                )
+            )
+        }
         return lines
     }
 
     private func createSummaryInOneLine() -> String {
-        let metrics = invocationRecord.metrics
-
-        let analyzerWarningCount = metrics.analyzerWarningCount ?? 0
-        let errorCount = metrics.errorCount ?? 0
-        let testsCount = metrics.testsCount ?? 0
-        let testsFailedCount = metrics.testsFailedCount ?? 0
-        let warningCount = metrics.warningCount ?? 0
-        let testsSkippedCount = metrics.testsSkippedCount ?? 0
+        let analyzerWarningCount = buildResults.analyzerWarningCount
+        let errorCount = buildResults.errorCount
+        let testsCount = testSummary.totalTestCount
+        let testsFailedCount = testSummary.failedTests
+        let warningCount = buildResults.warningCount
+        let testsSkippedCount = testSummary.skippedTests
 
         var summary = ""
         if summaryFields.enabledFields.contains(.errors) {
@@ -200,126 +282,174 @@ public struct XCResultFormatter {
         if summaryFields.enabledFields.contains(.skipped) {
             summary += "; Skipped: \(testsSkippedCount)"
         }
+        if summaryFields.enabledFields.contains(.duration),
+           let durationString = executionDurationString() {
+            summary += "; Execution time = \(durationString)s"
+        }
+        if summaryFields.enabledFields.contains(.date),
+           let executionDateString = executionDateString() {
+            summary += "; Execution date = \(executionDateString)"
+        }
         return summary
+    }
+
+    private func executionDurationString() -> String? {
+        guard let start = testSummary.startTime,
+              let finish = testSummary.finishTime else {
+            return nil
+        }
+        let duration = max(0, finish - start)
+        let formatted = duration.formatted(Self.numberStyle)
+        return formatted.isEmpty ? nil : formatted
+    }
+
+    private func executionDateString() -> String? {
+        guard let start = testSummary.startTime else {
+            return nil
+        }
+        let date = Date(timeIntervalSince1970: start)
+        return date.formatted(Self.iso8601UTCStyle)
     }
 
     private func createTestDetailsString() -> [String] {
         var lines = [String]()
-        for testAction in invocationRecord.actions where testAction.schemeCommandName == "Test" {
-            lines.append(contentsOf: createTestDetailsString(forAction: testAction))
+        let runDestination = tests.devices.first?.deviceName ?? "Unknown destination"
+        let failureMessageDetails = failureMessageDetailsByTestIdentifier()
+
+        let configuredNodes = tests.testPlanConfigurations.map { config in
+            (
+                name: config.configurationName,
+                nodes: nodes(for: config, in: tests.testNodes)
+            )
         }
+
+        let entries: [(name: String, nodes: [XCTestNode])] = if configuredNodes.isEmpty {
+            [(testSummary.title, tests.testNodes)]
+        } else {
+            configuredNodes
+        }
+
+        for entry in entries {
+            lines.append(outputFormatter.testConfiguration(entry.name))
+
+            let groups = entry.nodes.compactMap { mapGroup(node: $0, currentTestClassName: nil) }
+            let targetLabel = targetName(for: groups)
+            if let targetLabel {
+                lines.append(outputFormatter.testConfiguration("\(targetLabel) on '\(runDestination)'"))
+            }
+
+            if failedTestsOnly,
+               outputFormatter is CLIResultFormatter,
+               groups.allSatisfy(\.hasNoFailedTests) {
+                lines.append("No test failures")
+            } else {
+                for group in groups {
+                    lines += createTestSummaryInfo(
+                        group,
+                        level: 0,
+                        failureSummaries: testSummary.testFailures,
+                        failureMessageDetails: failureMessageDetails
+                    )
+                }
+            }
+
+            lines.append(outputFormatter.divider)
+        }
+
         return lines
     }
 
-    private func createTestDetailsString(forAction testAction: ActionRecord) -> [String] {
-        var lines = [String]()
-        guard let testsId = testAction.actionResult.testsRef?.id,
-              let testPlanRun = resultFile.getTestPlanRunSummaries(id: testsId) else {
-            return lines
+    private func targetName(for groups: [FormattedTestGroup]) -> String? {
+        if let bundle = groups.first(where: { $0.name.hasSuffix(".xctest") }) {
+            return bundle.name.replacingOccurrences(of: ".xctest", with: "")
         }
-        let testPlanRunSummaries = testPlanRun.summaries
-        let failureSummaries = invocationRecord.issues.testFailureSummaries
-        let runDestination = testAction.runDestination.displayName
-
-        for thisSummary in testPlanRunSummaries {
-            lines.append(
-                outputFormatter.testConfiguration(thisSummary.name ?? "No-name")
-            )
-            for thisTestableSummary in thisSummary.testableSummaries {
-                if let targetName = thisTestableSummary.targetName {
-                    let targetConfig = "\(targetName) on '\(runDestination)'"
-                    lines.append(
-                        outputFormatter.testConfiguration(targetConfig)
-                    )
-                }
-
-                if failedTestsOnly,
-                   outputFormatter is CLIResultFormatter,
-                   thisTestableSummary.tests.allSatisfy({ $0.hasNoFailedTests }) {
-                    lines.append("No test failures")
-                } else {
-                    for thisTest in thisTestableSummary.tests {
-                        lines += createTestSummaryInfo(thisTest, level: 0, failureSummaries: failureSummaries)
-                    }
-                }
-
-                lines.append(
-                    outputFormatter.divider
-                )
-            }
-        }
-        return lines
+        return groups.first?.name
     }
 
     private func createTestSummaryInfo(
-        _ group: ActionTestSummaryGroup,
+        _ group: FormattedTestGroup,
         level: Int,
-        failureSummaries: [TestFailureIssueSummary]
+        failureSummaries: [XCTestFailure],
+        failureMessageDetails: [String: [FailureMessageDetail]]
     ) -> [String] {
         var lines = [String]()
         if failedTestsOnly,
            !group.hasFailedTests {
             return lines
         }
-        let header = "\(group.nameString) (\(numFormatter.unwrappedString(for: group.duration)))"
+        let header = "\(group.name) (\(formattedDurationString(for: group.duration)))"
 
         switch level {
         case 0:
             break
         case 1:
-            lines.append(
-                outputFormatter.testTarget(header, failed: group.hasFailedTests)
-            )
+            lines.append(outputFormatter.testTarget(header, failed: group.hasFailedTests))
         case 2:
-            lines.append(
-                outputFormatter.testClass(header, failed: group.hasFailedTests)
-            )
+            lines.append(outputFormatter.testClass(header, failed: group.hasFailedTests))
         default:
-            lines.append(
-                outputFormatter.testClass(header, failed: group.hasFailedTests)
-            )
+            lines.append(outputFormatter.testClass(header, failed: group.hasFailedTests))
         }
         for subGroup in group.subtestGroups {
-            lines += createTestSummaryInfo(subGroup, level: level + 1, failureSummaries: failureSummaries)
+            lines += createTestSummaryInfo(
+                subGroup,
+                level: level + 1,
+                failureSummaries: failureSummaries,
+                failureMessageDetails: failureMessageDetails
+            )
         }
         if !outputFormatter.accordionOpenTag.isEmpty {
-            lines.append(
-                outputFormatter.accordionOpenTag
-            )
+            lines.append(outputFormatter.accordionOpenTag)
         }
         for thisTest in group.subtests {
             if !failedTestsOnly || thisTest.isFailed {
                 lines.append(
-                    actionTestFileStatusString(for: thisTest, failureSummaries: failureSummaries)
+                    actionTestFileStatusString(
+                        for: thisTest,
+                        failureSummaries: failureSummaries,
+                        failureMessageDetails: failureMessageDetails
+                    )
                 )
             }
         }
         if !outputFormatter.accordionCloseTag.isEmpty {
-            lines.append(
-                outputFormatter.accordionCloseTag
-            )
+            lines.append(outputFormatter.accordionCloseTag)
         }
         return lines
     }
 
     private func actionTestFileStatusString(
-        for testData: ActionTestMetadata,
-        failureSummaries: [TestFailureIssueSummary]
+        for testData: FormattedTest,
+        failureSummaries: [XCTestFailure],
+        failureMessageDetails: [String: [FailureMessageDetail]]
     ) -> String {
-        let duration = numFormatter.unwrappedString(for: testData.duration)
+        let duration = formattedDurationString(for: testData.duration)
         let icon = actionTestFileStatusStringIcon(testData: testData)
-        let testTitle = "\(icon) \(testData.name ?? "Missing-Name") (\(duration))"
-        let testCaseName = testData.identifier?.replacingOccurrences(of: "/", with: ".") ?? "No-identifier"
-        if let summary = failureSummaries.first(where: { $0.testCaseName == testCaseName }) {
-            return actionTestFailureStatusString(with: testTitle, and: summary)
-        } else {
-            return outputFormatter.singleTestItem(testTitle, failed: testData.isFailed)
+        let testTitle = "\(icon) \(testData.name) (\(duration))"
+        let testCaseName = testData.identifier
+        if let summary = failureSummaries.first(where: {
+            $0.testIdentifierString == testCaseName ||
+                $0.testIdentifierString.replacingOccurrences(of: "/", with: ".") == testCaseName
+        }) {
+            let candidates = failureMessageDetails[summary.testIdentifierString] ??
+                failureMessageDetails[summary.testIdentifierString.replacingOccurrences(of: "/", with: ".")] ?? []
+            let matchingDetail = bestFailureMessage(for: summary, in: candidates)
+            let enrichedMessage = if let matchingDetail {
+                "\(matchingDetail.documentLocation): \(matchingDetail.message)"
+            } else {
+                summary.failureText
+            }
+            return actionTestFailureStatusString(with: testTitle, message: enrichedMessage)
         }
+        return outputFormatter.singleTestItem(testTitle, failed: testData.isFailed)
     }
 
-    private func actionTestFileStatusStringIcon(testData: ActionTestMetadata) -> String {
+    private func actionTestFileStatusStringIcon(testData: FormattedTest) -> String {
         if testData.isSuccessful {
             return outputFormatter.testPassIcon
+        }
+
+        if testData.isExpectedFailure {
+            return outputFormatter.testExpectedFailureIcon
         }
 
         if testData.isSkipped {
@@ -329,55 +459,73 @@ public struct XCResultFormatter {
         return outputFormatter.testFailIcon
     }
 
-    private func actionTestFailureStatusString(
-        with header: String,
-        and failure: TestFailureIssueSummary
-    ) -> String {
-        return outputFormatter.failedTestItem(header, message: failure.message)
+    private func actionTestFailureStatusString(with header: String, message: String) -> String {
+        return outputFormatter.failedTestItem(header, message: message)
+    }
+
+    private func formattedDurationString(for duration: Double?) -> String {
+        guard let duration else {
+            return ""
+        }
+        let totalSeconds = max(0, Int(duration.rounded()))
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let seconds = totalSeconds % 60
+
+        if hours > 0 {
+            return "\(hours)h \(minutes)m \(seconds)s"
+        }
+        if minutes > 0 {
+            return "\(minutes)m \(seconds)s"
+        }
+        return "\(seconds)s"
     }
 
     private func createCoverageReport() -> [String] {
         var lines = [String]()
         lines.append(outputFormatter.testConfiguration("Coverage report"))
-        guard let codeCoverage else {
+        guard let coverageReport else {
             return lines
         }
+
         var executableLines = 0
         var coveredLines = 0
-        for target in codeCoverage.targets {
+        for target in coverageReport.targets {
             let targetData = createCoverageReportFor(target: target)
             lines += targetData.lines
             executableLines += targetData.executableLines
             coveredLines += targetData.coveredLines
         }
-        // Append the total coverage below the header
+
         guard executableLines > 0 else { return lines }
         let fraction = Double(coveredLines) / Double(executableLines)
-        let covPercent: String = percentFormatter.unwrappedString(for: fraction * 100)
-        let line = outputFormatter.codeCoverageTargetSummary(
-            "Total coverage: \(covPercent)% (\(coveredLines)/\(executableLines))")
+        let covPercent = (fraction * 100).formatted(Self.percentStyle)
+        let line = outputFormatter.codeCoverageTargetSummary("Total coverage: \(covPercent)% (\(coveredLines)/\(executableLines))")
         lines.insert(line, at: 1)
         return lines
     }
 
-    private func createCoverageReportFor(target: CodeCoverageTarget) -> CodeCoverageParseResult {
+    private func createCoverageReportFor(target: CoverageTarget) -> CodeCoverageParseResult {
         var lines = [String]()
         var executableLines = 0
         var coveredLines = 0
         guard coverageTargets.contains(target.name) else {
             return CodeCoverageParseResult(lines: lines, executableLines: executableLines, coveredLines: coveredLines)
         }
-        let covPercent = percentFormatter.unwrappedString(for: target.lineCoverage * 100)
+
+        let covPercent = (target.lineCoverage * 100).formatted(Self.percentStyle)
         executableLines += target.executableLines
         coveredLines += target.coveredLines
         guard coverageReportFormat != .totals else {
             return CodeCoverageParseResult(lines: lines, executableLines: executableLines, coveredLines: coveredLines)
         }
+
         lines.append(
             outputFormatter.codeCoverageTargetSummary(
                 "\(target.name): \(covPercent)% (\(target.coveredLines)/\(target.executableLines))"
             )
         )
+
         if coverageReportFormat != .targets {
             if !outputFormatter.accordionOpenTag.isEmpty {
                 lines.append(outputFormatter.accordionOpenTag)
@@ -392,9 +540,9 @@ public struct XCResultFormatter {
         return CodeCoverageParseResult(lines: lines, executableLines: executableLines, coveredLines: coveredLines)
     }
 
-    private func createCoverageReportFor(file: CodeCoverageFile) -> [String] {
+    private func createCoverageReportFor(file: CoverageReportFile) -> [String] {
         var lines = [String]()
-        let covPercent = percentFormatter.unwrappedString(for: file.lineCoverage * 100)
+        let covPercent = (file.lineCoverage * 100).formatted(Self.percentStyle)
         lines.append(
             outputFormatter.codeCoverageFileSummary(
                 "\(file.name): \(covPercent)% (\(file.coveredLines)/\(file.executableLines))"
@@ -408,7 +556,7 @@ public struct XCResultFormatter {
                 lines.append(outputFormatter.tableOpenTag)
             }
             for function in file.functions {
-                let covPercentLine = percentFormatter.unwrappedString(for: function.lineCoverage * 100)
+                let covPercentLine = (function.lineCoverage * 100).formatted(Self.percentStyle)
                 lines.append(
                     outputFormatter.codeCoverageFunctionSummary(
                         [
@@ -430,6 +578,160 @@ public struct XCResultFormatter {
         return lines
     }
 
+    private func nodes(for configuration: XCConfiguration, in roots: [XCTestNode]) -> [XCTestNode] {
+        var matches = [XCTestNode]()
+        for root in roots {
+            matches.append(contentsOf: findConfigurationChildren(in: root, configuration: configuration))
+        }
+        return matches.isEmpty ? roots : matches
+    }
+
+    private func findConfigurationChildren(in node: XCTestNode, configuration: XCConfiguration) -> [XCTestNode] {
+        if node.nodeType == .testPlanConfiguration,
+           node.name == configuration.configurationName || node.nodeIdentifier == configuration.configurationId {
+            return node.children ?? []
+        }
+
+        return (node.children ?? []).flatMap { findConfigurationChildren(in: $0, configuration: configuration) }
+    }
+
+    private func mapGroup(node: XCTestNode, currentTestClassName: String?) -> FormattedTestGroup? {
+        guard node.nodeType != .testCase else {
+            return nil
+        }
+
+        let groupName = mappedGroupName(for: node)
+        let nextTestClassName: String? = if node.nodeType == .testSuite {
+            groupName
+        } else {
+            currentTestClassName
+        }
+
+        let children = node.children ?? []
+        let tests = children.mapTests(
+            testClassName: nextTestClassName,
+            mapTest: mapTest(node:testClassName:),
+            mapArgumentTest: { mappedArgumentTest in
+                FormattedTest(
+                    identifier: mappedArgumentTest.identifier,
+                    name: mappedArgumentTest.name,
+                    duration: mappedArgumentTest.duration,
+                    status: testStatus(for: mappedArgumentTest.result)
+                )
+            }
+        )
+
+        let groups = children.compactMap { child in
+            mapGroup(node: child, currentTestClassName: nextTestClassName)
+        }
+
+        let duration = node.durationInSeconds ?? tests.compactMap(\.duration).reduce(0, +) + groups.reduce(0) { $0 + $1.duration }
+
+        return FormattedTestGroup(
+            name: groupName,
+            duration: duration,
+            subtests: tests,
+            subtestGroups: groups
+        )
+    }
+
+    private func mapTest(node: XCTestNode, testClassName: String?) -> FormattedTest {
+        let result = node.result ?? .unknown
+        let identifier: String = if let testClassName {
+            "\(testClassName)/\(node.name)"
+        } else {
+            node.name
+        }
+        return FormattedTest(
+            identifier: identifier,
+            name: node.name,
+            duration: node.durationInSeconds,
+            status: testStatus(for: result)
+        )
+    }
+
+    private func testStatus(for result: XCTestResult) -> FormattedTestStatus {
+        switch result {
+        case .failed:
+            return .failed
+        case .skipped:
+            return .skipped
+        case .expectedFailure:
+            return .expectedFailure
+        case .passed, .unknown:
+            return .passed
+        }
+    }
+
+    private func mappedGroupName(for node: XCTestNode) -> String {
+        switch node.nodeType {
+        case .unitTestBundle, .uiTestBundle:
+            return node.name.hasSuffix(".xctest") ? node.name : "\(node.name).xctest"
+        default:
+            return node.name
+        }
+    }
+
+    private func failureMessageDetailsByTestIdentifier() -> [String: [FailureMessageDetail]] {
+        var result = [String: [FailureMessageDetail]]()
+        for node in tests.testNodes {
+            collectFailureMessages(
+                in: node,
+                currentTestIdentifier: nil,
+                currentTestClassName: nil,
+                into: &result
+            )
+        }
+        return result
+    }
+
+    private func collectFailureMessages(
+        in node: XCTestNode,
+        currentTestIdentifier: String?,
+        currentTestClassName: String?,
+        into result: inout [String: [FailureMessageDetail]]
+    ) {
+        var currentIdentifier = currentTestIdentifier
+        let nextTestClassName: String? = if node.nodeType == .testSuite {
+            node.name
+        } else {
+            currentTestClassName
+        }
+        if node.nodeType == .testCase {
+            currentIdentifier = node.nodeIdentifier ?? {
+                if let nextTestClassName {
+                    return "\(nextTestClassName)/\(node.name)"
+                }
+                return node.name
+            }()
+        }
+
+        if node.nodeType == .failureMessage,
+           let currentIdentifier,
+           let detail = FailureMessageDetail(from: node.name) {
+            result[currentIdentifier, default: []].append(detail)
+            let dotKey = currentIdentifier.replacingOccurrences(of: "/", with: ".")
+            result[dotKey, default: []].append(detail)
+        }
+
+        for child in node.children ?? [] {
+            collectFailureMessages(
+                in: child,
+                currentTestIdentifier: currentIdentifier,
+                currentTestClassName: nextTestClassName,
+                into: &result
+            )
+        }
+    }
+
+    private func bestFailureMessage(for failure: XCTestFailure, in candidates: [FailureMessageDetail]) -> FailureMessageDetail? {
+        candidates.first {
+            $0.message == failure.failureText ||
+                $0.message.contains(failure.failureText) ||
+                failure.failureText.contains($0.message)
+        } ?? candidates.first
+    }
+
     struct CodeCoverageParseResult {
         let lines: [String]
         let executableLines: Int
@@ -437,60 +739,8 @@ public struct XCResultFormatter {
     }
 }
 
-extension ActionTestMetadata {
-    var isFailed: Bool {
-        return isSuccessful == false && isSkipped == false
-    }
-
-    var isSuccessful: Bool {
-        return testStatus == "Success" || testStatus == "Expected Failure"
-    }
-
-    var isSkipped: Bool {
-        return testStatus == "Skipped"
-    }
-}
-
-extension ActionTestSummaryGroup {
-    var nameString: String {
-        return name ?? "Unnamed"
-    }
-}
-
 extension NumberFormatter {
     func unwrappedString(for input: Double?) -> String {
         return string(for: input) ?? ""
-    }
-}
-
-extension CodeCoverage {
-    func targets(filteredBy filter: [String]) -> Set<String> {
-        let targetNames = targets.map { $0.name }
-        guard !filter.isEmpty else {
-            return Set(targetNames)
-        }
-        let filterSet = Set(filter)
-        let filtered = targetNames.filter { thisTarget in
-            // Clean up target.name. Split on '.' because the target.name is appended with .framework or .app
-            guard let stripped = thisTarget.split(separator: ".").first else { return true }
-            return filterSet.contains(String(stripped))
-        }
-        return Set(filtered)
-    }
-}
-
-private extension ActionTestSummaryGroup {
-    var hasFailedTests: Bool {
-        if subtests.first(where: \.isFailed) != nil {
-            return true
-        }
-        if subtestGroups.first(where: \.hasFailedTests) != nil {
-            return true
-        }
-        return false
-    }
-
-    var hasNoFailedTests: Bool {
-        return !hasFailedTests
     }
 }

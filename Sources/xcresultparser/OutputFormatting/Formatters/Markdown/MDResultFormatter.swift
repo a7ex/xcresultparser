@@ -7,11 +7,10 @@
 import Foundation
 
 public struct MDResultFormatter: XCResultFormatting {
-    private let indentWidth = "  "
-
     public let testFailIcon = "🔴&nbsp;&nbsp;"
     public let testPassIcon = "🟢&nbsp;&nbsp;"
     public let testSkipIcon = "⚪️&nbsp;&nbsp;"
+    public let testExpectedFailureIcon = "🟡&nbsp;&nbsp;"
 
     public init() {}
 
