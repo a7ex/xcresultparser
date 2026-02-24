@@ -26,7 +26,7 @@ struct XCResultToolClient: XCResultToolProviding {
     private let decoder: JSONDecoder
 
     init(
-        shell: Commandline = DependencyFactory.createShell(),
+        shell: Commandline = Shell(),
         decoder: JSONDecoder = JSONDecoder()
     ) {
         self.shell = shell

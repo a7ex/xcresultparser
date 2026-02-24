@@ -98,13 +98,10 @@ struct XCResultToolJunitXMLDataProviderTests {
             ]
         )
         let client = XCResultToolClient(shell: shell)
-        guard let provider = XCResultToolJunitXMLDataProvider(
+        let provider = try XCResultToolJunitXMLDataProvider(
             url: URL(fileURLWithPath: "/tmp/test.xcresult"),
             client: client
-        ) else {
-            Issue.record("Expected provider initialization to succeed")
-            return
-        }
+        )
 
         #expect(provider.metrics.testsCount == 2)
         #expect(provider.metrics.testsFailedCount == 1)
@@ -212,13 +209,10 @@ struct XCResultToolJunitXMLDataProviderTests {
             ]
         )
         let client = XCResultToolClient(shell: shell)
-        guard let provider = XCResultToolJunitXMLDataProvider(
+        let provider = try XCResultToolJunitXMLDataProvider(
             url: URL(fileURLWithPath: "/tmp/test.xcresult"),
             client: client
-        ) else {
-            Issue.record("Expected provider initialization to succeed")
-            return
-        }
+        )
 
         let action = try #require(provider.testActions.first)
         let summary = try #require(action.failureSummaries.first)
@@ -234,12 +228,12 @@ struct XCResultToolJunitXMLDataProviderTests {
         )
         let client = XCResultToolClient(shell: shell)
 
-        let provider = XCResultToolJunitXMLDataProvider(
-            url: URL(fileURLWithPath: "/tmp/test.xcresult"),
-            client: client
-        )
-
-        #expect(provider == nil)
+        #expect(throws: (any Error).self) {
+            try XCResultToolJunitXMLDataProvider(
+                url: URL(fileURLWithPath: "/tmp/test.xcresult"),
+                client: client
+            )
+        }
     }
 
     @Test
@@ -340,13 +334,10 @@ struct XCResultToolJunitXMLDataProviderTests {
             ]
         )
         let client = XCResultToolClient(shell: shell)
-        guard let provider = XCResultToolJunitXMLDataProvider(
+        let provider = try XCResultToolJunitXMLDataProvider(
             url: URL(fileURLWithPath: "/tmp/test.xcresult"),
             client: client
-        ) else {
-            Issue.record("Expected provider initialization to succeed")
-            return
-        }
+        )
 
         let action = try #require(provider.testActions.first)
         let plan = try #require(action.testPlanRunSummaries.first)
@@ -430,13 +421,10 @@ struct XCResultToolJunitXMLDataProviderTests {
             ]
         )
         let client = XCResultToolClient(shell: shell)
-        guard let provider = XCResultToolJunitXMLDataProvider(
+        let provider = try XCResultToolJunitXMLDataProvider(
             url: URL(fileURLWithPath: "/tmp/test.xcresult"),
             client: client
-        ) else {
-            Issue.record("Expected provider initialization to succeed")
-            return
-        }
+        )
 
         let action = try #require(provider.testActions.first)
         let plan = try #require(action.testPlanRunSummaries.first)

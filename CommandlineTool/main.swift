@@ -115,13 +115,11 @@ struct xcresultparser: ParsableCommand {
     }
 
     private func outputIssuesJSON(for xcresult: String, format: OutputFormat) throws {
-        guard let converter = IssuesJSON(
+        let converter = try IssuesJSON(
             with: URL(fileURLWithPath: xcresult),
             projectRoot: projectRoot ?? "",
             excludedPaths: excludedPaths
-        ) else {
-            throw ParseError.argumentError
-        }
+        )
         let rslt = try converter.jsonString(format: format, quiet: quiet == 1)
         writeToStdOut(rslt)
     }
@@ -140,27 +138,23 @@ struct xcresultparser: ParsableCommand {
         for xcresult: String,
         with format: TestReportFormat
     ) throws {
-        guard let junitXML = JunitXML(
+        let junitXML = try JunitXML(
             with: URL(fileURLWithPath: xcresult),
             projectRoot: projectRoot ?? "",
             format: format
-        ) else {
-            throw ParseError.argumentError
-        }
+        )
         writeToStdOut(junitXML.xmlString)
     }
 
     private func outputDescription(for xcresult: String) throws {
-        guard let resultParser = XCResultFormatter(
+        let resultParser = try XCResultFormatter(
             with: URL(fileURLWithPath: xcresult),
             formatter: outputFormatter,
             coverageTargets: coverageTargets,
             failedTestsOnly: failedTestsOnly == 1,
             summaryFields: summaryFields ?? "errors|warnings|analyzerWarnings|tests|failed|skipped|duration|date",
             coverageReportFormat: CoverageReportFormat(string: coverageReportFormat)
-        ) else {
-            throw ParseError.argumentError
-        }
+        )
         writeToStdOutLn(resultParser.documentPrefix(title: "XCResults"))
         writeToStdOutLn(resultParser.summary)
         if noTestResult == 0 {

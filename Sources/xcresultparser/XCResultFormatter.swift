@@ -102,35 +102,50 @@ public struct XCResultFormatter {
 
     // MARK: - Initializer
 
-    public init?(
+    public init(
         with url: URL,
         formatter: XCResultFormatting,
         coverageTargets: [String] = [],
         failedTestsOnly: Bool = false,
         summaryFields: String = "errors|warnings|analyzerWarnings|tests|failed|skipped|duration|date",
         coverageReportFormat: CoverageReportFormat = .methods
-    ) {
-        let shell = DependencyFactory.createShell()
-        let resolvedXCResultToolClient = DependencyFactory.createXCResultToolClient(shell)
-        let resolvedXCCovClient = DependencyFactory.createXCCovClient(shell)
+    ) throws {
+        try self.init(
+            with: url,
+            formatter: formatter,
+            coverageTargets: coverageTargets,
+            failedTestsOnly: failedTestsOnly,
+            summaryFields: summaryFields,
+            coverageReportFormat: coverageReportFormat,
+            xcResultToolClient: XCResultToolClient(),
+            xcCovClient: XCCovClient()
+        )
+    }
 
-        guard let buildResults = try? resolvedXCResultToolClient.getBuildResults(path: url),
-              let summary = try? resolvedXCResultToolClient.getTestSummary(path: url),
-              let tests = try? resolvedXCResultToolClient.getTests(path: url) else {
-            return nil
-        }
-
-        self.buildResults = buildResults
-        testSummary = summary
-        self.tests = tests
+    init(
+        with url: URL,
+        formatter: XCResultFormatting,
+        coverageTargets: [String] = [],
+        failedTestsOnly: Bool = false,
+        summaryFields: String = "errors|warnings|analyzerWarnings|tests|failed|skipped|duration|date",
+        coverageReportFormat: CoverageReportFormat = .methods,
+        xcResultToolClient: XCResultToolProviding,
+        xcCovClient: XCCovProviding
+    ) throws {
+        buildResults = try xcResultToolClient.getBuildResults(path: url)
+        testSummary = try xcResultToolClient.getTestSummary(path: url)
+        tests = try xcResultToolClient.getTests(path: url)
         outputFormatter = formatter
-        coverageReport = try? resolvedXCCovClient.getCoverageReport(path: url)
+        coverageReport = try? xcCovClient.getCoverageReport(path: url)
         let targetSelection = CoverageTargetSelection(
             with: coverageTargets,
             from: coverageReport?.targets.map(\.name) ?? []
         )
         guard targetSelection.unmatchedRequested.isEmpty else {
-            return nil
+            throw CoverageConverterError.unknownCoverageTargets(
+                requested: targetSelection.unmatchedRequested.sorted(),
+                available: targetSelection.availableTargets.sorted()
+            )
         }
         self.coverageTargets = targetSelection.selectedTargets
         self.failedTestsOnly = failedTestsOnly

@@ -56,25 +56,42 @@ public class CoverageConverter {
     let xcresultToolClient: XCResultToolProviding
     let xccovClient: XCCovProviding
 
-    public init(
+    public convenience init(
         with url: URL,
         projectRoot: String = "",
         coverageTargets: [String] = [],
         excludedPaths: [String] = [],
         strictPathnames: Bool
     ) throws {
-        let shell = DependencyFactory.createShell()
-        let resolvedXCResultToolClient = DependencyFactory.createXCResultToolClient(shell)
-        let resolvedXCCovClient = DependencyFactory.createXCCovClient(shell)
+        try self.init(
+            with: url,
+            projectRoot: projectRoot,
+            coverageTargets: coverageTargets,
+            excludedPaths: excludedPaths,
+            strictPathnames: strictPathnames,
+            xcResultToolClient: XCResultToolClient(),
+            xcCovClient: XCCovClient()
+        )
+    }
+
+    init(
+        with url: URL,
+        projectRoot: String = "",
+        coverageTargets: [String] = [],
+        excludedPaths: [String] = [],
+        strictPathnames: Bool,
+        xcResultToolClient: XCResultToolProviding,
+        xcCovClient: XCCovProviding
+    ) throws {
         let report: CoverageReport
         do {
-            report = try resolvedXCCovClient.getCoverageReport(path: url)
+            report = try xcCovClient.getCoverageReport(path: url)
         } catch {
             throw CoverageConverterError.couldNotLoadCoverageReport
         }
 
-        xcresultToolClient = resolvedXCResultToolClient
-        xccovClient = resolvedXCCovClient
+        self.xcresultToolClient = xcResultToolClient
+        xccovClient = xcCovClient
         resultFileURL = url
         coverageReport = report
         self.projectRoot = projectRoot
@@ -99,7 +116,7 @@ public class CoverageConverter {
             projectRoot: projectRoot
         )
         self.excludedPaths = Set(excludedPaths)
-        startTime = if let summary = try? resolvedXCResultToolClient.getTestSummary(path: url) {
+        startTime = if let summary = try? xcResultToolClient.getTestSummary(path: url) {
             summary.startTime
         } else {
             nil

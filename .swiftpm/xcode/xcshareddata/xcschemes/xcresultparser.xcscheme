@@ -84,7 +84,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "/Users/alex/Work/__OwnProjects/myGithub/xcresultparser/Tests/XcresultparserTests/TestAssets/parametrized.xcresult"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-d"
@@ -124,7 +124,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o html"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-t FRBNetworking"
@@ -148,7 +148,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-h"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o md"

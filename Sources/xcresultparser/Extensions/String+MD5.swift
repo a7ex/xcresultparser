@@ -9,8 +9,7 @@ import Foundation
 
 extension String {
     func md5() -> String {
-        let digest = Insecure.MD5.hash(data: Data(utf8))
-        return digest.map { String(format: "%02hhx", $0) }.joined()
+        return Data(utf8).md5()
     }
 
     func sha256() -> String {

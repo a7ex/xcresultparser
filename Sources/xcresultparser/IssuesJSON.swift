@@ -17,18 +17,28 @@ public struct IssuesJSON {
     let buildResults: XCBuildResults
     let excludedPaths: Set<String>
 
-    public init?(
+    public init(
         with url: URL,
         projectRoot: String = "",
         excludedPaths: [String] = []
-    ) {
-        let client = XCResultToolClient()
-        guard let buildResults = try? client.getBuildResults(path: url),
-              let checkdata = try? Data(contentsOf: url.appendingPathComponent("Info.plist")) else {
-            return nil
-        }
-        self.buildResults = buildResults
-        checkName = checkdata.md5()
+    ) throws {
+        try self.init(
+            with: url,
+            projectRoot: projectRoot,
+            excludedPaths: excludedPaths,
+            xcResultToolClient: XCResultToolClient()
+        )
+    }
+
+    init(
+        with url: URL,
+        projectRoot: String = "",
+        excludedPaths: [String] = [],
+        xcResultToolClient: XCResultToolProviding
+    ) throws {
+        buildResults = try xcResultToolClient.getBuildResults(path: url)
+        let checkdata = try? Data(contentsOf: url.appendingPathComponent("Info.plist"))
+        checkName = checkdata?.md5() ?? ""
         self.projectRoot = projectRoot
         self.excludedPaths = Set(excludedPaths)
     }

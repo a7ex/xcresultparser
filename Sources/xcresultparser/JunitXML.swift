@@ -50,6 +50,7 @@ public struct JunitXML: XmlSerializable {
     private let projectRoot: URL?
     private let testReportFormat: TestReportFormat
     private let relativePathNames: Bool
+    private let shell: Commandline
 
     private let nodeNames: NodeNames
 
@@ -62,14 +63,13 @@ public struct JunitXML: XmlSerializable {
 
     // MARK: - Initializer
 
-    public init?(
+    public init(
         with url: URL,
         projectRoot: String = "",
         format: TestReportFormat = .junit,
         relativePathNames: Bool = true
-    ) {
-        let dataProvider = XCResultToolJunitXMLDataProvider(url: url)
-        guard let dataProvider else { return nil }
+    ) throws {
+        let dataProvider = try XCResultToolJunitXMLDataProvider(url: url)
         self.init(
             dataProvider: dataProvider,
             projectRoot: projectRoot,
@@ -82,7 +82,8 @@ public struct JunitXML: XmlSerializable {
         dataProvider: JunitXMLDataProviding,
         projectRoot: String = "",
         format: TestReportFormat = .junit,
-        relativePathNames: Bool = true
+        relativePathNames: Bool = true,
+        shell: Commandline = Shell()
     ) {
         self.dataProvider = dataProvider
         var isDirectory: ObjCBool = false
@@ -100,6 +101,7 @@ public struct JunitXML: XmlSerializable {
             NodeNames.defaultNodeNames
         }
         self.relativePathNames = relativePathNames
+        self.shell = shell
     }
 
     func createRootElement() -> XMLElement {
@@ -206,7 +208,8 @@ public struct JunitXML: XmlSerializable {
                     let node = subGroup.sonarFileXML(
                         projectRoot: projectRoot,
                         configurationName: configurationName,
-                        relativePathNames: relativePathNames
+                        relativePathNames: relativePathNames,
+                        shell: shell
                     )
                     let testcases = createTestCases(
                         for: subGroup.nameString, tests: subGroup.subtests, failureSummaries: failureSummaries
@@ -239,7 +242,8 @@ public struct JunitXML: XmlSerializable {
             group.sonarFileXML(
                 projectRoot: projectRoot,
                 configurationName: configurationName,
-                relativePathNames: relativePathNames
+                relativePathNames: relativePathNames,
+                shell: shell
             ) : group.testSuiteXML(numFormatter: numFormatter)
 
         for thisTest in tests {
@@ -372,11 +376,11 @@ private extension JunitTestGroup {
         return testsuite
     }
 
-    func sonarFileXML(projectRoot: URL?, configurationName: String, relativePathNames: Bool = true) -> XMLElement {
+    func sonarFileXML(projectRoot: URL?, configurationName: String, relativePathNames: Bool = true, shell: Commandline) -> XMLElement {
         let testsuite = XMLElement(name: "file")
         testsuite.addAttribute(
             name: "path",
-            stringValue: classPath(in: projectRoot, relativePathNames: relativePathNames)
+            stringValue: classPath(in: projectRoot, relativePathNames: relativePathNames, shell: shell)
         )
         testsuite.addAttribute(name: "configuration", stringValue: configurationName)
         return testsuite
@@ -406,19 +410,19 @@ private extension JunitTestGroup {
 
     // MARK: - Private interface
 
-    private func classPath(in projectRootUrl: URL?, relativePathNames: Bool = true) -> String {
+    private func classPath(in projectRootUrl: URL?, relativePathNames: Bool = true, shell: Commandline) -> String {
         guard let projectRootUrl else {
             return identifierString
         }
         Self.cacheLock.lock()
         defer { Self.cacheLock.unlock() }
         if Self.cachedPathnames.isEmpty {
-            cacheAllClassNames(in: projectRootUrl, relativePathNames: relativePathNames)
+            cacheAllClassNames(in: projectRootUrl, relativePathNames: relativePathNames, shell: shell)
         }
         return Self.cachedPathnames[identifierString] ?? identifierString
     }
 
-    private func cacheAllClassNames(in projectRootUrl: URL, relativePathNames: Bool = true) {
+    private func cacheAllClassNames(in projectRootUrl: URL, relativePathNames: Bool = true, shell: Commandline) {
         let program = "/usr/bin/grep"
         let grepPathArgument = relativePathNames ? "." : projectRootUrl.path
         let arguments = [
@@ -430,7 +434,7 @@ private extension JunitTestGroup {
             "^(?:public )?(?:final )?(?:public )?(?:(class|\\@implementation|struct) )[a-zA-Z0-9_]+",
             grepPathArgument
         ]
-        guard let filelistData = try? DependencyFactory.createShell().execute(program: program, with: arguments, at: projectRootUrl) else {
+        guard let filelistData = try? shell.execute(program: program, with: arguments, at: projectRootUrl) else {
             return
         }
         let trimCharacterSet = CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: ":"))

@@ -2,7 +2,6 @@ import Foundation
 @testable import XcresultparserLib
 import Testing
 
-@MainActor
 struct XcresultparserTests {
     @Test
     func testTextResultFormatter() throws {
@@ -10,14 +9,11 @@ struct XcresultparserTests {
         let durationValue = executionTimeValue(for: xcresultFile)
         let dateValue = executionDateValue(for: xcresultFile)
 
-        guard let resultParser = XCResultFormatter(
+        let resultParser = try XCResultFormatter(
             with: xcresultFile,
             formatter: TextResultFormatter(),
             coverageTargets: []
-        ) else {
-            Issue.record("Unable to create XCResultFormatter with \(xcresultFile)")
-            return
-        }
+        )
         #expect(resultParser.documentPrefix(title: "XCResults") == "")
 
         let expectedSummary = """
@@ -45,15 +41,12 @@ struct XcresultparserTests {
         let durationValue = executionTimeValue(for: xcresultFile)
         let dateValue = executionDateValue(for: xcresultFile)
 
-        guard let resultParser = XCResultFormatter(
+        let resultParser = try XCResultFormatter(
             with: xcresultFile,
             formatter: TextResultFormatter(),
             coverageTargets: [],
             coverageReportFormat: .totals
-        ) else {
-            Issue.record("Unable to create XCResultFormatter with \(xcresultFile)")
-            return
-        }
+        )
         #expect("" == resultParser.documentPrefix(title: "XCResults"))
 
         let expectedSummary = """
@@ -83,15 +76,12 @@ struct XcresultparserTests {
         let durationValue = executionTimeValue(for: xcresultFile)
         let dateValue = executionDateValue(for: xcresultFile)
 
-        guard let resultParser = XCResultFormatter(
+        let resultParser = try XCResultFormatter(
             with: xcresultFile,
             formatter: TextResultFormatter(),
             coverageTargets: [],
             coverageReportFormat: .methods
-        ) else {
-            Issue.record("Unable to create XCResultFormatter with \(xcresultFile)")
-            return
-        }
+        )
         #expect(resultParser.documentPrefix(title: "XCResults") == "")
 
         let expectedSummary = """
@@ -121,15 +111,12 @@ struct XcresultparserTests {
     func testTextResultFormatterCanExcludeDateAndDurationFromSummary() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
 
-        guard let resultParser = XCResultFormatter(
+        let resultParser = try XCResultFormatter(
             with: xcresultFile,
             formatter: TextResultFormatter(),
             coverageTargets: [],
             summaryFields: "errors|warnings|analyzerWarnings|tests|failed|skipped"
-        ) else {
-            Issue.record("Unable to create XCResultFormatter with \(xcresultFile)")
-            return
-        }
+        )
 
         #expect(resultParser.summary.contains("Number of tests = 7"))
         #expect(!resultParser.summary.contains("Execution time = "))
@@ -142,14 +129,11 @@ struct XcresultparserTests {
         let durationValue = executionTimeValue(for: xcresultFile)
         let dateValue = executionDateValue(for: xcresultFile)
 
-        guard let resultParser = XCResultFormatter(
+        let resultParser = try XCResultFormatter(
             with: xcresultFile,
             formatter: CLIResultFormatter(),
             coverageTargets: []
-        ) else {
-            Issue.record("Unable to create XCResultFormatter with \(xcresultFile)")
-            return
-        }
+        )
         #expect(resultParser.documentPrefix(title: "XCResults") == "")
 
         let expectedSummary = """
@@ -179,14 +163,11 @@ struct XcresultparserTests {
         let durationValue = executionTimeValue(for: xcresultFile)
         let dateValue = executionDateValue(for: xcresultFile)
 
-        guard let resultParser = XCResultFormatter(
+        let resultParser = try XCResultFormatter(
             with: xcresultFile,
             formatter: HTMLResultFormatter(),
             coverageTargets: []
-        ) else {
-            Issue.record("Unable to create XCResultFormatter with \(xcresultFile)")
-            return
-        }
+        )
         let documentPrefix = """
         <!DOCTYPE html>
         <html lang="en">
@@ -218,14 +199,11 @@ struct XcresultparserTests {
     func testHTMLResultFormatterParameterizedArguments() throws {
         let xcresultFile = Bundle.module.url(forResource: "parametrized", withExtension: "xcresult")!
 
-        guard let resultParser = XCResultFormatter(
+        let resultParser = try XCResultFormatter(
             with: xcresultFile,
             formatter: HTMLResultFormatter(),
             coverageTargets: []
-        ) else {
-            Issue.record("Unable to create XCResultFormatter with \(xcresultFile)")
-            return
-        }
+        )
 
         #expect(
             resultParser.testDetails.contains(
@@ -240,14 +218,11 @@ struct XcresultparserTests {
         let durationValue = executionTimeValue(for: xcresultFile)
         let dateValue = executionDateValue(for: xcresultFile)
 
-        guard let resultParser = XCResultFormatter(
+        let resultParser = try XCResultFormatter(
             with: xcresultFile,
             formatter: MDResultFormatter(),
             coverageTargets: []
-        ) else {
-            Issue.record("Unable to create XCResultFormatter with \(xcresultFile)")
-            return
-        }
+        )
         #expect(resultParser.documentPrefix(title: "XCResults") == "")
 
         let expectedSummary = "Errors: 0; Warnings: 3; Analyzer Warnings: 0; Tests: 7; Failed: 1; Skipped: 0; Execution time = \(durationValue)s; Execution date = \(dateValue)"
@@ -271,14 +246,11 @@ struct XcresultparserTests {
     func testMDResultFormatterParameterizedArguments() throws {
         let xcresultFile = Bundle.module.url(forResource: "parametrized", withExtension: "xcresult")!
 
-        guard let resultParser = XCResultFormatter(
+        let resultParser = try XCResultFormatter(
             with: xcresultFile,
             formatter: MDResultFormatter(),
             coverageTargets: []
-        ) else {
-            Issue.record("Unable to create XCResultFormatter with \(xcresultFile)")
-            return
-        }
+        )
 
         #expect(
             resultParser.testDetails.contains(
@@ -291,14 +263,11 @@ struct XcresultparserTests {
     func testTextResultFormatterParameterizedArguments() throws {
         let xcresultFile = Bundle.module.url(forResource: "parametrized", withExtension: "xcresult")!
 
-        guard let resultParser = XCResultFormatter(
+        let resultParser = try XCResultFormatter(
             with: xcresultFile,
             formatter: TextResultFormatter(),
             coverageTargets: []
-        ) else {
-            Issue.record("Unable to create XCResultFormatter with \(xcresultFile)")
-            return
-        }
+        )
 
         #expect(
             resultParser.testDetails.contains(
@@ -415,6 +384,8 @@ struct XcresultparserTests {
                 #expect(!available.isEmpty)
             case .couldNotLoadCoverageReport:
                 Issue.record("Unexpected coverage report loading error")
+            case .notImplemented:
+                Issue.record("Unexpected notImplemented case.")
             }
         } catch {
             Issue.record("Unexpected error: \(error)")
@@ -439,6 +410,8 @@ struct XcresultparserTests {
                 #expect(requested == ["MissingTarget"])
             case .couldNotLoadCoverageReport:
                 Issue.record("Unexpected coverage report loading error")
+            case .notImplemented:
+                Issue.record("Unexpected notImplemented case.")
             }
         } catch {
             Issue.record("Unexpected error: \(error)")
@@ -449,13 +422,13 @@ struct XcresultparserTests {
     func testFormatterInitFailsForUnknownCoverageTarget() {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
 
-        let resultParser = XCResultFormatter(
-            with: xcresultFile,
-            formatter: TextResultFormatter(),
-            coverageTargets: ["NonExistingTarget"]
-        )
-
-        #expect(resultParser == nil)
+        #expect(throws: CoverageConverterError.self) {
+            try XCResultFormatter(
+                with: xcresultFile,
+                formatter: TextResultFormatter(),
+                coverageTargets: ["NonExistingTarget"]
+            )
+        }
     }
 
     @Test
@@ -527,6 +500,8 @@ struct XcresultparserTests {
                 #expect(requested == ["NonExistingTarget"])
             case .couldNotLoadCoverageReport:
                 Issue.record("Unexpected coverage report loading error")
+            case .notImplemented:
+                Issue.record("Unexpected notImplemented case.")
             }
         } catch {
             Issue.record("Unexpected error: \(error)")
@@ -554,14 +529,11 @@ struct XcresultparserTests {
         JunitXML.resetCachedPathnames()
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         let projectRoot = ""
-        guard let junitXML = JunitXML(
+        let junitXML = try JunitXML(
             with: xcresultFile,
             projectRoot: projectRoot,
             format: .sonar
-        ) else {
-            Issue.record("Unable to create JunitXML from \(xcresultFile)")
-            return
-        }
+        )
         try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecution", actual: junitXML)
     }
 
@@ -577,23 +549,18 @@ struct XcresultparserTests {
 
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         let projectRoot = "/Users/imaginary/project"
-        guard let junitXML = JunitXML(
-            with: xcresultFile,
-            projectRoot: projectRoot,
-            format: .sonar,
-            relativePathNames: true
-        ) else {
-            Issue.record("Unable to create JunitXML from \(xcresultFile)")
-            return
-        }
-
-        let savedShellFactory = DependencyFactory.createShell
+        let dataProvider = try XCResultToolJunitXMLDataProvider(url: xcresultFile)
         let mockedShell = MockedShell(response: Data(cliResult.utf8), error: nil)
-        DependencyFactory.createShell = { mockedShell }
-        defer { DependencyFactory.createShell = savedShellFactory }
         mockedShell.argumentValidation = { arguments in
             return arguments.last == "."
         }
+        let junitXML = JunitXML(
+            dataProvider: dataProvider,
+            projectRoot: projectRoot,
+            format: .sonar,
+            relativePathNames: true,
+            shell: mockedShell
+        )
         try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecutionWithProjectRootRelative", actual: junitXML)
     }
 
@@ -610,23 +577,18 @@ struct XcresultparserTests {
 
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         let projectRoot = "/Users/imaginary/project"
-        guard let junitXML = JunitXML(
-            with: xcresultFile,
-            projectRoot: projectRoot,
-            format: .sonar,
-            relativePathNames: false
-        ) else {
-            Issue.record("Unable to create JunitXML from \(xcresultFile)")
-            return
-        }
-
-        let savedShellFactory = DependencyFactory.createShell
+        let dataProvider = try XCResultToolJunitXMLDataProvider(url: xcresultFile)
         let mockedShell = MockedShell(response: Data(cliResult.utf8), error: nil)
-        DependencyFactory.createShell = { mockedShell }
-        defer { DependencyFactory.createShell = savedShellFactory }
         mockedShell.argumentValidation = { arguments in
             return arguments.last != "."
         }
+        let junitXML = JunitXML(
+            dataProvider: dataProvider,
+            projectRoot: projectRoot,
+            format: .sonar,
+            relativePathNames: false,
+            shell: mockedShell
+        )
         try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecutionWithProjectRootAbsolute", actual: junitXML)
     }
 
@@ -634,14 +596,11 @@ struct XcresultparserTests {
     func testJunitXMLJunit() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
         let projectRoot = ""
-        guard let junitXML = JunitXML(
+        let junitXML = try JunitXML(
             with: xcresultFile,
             projectRoot: projectRoot,
             format: .junit
-        ) else {
-            Issue.record("Unable to create JunitXML from \(xcresultFile)")
-            return
-        }
+        )
         try assertXmlTestReportsAreEqual(expectedFileName: "junit", actual: junitXML)
     }
 
@@ -649,14 +608,11 @@ struct XcresultparserTests {
     func testJunitXMLMergedJunit() throws {
         let xcresultFile = Bundle.module.url(forResource: "test_merged", withExtension: "xcresult")!
         let projectRoot = ""
-        guard let junitXML = JunitXML(
+        let junitXML = try JunitXML(
             with: xcresultFile,
             projectRoot: projectRoot,
             format: .junit
-        ) else {
-            Issue.record("Unable to create JunitXML from \(xcresultFile)")
-            return
-        }
+        )
         try assertXmlTestReportsAreEqual(expectedFileName: "junit_merged", actual: junitXML)
     }
 
@@ -664,29 +620,23 @@ struct XcresultparserTests {
     func testJunitXMLRepeated() throws {
         let xcresultFile = Bundle.module.url(forResource: "test_repeated", withExtension: "xcresult")!
         let projectRoot = ""
-        guard let junitXML = JunitXML(
+        let junitXML = try JunitXML(
             with: xcresultFile,
             projectRoot: projectRoot,
             format: .junit
-        ) else {
-            Issue.record("Unable to create JunitXML from \(xcresultFile)")
-            return
-        }
+        )
         try assertXmlTestReportsAreEqual(expectedFileName: "junit_repeated", actual: junitXML)
     }
 
     @Test
-    func testJunitXMLIncludesParameterizedArguments() {
+    func testJunitXMLIncludesParameterizedArguments() throws {
         let xcresultFile = Bundle.module.url(forResource: "parametrized", withExtension: "xcresult")!
         let projectRoot = ""
-        guard let junitXML = JunitXML(
+        let junitXML = try JunitXML(
             with: xcresultFile,
             projectRoot: projectRoot,
             format: .junit
-        ) else {
-            Issue.record("Unable to create JunitXML from \(xcresultFile)")
-            return
-        }
+        )
 
         let xmlString = junitXML.xmlString
         #expect(xmlString.contains("testCoverageConverter(strictPathnames: false)"))
@@ -773,10 +723,7 @@ struct XcresultparserTests {
     @Test
     func testCleanCodeWarnings() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
-        guard let converter = IssuesJSON(with: xcresultFile) else {
-            Issue.record("Unable to create warnings json from \(xcresultFile)")
-            return
-        }
+        let converter = try IssuesJSON(with: xcresultFile)
         let rslt = try converter.jsonString(format: .warnings, quiet: true)
         let result = try JSONDecoder().decode([XcresultparserLib.Issue].self, from: Data(rslt.utf8))
 
@@ -794,10 +741,7 @@ struct XcresultparserTests {
     @Test
     func testCleanCodeWarningsWithRelativePath() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
-        guard let converter = IssuesJSON(with: xcresultFile, projectRoot: "xcresultparser/") else {
-            Issue.record("Unable to create warnings json from \(xcresultFile)")
-            return
-        }
+        let converter = try IssuesJSON(with: xcresultFile, projectRoot: "xcresultparser/")
         let rslt = try converter.jsonString(format: .warnings, quiet: true)
         let result = try JSONDecoder().decode([XcresultparserLib.Issue].self, from: Data(rslt.utf8))
             .sorted { lhs, rhs in
@@ -808,10 +752,7 @@ struct XcresultparserTests {
 
     func testCleanCodeWarningsExcludingFiles() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
-        guard let converter = IssuesJSON(with: xcresultFile, excludedPaths: ["Tests/XcresultparserTests"]) else {
-            Issue.record("Unable to create warnings json from \(xcresultFile)")
-            return
-        }
+        let converter = try IssuesJSON(with: xcresultFile, excludedPaths: ["Tests/XcresultparserTests"])
         let rslt = try converter.jsonString(format: .warnings, quiet: true)
         let result = try JSONDecoder().decode([XcresultparserLib.Issue].self, from: Data(rslt.utf8))
         #expect(result.count == 0)
@@ -820,10 +761,7 @@ struct XcresultparserTests {
     @Test
     func testCleanCodeNoErrors() throws {
         let xcresultFile = Bundle.module.url(forResource: "test", withExtension: "xcresult")!
-        guard let converter = IssuesJSON(with: xcresultFile) else {
-            Issue.record("Unable to create warnings json from \(xcresultFile)")
-            return
-        }
+        let converter = try IssuesJSON(with: xcresultFile)
         let rslt = try converter.jsonString(format: .errors, quiet: true)
         #expect(rslt == "[\n\n]")
     }
@@ -831,10 +769,7 @@ struct XcresultparserTests {
     @Test
     func testCleanCodeErrors() throws {
         let xcresultFile = Bundle.module.url(forResource: "resultWithCompileError", withExtension: "xcresult")!
-        guard let converter = IssuesJSON(with: xcresultFile) else {
-            Issue.record("Unable to create warnings json from \(xcresultFile)")
-            return
-        }
+        let converter = try IssuesJSON(with: xcresultFile)
         let rslt = try converter.jsonString(format: .errors, quiet: true)
         let result = try JSONDecoder().decode([XcresultparserLib.Issue].self, from: Data(rslt.utf8))
             .sorted { lhs, rhs in

@@ -11,13 +11,9 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
     private let summary: XCSummary
     private let tests: XCTests
 
-    init?(url: URL, client: XCResultToolClient = XCResultToolClient()) {
-        guard let summary = try? client.getTestSummary(path: url),
-              let tests = try? client.getTests(path: url) else {
-            return nil
-        }
-        self.summary = summary
-        self.tests = tests
+    init(url: URL, client: XCResultToolProviding = XCResultToolClient()) throws {
+        summary = try client.getTestSummary(path: url)
+        tests = try client.getTests(path: url)
     }
 
     var metrics: JunitInvocationMetrics {
