@@ -435,6 +435,206 @@ struct XCResultToolJunitXMLDataProviderTests {
         #expect(expectedFailureTest.isFailed == false)
         #expect(expectedFailureTest.isSkipped == false)
     }
+    @Test
+    func testProviderDetectsSessionLevelFailures() throws {
+        let summaryJSON = """
+        {
+          "title": "Test - Demo",
+          "environmentDescription": "Demo",
+          "topInsights": [],
+          "result": "Failed",
+          "totalTestCount": 3,
+          "passedTests": 2,
+          "failedTests": 1,
+          "skippedTests": 0,
+          "expectedFailures": 0,
+          "statistics": [],
+          "devicesAndConfigurations": [],
+          "testFailures": [
+            {
+              "failureText": "Issue recorded: detached task failure",
+              "targetName": "DemoTests",
+              "testIdentifier": 3,
+              "testIdentifierString": "Issues recorded without an associated test or suite",
+              "testName": "Issues recorded without an associated test or suite"
+            }
+          ],
+          "startTime": 100.0,
+          "finishTime": 120.0
+        }
+        """
+
+        let testsJSON = """
+        {
+          "testPlanConfigurations": [
+            {
+              "configurationId": "1",
+              "configurationName": "Default"
+            }
+          ],
+          "devices": [],
+          "testNodes": [
+            {
+              "name": "Test Plan",
+              "nodeType": "Test Plan",
+              "children": [
+                {
+                  "name": "Default",
+                  "nodeType": "Test Plan Configuration",
+                  "children": [
+                    {
+                      "name": "DemoTests.xctest",
+                      "nodeType": "Unit test bundle",
+                      "children": [
+                        {
+                          "name": "Issues recorded without an associated test or suite",
+                          "nodeType": "Test Case",
+                          "result": "Failed",
+                          "children": [
+                            {
+                              "name": "SessionTests.swift:11: Issue recorded: detached task failure",
+                              "nodeType": "Failure Message"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "DemoTests",
+                          "nodeType": "Test Suite",
+                          "children": [
+                            {
+                              "name": "testPass()",
+                              "nodeType": "Test Case",
+                              "result": "Passed",
+                              "durationInSeconds": 1.0
+                            },
+                            {
+                              "name": "triggerDetached()",
+                              "nodeType": "Test Case",
+                              "result": "Passed",
+                              "durationInSeconds": 2.0
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+        """
+
+        let shell = LookupShell(
+            responses: [
+                "xcresulttool get test-results summary --path /tmp/test.xcresult": .success(Data(summaryJSON.utf8)),
+                "xcresulttool get test-results tests --path /tmp/test.xcresult": .success(Data(testsJSON.utf8))
+            ]
+        )
+        let client = XCResultToolClient(shell: shell)
+        let provider = try XCResultToolJunitXMLDataProvider(
+            url: URL(fileURLWithPath: "/tmp/test.xcresult"),
+            client: client
+        )
+
+        let sessionFailures = provider.sessionLevelFailures
+        #expect(sessionFailures.count == 1)
+
+        let failure = try #require(sessionFailures.first)
+        #expect(failure.message == "Issue recorded: detached task failure")
+        #expect(failure.testCaseName == "Issues recorded without an associated test or suite")
+        #expect(failure.issueType == "Session-level failure")
+        #expect(failure.producingTarget == "DemoTests")
+        #expect(failure.documentLocation == "SessionTests.swift:11")
+    }
+
+    @Test
+    func testProviderReturnsNoSessionLevelFailuresWhenAllMatchTests() throws {
+        let summaryJSON = """
+        {
+          "title": "Test - Demo",
+          "environmentDescription": "Demo",
+          "topInsights": [],
+          "result": "Failed",
+          "totalTestCount": 1,
+          "passedTests": 0,
+          "failedTests": 1,
+          "skippedTests": 0,
+          "expectedFailures": 0,
+          "statistics": [],
+          "devicesAndConfigurations": [],
+          "testFailures": [
+            {
+              "failureText": "failed - expected true",
+              "targetName": "DemoTests",
+              "testIdentifier": 1,
+              "testIdentifierString": "DemoTests/testFail()",
+              "testName": "testFail()"
+            }
+          ],
+          "startTime": 100.0,
+          "finishTime": 120.0
+        }
+        """
+
+        let testsJSON = """
+        {
+          "testPlanConfigurations": [
+            {
+              "configurationId": "1",
+              "configurationName": "Default"
+            }
+          ],
+          "devices": [],
+          "testNodes": [
+            {
+              "name": "Test Plan",
+              "nodeType": "Test Plan",
+              "children": [
+                {
+                  "name": "Default",
+                  "nodeType": "Test Plan Configuration",
+                  "children": [
+                    {
+                      "name": "DemoTests.xctest",
+                      "nodeType": "Unit test bundle",
+                      "children": [
+                        {
+                          "name": "DemoTests",
+                          "nodeType": "Test Suite",
+                          "children": [
+                            {
+                              "name": "testFail()",
+                              "nodeType": "Test Case",
+                              "result": "Failed",
+                              "durationInSeconds": 1.0
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+        """
+
+        let shell = LookupShell(
+            responses: [
+                "xcresulttool get test-results summary --path /tmp/test.xcresult": .success(Data(summaryJSON.utf8)),
+                "xcresulttool get test-results tests --path /tmp/test.xcresult": .success(Data(testsJSON.utf8))
+            ]
+        )
+        let client = XCResultToolClient(shell: shell)
+        let provider = try XCResultToolJunitXMLDataProvider(
+            url: URL(fileURLWithPath: "/tmp/test.xcresult"),
+            client: client
+        )
+
+        #expect(provider.sessionLevelFailures.isEmpty)
+    }
 }
 
 private final class LookupShell: Commandline {

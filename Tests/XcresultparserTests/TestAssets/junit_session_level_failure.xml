@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="3" failures="1" errors="0" time="14.301">
+    <testsuite name="LibTests.xctest" tests="3" failures="1" errors="0" time="0">
+        <testcase name="passingTest()"/>
+        <testcase name="triggerSessionLevelFailure()"/>
+    </testsuite>
+    <testsuite name="Session-level issues" tests="1" failures="1" errors="0" time="0">
+        <testcase name="Issues recorded without an associated test or suite" classname="LibTests" time="0">
+            <failure message="Session-level failure in LibTests: Issues recorded without an associated test or suite" type="Session-level failure">Issue recorded: Issue recorded in Task.detached — no Test.current (SessionLevelFailureTests.swift:11)</failure>
+        </testcase>
+    </testsuite>
+</testsuites>

@@ -94,7 +94,11 @@ iOSInjectionProject/
 product/
 AgentNotes/
 TestResults/
+
+.agents
+AGENTS.md
 CLAUDE.md
+.claude/
 
 
 .scannerwork/

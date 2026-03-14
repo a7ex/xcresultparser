@@ -265,5 +265,85 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
                 failure.failureText.contains($0.message)
         } ?? candidates.first
     }
+
+    var sessionLevelFailures: [JunitFailureSummary] {
+        // Collect all test identifiers from the test nodes
+        let allTestIdentifiers = collectAllTestIdentifiers(from: tests.testNodes)
+
+        // Find failures that don't match any actual test case
+        let unmatchedFailures = summary.testFailures.filter { failure in
+            let normalizedIdentifier = failure.testIdentifierString.replacingOccurrences(of: "/", with: ".")
+            return !allTestIdentifiers.contains(failure.testIdentifierString) &&
+                   !allTestIdentifiers.contains(normalizedIdentifier)
+        }
+
+        let failureMessageDetails = failureMessageDetailsByTestIdentifier()
+
+        return unmatchedFailures.map { failure in
+            let matchingFailureMessage = bestFailureMessage(
+                for: failure,
+                in: failureMessageDetails[failure.testIdentifierString] ?? []
+            )
+            return JunitFailureSummary(
+                message: failure.failureText,
+                testCaseName: failure.testName,
+                issueType: "Session-level failure",
+                producingTarget: failure.targetName,
+                documentLocation: matchingFailureMessage?.documentLocation ?? extractLocation(from: failure.testIdentifierURL)
+            )
+        }
+    }
+
+    private func collectAllTestIdentifiers(from nodes: [XCTestNode]) -> Set<String> {
+        let identifiers = collectTestIdentifiers(from: nodes, testClassName: nil)
+        return Set(identifiers)
+    }
+
+    private func collectTestIdentifiers(
+        from nodes: [XCTestNode],
+        testClassName: String?
+    ) -> [String] {
+        var identifiers = [String]()
+        for node in nodes {
+            var currentClassName = testClassName
+            if node.nodeType == .testSuite {
+                currentClassName = node.name
+            }
+            if node.nodeType == .testCase {
+                let identifier = testIdentifierString(for: node, testClassName: currentClassName)
+                // Skip the synthetic "Issues recorded without an associated test or suite" node
+                // This represents session-level failures and should be handled separately
+                if !isSessionLevelFailureIdentifier(identifier) {
+                    identifiers.append(identifier)
+                }
+            }
+            if let children = node.children {
+                // recurse
+                identifiers.append(
+                    contentsOf: collectTestIdentifiers(
+                        from: children,
+                        testClassName: currentClassName
+                    )
+                )
+            }
+        }
+        return identifiers
+    }
+
+    private func extractLocation(from url: URL?) -> String? {
+        guard let url else { return nil }
+        // testIdentifierURL format: "test://com.apple.xcode/Xcresultparser/XcresultparserTests/XcresultparserTests/testName"
+        // We want to extract the path components to form a file location hint
+        let pathComponents = url.pathComponents.filter { !$0.isEmpty && $0 != "/" }
+        guard pathComponents.count >= 2 else { return nil }
+        // Try to form a meaningful path like "XcresultparserTests/testName"
+        return pathComponents.suffix(2).joined(separator: "/")
+    }
+
+    private func isSessionLevelFailureIdentifier(_ identifier: String) -> Bool {
+        // Swift Testing creates synthetic test nodes for session-level failures
+        identifier == "Issues recorded without an associated test or suite" ||
+        identifier.contains("«unknown»")
+    }
 }
 

@@ -10,6 +10,7 @@ import Foundation
 protocol JunitXMLDataProviding {
     var metrics: JunitInvocationMetrics { get }
     var testActions: [JunitTestAction] { get }
+    var sessionLevelFailures: [JunitFailureSummary] { get }
 }
 
 struct JunitInvocationMetrics {

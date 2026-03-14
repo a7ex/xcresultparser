@@ -163,6 +163,10 @@ public struct JunitXML: XmlSerializable {
             )
         }
 
+        // Add session-level failures that weren't associated with any specific test
+        // These occur when Issue.record() is called outside a test's task context
+        addSessionLevelFailures(to: testsuites)
+
         return xml.xmlString(options: [.nodePrettyPrint, .nodeCompactEmptyElement])
     }
 
@@ -302,6 +306,40 @@ public struct JunitXML: XmlSerializable {
 
     private var skippedWithoutSummary: XMLElement {
         return XMLElement(name: "skipped")
+    }
+
+    private func addSessionLevelFailures(to testsuites: XMLElement) {
+        // Get session-level failures that weren't matched to any specific test
+        let unmatchedFailures = dataProvider.sessionLevelFailures
+        
+        guard !unmatchedFailures.isEmpty else { return }
+        
+        // For JUnit format, create a separate test suite for session-level failures
+        // For Sonar format, we skip this as it expects file-based organization
+        if testReportFormat != .sonar {
+            let sessionSuite = XMLElement(name: "testsuite")
+            sessionSuite.addAttribute(name: "name", stringValue: "Session-level issues")
+            sessionSuite.addAttribute(name: "tests", stringValue: String(unmatchedFailures.count))
+            sessionSuite.addAttribute(name: "failures", stringValue: String(unmatchedFailures.count))
+            sessionSuite.addAttribute(name: "errors", stringValue: "0")
+            sessionSuite.addAttribute(name: "time", stringValue: "0")
+            
+            for failure in unmatchedFailures {
+                let testcase = XMLElement(name: nodeNames.testcaseName)
+                let testName = failure.testCaseName.isEmpty ? "Unknown test" : failure.testCaseName
+                testcase.addAttribute(name: "name", stringValue: testName)
+                if !nodeNames.testcaseClassNameName.isEmpty {
+                    testcase.addAttribute(name: nodeNames.testcaseClassNameName, stringValue: failure.producingTarget ?? "Session")
+                }
+                if !nodeNames.testcaseDurationName.isEmpty {
+                    testcase.addAttribute(name: nodeNames.testcaseDurationName, stringValue: "0")
+                }
+                testcase.addChild(failure.failureXML(projectRoot: projectRoot))
+                sessionSuite.addChild(testcase)
+            }
+            
+            testsuites.addChild(sessionSuite)
+        }
     }
 }
 

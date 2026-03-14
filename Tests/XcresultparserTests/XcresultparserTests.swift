@@ -654,6 +654,32 @@ struct XcresultparserTests {
     }
 
     @Test
+    func testJunitXMLSessionLevelFailure() throws {
+        let xcresultFile = Bundle.module.url(forResource: "session_level_failure", withExtension: "xcresult")!
+        let projectRoot = ""
+        let junitXML = try JunitXML(
+            with: xcresultFile,
+            projectRoot: projectRoot,
+            format: .junit
+        )
+        try assertXmlTestReportsAreEqual(expectedFileName: "junit_session_level_failure", actual: junitXML)
+    }
+
+    @Test
+    func testSonarXMLOmitsSessionLevelFailures() throws {
+        let xcresultFile = Bundle.module.url(forResource: "session_level_failure", withExtension: "xcresult")!
+        let projectRoot = ""
+        let junitXML = try JunitXML(
+            with: xcresultFile,
+            projectRoot: projectRoot,
+            format: .sonar
+        )
+        let xmlString = junitXML.xmlString
+        #expect(!xmlString.contains("Session-level issues"))
+        #expect(!xmlString.contains("Issues recorded without an associated test or suite"))
+    }
+
+    @Test
     func testFailureSummariesReturnsAllMatchingFailures() throws {
         let test = makeJunitTest()
 
