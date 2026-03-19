@@ -93,7 +93,7 @@ You should see the tool respond like this:
 ```
 Error: Missing expected argument '<xcresult-file>'
 
-OVERVIEW: xcresultparser 2.0.0
+OVERVIEW: xcresultparser 2.0.1
 Interpret binary .xcresult files and print summary in different formats: txt,
 xml, html or colored cli output.
 
@@ -109,12 +109,14 @@ OPTIONS:
                           'methods'
   -o, --output-format <output-format>
                           The output format. It can be either 'txt', 'cli',
-                          'html', 'md', 'xml', 'junit', 'cobertura',
+                          'html', 'md', 'github', 'xml', 'junit', 'cobertura',
                           'warnings', 'errors' and 'warnings-and-errors'. In
                           case of 'xml' sonar generic format for test results
                           and generic format (Sonarqube) for coverage data is
                           used. In the case of 'cobertura', --coverage is
-                          implied.
+                          implied. The format 'github' is more or less the same
+                          as 'md', but it doesn't use inline html to colorize
+                          the output.
   -p, --project-root <project-root>
                           The name of the project root. If present paths and
                           urls are relative to the specified directory.
@@ -258,6 +260,3 @@ The parameter -p or --project-root takes a string in order to find and delete th
 ./xcresultparser -c -o xml --project-root "work/myApp/" test.xcresult > sonar.xml
 Example path in xcresult: */Users/alex/work/myApp/Sources/myApp/SomeClass.swift* will be converted to: *Sources/myApp/SomeClass.swift*
 Now make sure you call *sonar-scanner* from within the root of your project and use the relative path "Sources" as parameter for *sonar.sources*.
-
-#### Test colored text in markdown on github
-$\textcolor{red}{\text{● Error in Test}}$

@@ -7,12 +7,24 @@
 import Foundation
 
 public struct MDResultFormatter: XCResultFormatting {
-    public let testFailIcon = "🔴&nbsp;&nbsp;"
-    public let testPassIcon = "🟢&nbsp;&nbsp;"
-    public let testSkipIcon = "⚪️&nbsp;&nbsp;"
-    public let testExpectedFailureIcon = "🟡&nbsp;&nbsp;"
+    public var testFailIcon: String {
+        return forGithub ? "🔴 " : "🔴&nbsp;&nbsp;"
+    }
+    public var testPassIcon: String {
+        return forGithub ? "🟢 " : "🟢&nbsp;&nbsp;"
+    }
+    public var testSkipIcon: String {
+        return forGithub ? "⚪️ " : "⚪️&nbsp;&nbsp;"
+    }
+    public var testExpectedFailureIcon: String {
+        return forGithub ? "🟡 " : "🟡&nbsp;&nbsp;"
+    }
 
-    public init() {}
+    private let forGithub: Bool
+
+    public init(forGithub: Bool = false) {
+        self.forGithub = forGithub
+    }
 
     public func documentPrefix(title: String) -> String {
         return ""
@@ -64,12 +76,21 @@ public struct MDResultFormatter: XCResultFormatting {
 
     public func singleTestItem(_ item: String, failed: Bool) -> String {
         let color = failed ? "red" : "green"
-        return "* <span style=\\\"color:\(color)\\\">" + item.escapingQuotes + "</span>"
+        if forGithub {
+            return "$\\textcolor{\(color)}{\\text{\(item.escapingQuotes)}}$"
+        } else {
+            return "* <span style=\\\"color:\(color)\\\">" + item.escapingQuotes + "</span>"
+        }
     }
 
     public func failedTestItem(_ item: String, message: String) -> String {
-        return "* <span style=\\\"color:red\\\">" + item.escapingQuotes + "</span><br />" + "\n" +
+        if forGithub {
+            return "* $\\textcolor{red}{\\text{\(item.escapingQuotes)}}$\n" +
+            "  * $\\textcolor{gray}{\\text{\(message.escapingQuotes)"
+        } else {
+            return "* <span style=\\\"color:red\\\">" + item.escapingQuotes + "</span><br />" + "\n" +
             "  * <span style=\\\"color:gray\\\">" + message.escapingQuotes + "</span>"
+        }
     }
 
     public func codeCoverageTargetSummary(_ item: String) -> String {

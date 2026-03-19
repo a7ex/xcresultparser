@@ -9,7 +9,7 @@ import ArgumentParser
 import Foundation
 import XcresultparserLib
 
-private let marketingVersion = "2.0.0"
+private let marketingVersion = "2.0.1"
 
 struct xcresultparser: ParsableCommand {
     static let configuration = CommandConfiguration(
@@ -19,7 +19,7 @@ struct xcresultparser: ParsableCommand {
     @Option(name: .long, help: "The coverage report format. The Default is 'methods', It can either be 'totals', 'targets', 'classes' or 'methods'")
     var coverageReportFormat: String?
 
-    @Option(name: .shortAndLong, help: "The output format. It can be either 'txt', 'cli', 'html', 'md', 'xml', 'junit', 'cobertura', 'warnings', 'errors' and 'warnings-and-errors'. In case of 'xml' sonar generic format for test results and generic format (Sonarqube) for coverage data is used. In the case of 'cobertura', --coverage is implied.")
+    @Option(name: .shortAndLong, help: "The output format. It can be either 'txt', 'cli', 'html', 'md', 'github', 'xml', 'junit', 'cobertura', 'warnings', 'errors' and 'warnings-and-errors'. In case of 'xml' sonar generic format for test results and generic format (Sonarqube) for coverage data is used. In the case of 'cobertura', --coverage is implied. The format 'github' is more or less the same as 'md', but it doesn't use inline html to colorize the output.")
     var outputFormat: String?
 
     @Option(name: .shortAndLong, help: "The name of the project root. If present paths and urls are relative to the specified directory.")
@@ -83,7 +83,7 @@ struct xcresultparser: ParsableCommand {
         case .cobertura:
             coverage = 1
             try outputCoberturaXML(for: xcresult)
-        case .cli, .md, .txt, .html:
+        case .cli, .md, .txt, .html, .github:
             try outputDescription(for: xcresult)
         case .warnings, .errors, .warningsAndErrors:
             try outputIssuesJSON(for: xcresult, format: format)
@@ -184,6 +184,8 @@ struct xcresultparser: ParsableCommand {
             return TextResultFormatter()
         case .md:
             return MDResultFormatter()
+        case .github:
+            return MDResultFormatter(forGithub: true)
         }
     }
 }
