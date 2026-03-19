@@ -258,3 +258,6 @@ The parameter -p or --project-root takes a string in order to find and delete th
 ./xcresultparser -c -o xml --project-root "work/myApp/" test.xcresult > sonar.xml
 Example path in xcresult: */Users/alex/work/myApp/Sources/myApp/SomeClass.swift* will be converted to: *Sources/myApp/SomeClass.swift*
 Now make sure you call *sonar-scanner* from within the root of your project and use the relative path "Sources" as parameter for *sonar.sources*.
+
+#### Test colored text in markdown on github
+$\textcolor{red}{\text{● Error in Test}}$
