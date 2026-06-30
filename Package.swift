@@ -58,7 +58,8 @@ let package = Package(
                 .copy("TestAssets/sonarTestExecutionWithProjectRootRelative.xml"),
                 .copy("TestAssets/parametrized.xcresult"),
                 .copy("TestAssets/session_level_failure.xcresult"),
-                .copy("TestAssets/junit_session_level_failure.xml")
+                .copy("TestAssets/junit_session_level_failure.xml"),
+                .copy("TestAssets/Test-FlakyFixture.xcresult")
             ]
         )
     ]

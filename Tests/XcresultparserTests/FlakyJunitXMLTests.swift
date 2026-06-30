@@ -1,0 +1,222 @@
+import Foundation
+@testable import XcresultparserLib
+import Testing
+
+// End-to-end coverage for "flaky"/"mixed" tests (failed on a first attempt,
+// passed on retry). These drive the real `XCResultToolClient` with a stubbed
+// shell so that `xcresulttool ... tests` returns canned JSON containing mixed
+// `Repetition` results, then assert that the flaky marker propagates all the
+// way through the provider mapping and into the rendered JUnit XML.
+@MainActor
+struct FlakyJunitXMLTests {
+    private let flakySummaryJSON = """
+    {
+      "title": "Test - Demo",
+      "environmentDescription": "Demo",
+      "topInsights": [],
+      "result": "Failed",
+      "totalTestCount": 1,
+      "passedTests": 0,
+      "failedTests": 1,
+      "skippedTests": 0,
+      "expectedFailures": 0,
+      "statistics": [],
+      "devicesAndConfigurations": [],
+      "testFailures": [
+        {
+          "failureText": "failed - randomly failed",
+          "targetName": "DemoTests",
+          "testIdentifier": 1,
+          "testIdentifierString": "DemoTests/test_random()",
+          "testIdentifierURL": "test://com.apple.xcode/Demo/DemoTests/test_random",
+          "testName": "test_random()"
+        }
+      ],
+      "startTime": 100.0,
+      "finishTime": 120.0
+    }
+    """
+
+    // A test case that failed on the first repetition and passed on the second.
+    private let flakyTestsJSON = """
+    {
+      "testPlanConfigurations": [
+        {
+          "configurationId": "1",
+          "configurationName": "Default"
+        }
+      ],
+      "devices": [],
+      "testNodes": [
+        {
+          "name": "Test Plan",
+          "nodeType": "Test Plan",
+          "children": [
+            {
+              "name": "Default",
+              "nodeType": "Test Plan Configuration",
+              "children": [
+                {
+                  "name": "DemoTests.xctest",
+                  "nodeType": "Unit test bundle",
+                  "children": [
+                    {
+                      "name": "DemoTests",
+                      "nodeType": "Test Suite",
+                      "children": [
+                        {
+                          "name": "test_random()",
+                          "nodeType": "Test Case",
+                          "result": "Failed",
+                          "durationInSeconds": 2.0,
+                          "children": [
+                            {
+                              "name": "Repetition 1",
+                              "nodeType": "Repetition",
+                              "result": "Failed",
+                              "children": [
+                                {
+                                  "name": "DemoTests.swift:42: failed - randomly failed",
+                                  "nodeType": "Failure Message"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Repetition 2",
+                              "nodeType": "Repetition",
+                              "result": "Passed"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+    """
+
+    private func makeProvider() throws -> XCResultToolJunitXMLDataProvider {
+        let shell = LookupShell(
+            responses: [
+                "xcresulttool get test-results summary --path /tmp/test.xcresult": .success(Data(flakySummaryJSON.utf8)),
+                "xcresulttool get test-results tests --path /tmp/test.xcresult": .success(Data(flakyTestsJSON.utf8))
+            ]
+        )
+        let client = XCResultToolClient(shell: shell)
+        return try XCResultToolJunitXMLDataProvider(
+            url: URL(fileURLWithPath: "/tmp/test.xcresult"),
+            client: client
+        )
+    }
+
+    @Test
+    func providerMarksMixedRepetitionTestAsFlaky() throws {
+        let provider = try makeProvider()
+
+        let action = try #require(provider.testActions.first)
+        let plan = try #require(action.testPlanRunSummaries.first)
+        let rootGroup = try #require(plan.testableSummaries.first?.tests.first)
+        let suite = try #require(rootGroup.subtestGroups.first)
+        let test = try #require(suite.subtests.first)
+
+        #expect(test.name == "test_random()")
+        #expect(test.isFailed == true)
+        #expect(test.isFlaky == true)
+    }
+
+    @Test
+    func junitXMLLabelsFlakyTestcase() throws {
+        let provider = try makeProvider()
+        let xml = JunitXML(dataProvider: provider).xmlString
+
+        // The failing testcase keeps its failure but gains a flaky marker and a
+        // `[FLAKY]` prefix on the failure message.
+        #expect(xml.contains("flaky=\"true\""))
+        #expect(xml.contains("[FLAKY]"))
+    }
+
+    // End-to-end against a real bundle generated by FlakyTests/FlakyFixtureGen
+    // (see FlakyTests/README.md). It was recorded with `-retry-tests-on-failure`,
+    // so `testFlaky()` has a failed "First Run" repetition and a passed "Retry 1"
+    // repetition. This drives the real `xcresulttool` rather than stubbed JSON.
+    //
+    // NOTE on issue #67: the reporter's Xcode kept the recovered test surfaced as
+    // a *failure* (cascading up case/suite/bundle/plan) even though the exit code
+    // was 0. The Xcode used to record this fixture instead aggregates the
+    // recovered retry as a clean **pass** at every level (summary result Passed,
+    // 0 failures, Test Case Passed) while still preserving the failed first
+    // repetition underneath. Either way the test is detected as flaky and, in the
+    // passed case, gains a `flaky="true"` marker so it can be distinguished from a
+    // test that never failed. (The `[FLAKY]` failure-message labeling only applies
+    // when the overall result is failed; that is covered by the stubbed
+    // `junitXMLLabelsFlakyTestcase` test above.)
+    @Test
+    func realFlakyBundleIsDetectedAsFlaky() throws {
+        let xcresultFile = try #require(
+            Bundle.module.url(forResource: "Test-FlakyFixture", withExtension: "xcresult")
+        )
+        let provider = try XCResultToolJunitXMLDataProvider(url: xcresultFile)
+
+        let leaves = provider.testActions
+            .flatMap { $0.testPlanRunSummaries }
+            .flatMap { $0.testableSummaries }
+            .flatMap { $0.tests }
+            .flatMap { allTests(in: $0) }
+
+        let flaky = try #require(leaves.first { $0.name?.contains("testFlaky") == true })
+        #expect(flaky.isFlaky == true)
+        #expect(flaky.isFailed == false) // recovered on retry -> overall passed
+
+        let stable = try #require(leaves.first { $0.name?.contains("testStablePass") == true })
+        #expect(stable.isFlaky == false)
+    }
+
+    // The recovered-on-retry test is overall passed yet must still be marked
+    // `flaky="true"` in the rendered JUnit XML so it is distinguishable from a
+    // clean pass. It must NOT carry a `<failure>` (it passed) nor the `[FLAKY]`
+    // message prefix (which only labels actual failures).
+    @Test
+    func passedFlakyTestGetsFlakyMarkerWithoutFailure() throws {
+        let xcresultFile = try #require(
+            Bundle.module.url(forResource: "Test-FlakyFixture", withExtension: "xcresult")
+        )
+        let provider = try XCResultToolJunitXMLDataProvider(url: xcresultFile)
+        let xml = JunitXML(dataProvider: provider).xmlString
+
+        #expect(xml.contains("flaky=\"true\""))
+        #expect(!xml.contains("[FLAKY]"))
+        #expect(!xml.contains("<failure"))
+    }
+
+    /// Recursively collects all leaf `JunitTest`s from a group tree.
+    private func allTests(in group: JunitTestGroup) -> [JunitTest] {
+        group.subtests + group.subtestGroups.flatMap { allTests(in: $0) }
+    }
+}
+
+private final class LookupShell: Commandline {
+    let responses: [String: Result<Data, Error>]
+
+    init(responses: [String: Result<Data, Error>]) {
+        self.responses = responses
+    }
+
+    func execute(program: String, with arguments: [String], at executionPath: URL?) throws -> Data {
+        #expect(program == "/usr/bin/xcrun")
+        let key = arguments.joined(separator: " ")
+        guard let response = responses[key] else {
+            throw NSError(domain: "missing_response", code: 1)
+        }
+        switch response {
+        case .success(let data):
+            return data
+        case .failure(let error):
+            throw error
+        }
+    }
+}

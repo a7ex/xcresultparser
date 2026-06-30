@@ -19,6 +19,9 @@ public struct MDResultFormatter: XCResultFormatting {
     public var testExpectedFailureIcon: String {
         return forGithub ? "🟡 " : "🟡&nbsp;&nbsp;"
     }
+    public var testFlakyIcon: String {
+        return forGithub ? "🟠 " : "🟠&nbsp;&nbsp;"
+    }
 
     private let forGithub: Bool
 

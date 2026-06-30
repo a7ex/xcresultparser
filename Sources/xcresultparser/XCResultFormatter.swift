@@ -30,7 +30,7 @@ public struct XCResultFormatter {
         let subtestGroups: [FormattedTestGroup]
 
         var hasFailedTests: Bool {
-            if subtests.contains(where: \.isFailed) {
+            if subtests.contains(where: \.countsAsFailure) {
                 return true
             }
             if subtestGroups.contains(where: \.hasFailedTests) {
@@ -49,6 +49,7 @@ public struct XCResultFormatter {
         case failed
         case skipped
         case expectedFailure
+        case flaky
     }
 
     private struct FormattedTest {
@@ -59,6 +60,17 @@ public struct XCResultFormatter {
 
         var isFailed: Bool {
             status == .failed
+        }
+
+        var isFlaky: Bool {
+            status == .flaky
+        }
+
+        // A flaky test recovered on retry but is still treated as a failure for
+        // roll-up, counting and `--failed-tests-only` purposes - it is only
+        // labeled differently in the rendered output.
+        var countsAsFailure: Bool {
+            status == .failed || status == .flaky
         }
 
         var isSkipped: Bool {
@@ -401,7 +413,7 @@ public struct XCResultFormatter {
             lines.append(outputFormatter.accordionOpenTag)
         }
         for thisTest in group.subtests {
-            if !failedTestsOnly || thisTest.isFailed {
+            if !failedTestsOnly || thisTest.countsAsFailure {
                 lines.append(
                     actionTestFileStatusString(
                         for: thisTest,
@@ -454,6 +466,10 @@ public struct XCResultFormatter {
 
         if testData.isSkipped {
             return outputFormatter.testSkipIcon
+        }
+
+        if testData.isFlaky {
+            return outputFormatter.testFlakyIcon
         }
 
         return outputFormatter.testFailIcon
@@ -616,7 +632,7 @@ public struct XCResultFormatter {
                     identifier: mappedArgumentTest.identifier,
                     name: mappedArgumentTest.name,
                     duration: mappedArgumentTest.duration,
-                    status: testStatus(for: mappedArgumentTest.result)
+                    status: mappedArgumentTest.isFlaky ? .flaky : testStatus(for: mappedArgumentTest.result)
                 )
             }
         )
@@ -646,7 +662,7 @@ public struct XCResultFormatter {
             identifier: identifier,
             name: node.name,
             duration: node.durationInSeconds,
-            status: testStatus(for: result)
+            status: node.isFlaky ? .flaky : testStatus(for: result)
         )
     }
 
