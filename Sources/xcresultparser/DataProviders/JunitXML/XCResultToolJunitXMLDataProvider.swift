@@ -239,6 +239,7 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
         guard let candidate = components.last,
               !candidate.isEmpty,
               Int(candidate) == nil,
+              candidate.rangeOfCharacter(from: .whitespacesAndNewlines) == nil,
               !candidate.hasSuffix(".xctest") else {
             return nil
         }

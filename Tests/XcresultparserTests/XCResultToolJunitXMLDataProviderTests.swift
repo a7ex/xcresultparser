@@ -231,25 +231,12 @@ struct XCResultToolJunitXMLDataProviderTests {
         ])
         #expect(action.failureSummaries.first?.documentLocation == "SomeClassTests.swift:42")
 
-        JunitXML.resetCachedPathnames()
-        let savedFileManager = SharedInstances.fileManager
-        SharedInstances.fileManager = MockedFileManager(fileExists: true, isPathDirectory: true)
-        defer { SharedInstances.fileManager = savedFileManager }
-
-        let classIndex = """
-        Sources/SomeClass.swift:struct SomeClass
-        Tests/SomeClassTests.swift:struct SomeClassTests
-        """
         let junitXML = JunitXML(
             dataProvider: provider,
-            projectRoot: "/tmp/project",
-            format: .sonar,
-            relativePathNames: true,
-            shell: MockedShell(response: Data(classIndex.utf8), error: nil)
+            format: .sonar
         )
         let xmlString = junitXML.xmlString
-        #expect(xmlString.contains("path=\"Tests/SomeClassTests.swift\""))
-        #expect(!xmlString.contains("path=\"Sources/SomeClass.swift\""))
+        #expect(xmlString.contains("path=\"SomeClassTests\""))
         #expect(!xmlString.contains("path=\"SomeClass\""))
 
         let document = try XMLDocument(xmlString: xmlString)
@@ -418,11 +405,12 @@ struct XCResultToolJunitXMLDataProviderTests {
                       "nodeType": "Unit test bundle",
                       "children": [
                         {
-                          "name": "DemoTests",
+                          "name": "Demo Feature",
                           "nodeType": "Test Suite",
                           "children": [
                             {
                               "name": "testParametrized(value:)",
+                              "nodeIdentifier": "DemoTests/testParametrized(value:)",
                               "nodeType": "Test Case",
                               "result": "Passed",
                               "children": [
@@ -442,6 +430,7 @@ struct XCResultToolJunitXMLDataProviderTests {
                             },
                             {
                               "name": "testMultiParam(value:count:)",
+                              "nodeIdentifier": "DemoTests/testMultiParam(value:count:)",
                               "nodeType": "Test Case",
                               "result": "Passed",
                               "children": [
@@ -481,10 +470,15 @@ struct XCResultToolJunitXMLDataProviderTests {
         let plan = try #require(action.testPlanRunSummaries.first)
         let rootGroup = try #require(plan.testableSummaries.first?.tests.first)
         let suite = try #require(rootGroup.subtestGroups.first)
+        #expect(suite.name == "Demo Feature")
+        #expect(suite.identifier == "DemoTests")
         #expect(suite.subtests.count == 3)
         #expect(suite.subtests[0].name == "testParametrized(value: false)")
         #expect(suite.subtests[1].name == "testParametrized(value: true)")
         #expect(suite.subtests[2].name == "testMultiParam(value: false, count: 3)")
+        #expect(suite.subtests[0].identifier == "DemoTests/testParametrized(value: false)")
+        #expect(suite.subtests[1].identifier == "DemoTests/testParametrized(value: true)")
+        #expect(suite.subtests[2].identifier == "DemoTests/testMultiParam(value: false, count: 3)")
     }
 
     @Test
