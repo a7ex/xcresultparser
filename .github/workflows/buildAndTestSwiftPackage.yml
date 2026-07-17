@@ -16,7 +16,14 @@ jobs:
     - name: Build
       run: swift build -c release --disable-sandbox --arch arm64 --arch x86_64
     - name: Run tests
-      run: swift test -v
+      run: |
+        mkdir -p .build/test-results
+        swift test -v --xunit-output .build/test-results/tests.xml
+    - uses: actions/upload-artifact@v7
+      if: always()
+      with:
+          name: test-results
+          path: .build/test-results/tests.xml
     - uses: actions/upload-artifact@v7
       with:
           name: xcresultparser
