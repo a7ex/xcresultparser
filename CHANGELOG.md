@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### FIXES:
+- Fix issue #69: use canonical Xcode test identifiers instead of Swift Testing suite display names when resolving SonarQube test file paths.
+- Always emit the required millisecond `duration` attribute for SonarQube test cases, using `0` when Xcode omits a duration.
+
 ## Version 2.0.0 - 2026-03-14
 ### CHANGES:
 - Fix issue #65: 'Session-level issues' / 'Issues recorded without an associated test or suite' are now listed in test results

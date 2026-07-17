@@ -124,6 +124,144 @@ struct XCResultToolJunitXMLDataProviderTests {
     }
 
     @Test
+    func testProviderUsesCanonicalTestIdentifierForDisplayNamedSuite() throws {
+        let summaryJSON = """
+        {
+          "title": "Test - Demo",
+          "environmentDescription": "Demo",
+          "topInsights": [],
+          "result": "Failed",
+          "totalTestCount": 2,
+          "passedTests": 1,
+          "failedTests": 1,
+          "skippedTests": 0,
+          "expectedFailures": 0,
+          "statistics": [],
+          "devicesAndConfigurations": [],
+          "testFailures": [
+            {
+              "failureText": "failed - expected true",
+              "targetName": "DemoTests",
+              "testIdentifier": 1,
+              "testIdentifierString": "SomeClassTests/testFail()",
+              "testIdentifierURL": "test://com.apple.xcode/Demo/DemoTests/SomeClassTests/testFail",
+              "testName": "testFail()"
+            }
+          ],
+          "startTime": 100.0,
+          "finishTime": 120.0
+        }
+        """
+
+        let testsJSON = """
+        {
+          "testPlanConfigurations": [
+            {
+              "configurationId": "1",
+              "configurationName": "Default"
+            }
+          ],
+          "devices": [],
+          "testNodes": [
+            {
+              "name": "Test Plan",
+              "nodeType": "Test Plan",
+              "children": [
+                {
+                  "name": "Default",
+                  "nodeType": "Test Plan Configuration",
+                  "children": [
+                    {
+                      "name": "DemoTests.xctest",
+                      "nodeType": "Unit test bundle",
+                      "children": [
+                        {
+                          "name": "SomeClass",
+                          "nodeType": "Test Suite",
+                          "children": [
+                            {
+                              "name": "testPass()",
+                              "nodeIdentifier": "SomeClassTests/testPass()",
+                              "nodeType": "Test Case",
+                              "result": "Passed"
+                            },
+                            {
+                              "name": "testFail()",
+                              "nodeIdentifier": "SomeClassTests/testFail()",
+                              "nodeType": "Test Case",
+                              "result": "Failed",
+                              "children": [
+                                {
+                                  "name": "SomeClassTests.swift:42: failed - expected true",
+                                  "nodeType": "Failure Message"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+        """
+
+        let shell = LookupShell(
+            responses: [
+                "xcresulttool get test-results summary --path /tmp/test.xcresult": .success(Data(summaryJSON.utf8)),
+                "xcresulttool get test-results tests --path /tmp/test.xcresult": .success(Data(testsJSON.utf8))
+            ]
+        )
+        let provider = try XCResultToolJunitXMLDataProvider(
+            url: URL(fileURLWithPath: "/tmp/test.xcresult"),
+            client: XCResultToolClient(shell: shell)
+        )
+
+        let action = try #require(provider.testActions.first)
+        let rootGroup = try #require(action.testPlanRunSummaries.first?.testableSummaries.first?.tests.first)
+        let suite = try #require(rootGroup.subtestGroups.first)
+        #expect(suite.name == "SomeClass")
+        #expect(suite.identifier == "SomeClassTests")
+        #expect(suite.subtests.map(\.identifier) == [
+            "SomeClassTests/testPass()",
+            "SomeClassTests/testFail()"
+        ])
+        #expect(action.failureSummaries.first?.documentLocation == "SomeClassTests.swift:42")
+
+        JunitXML.resetCachedPathnames()
+        let savedFileManager = SharedInstances.fileManager
+        SharedInstances.fileManager = MockedFileManager(fileExists: true, isPathDirectory: true)
+        defer { SharedInstances.fileManager = savedFileManager }
+
+        let classIndex = """
+        Sources/SomeClass.swift:struct SomeClass
+        Tests/SomeClassTests.swift:struct SomeClassTests
+        """
+        let junitXML = JunitXML(
+            dataProvider: provider,
+            projectRoot: "/tmp/project",
+            format: .sonar,
+            relativePathNames: true,
+            shell: MockedShell(response: Data(classIndex.utf8), error: nil)
+        )
+        let xmlString = junitXML.xmlString
+        #expect(xmlString.contains("path=\"Tests/SomeClassTests.swift\""))
+        #expect(!xmlString.contains("path=\"Sources/SomeClass.swift\""))
+        #expect(!xmlString.contains("path=\"SomeClass\""))
+
+        let document = try XMLDocument(xmlString: xmlString)
+        let testCases = try document.nodes(forXPath: "//testCase")
+        #expect(testCases.count == 2)
+        for testCase in testCases {
+            let duration = (testCase as? XMLElement)?.attribute(forName: "duration")?.stringValue
+            #expect(duration == "0")
+        }
+    }
+
+    @Test
     func testProviderAddsFailureDocumentLocation() throws {
         let summaryJSON = """
         {
