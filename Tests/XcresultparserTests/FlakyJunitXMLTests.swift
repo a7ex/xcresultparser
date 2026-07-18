@@ -193,6 +193,42 @@ struct FlakyJunitXMLTests {
         #expect(!xml.contains("<failure"))
     }
 
+    // The sonar generic test execution schema only allows `name` and `duration`
+    // on `testCase`, so sonar output must not carry the `flaky="true"` marker.
+    @Test
+    func sonarXMLOmitsFlakyAttribute() throws {
+        let xcresultFile = try #require(
+            Bundle.module.url(forResource: "Test-FlakyFixture", withExtension: "xcresult")
+        )
+        let provider = try XCResultToolJunitXMLDataProvider(url: xcresultFile)
+        let xml = JunitXML(dataProvider: provider, format: .sonar).xmlString
+
+        #expect(!xml.contains("flaky"))
+    }
+
+    // A recovered flaky test is overall passed, so it must not surface when only
+    // failed tests are requested - flakiness is a label, not a failure.
+    @Test
+    func recoveredFlakyTestIsNotListedAsFailed() throws {
+        let xcresultFile = try #require(
+            Bundle.module.url(forResource: "Test-FlakyFixture", withExtension: "xcresult")
+        )
+        let allTests = try XCResultFormatter(
+            with: xcresultFile,
+            formatter: TextResultFormatter(),
+            coverageTargets: []
+        )
+        #expect(allTests.testDetails.contains("testFlaky"))
+
+        let failedOnly = try XCResultFormatter(
+            with: xcresultFile,
+            formatter: TextResultFormatter(),
+            coverageTargets: [],
+            failedTestsOnly: true
+        )
+        #expect(!failedOnly.testDetails.contains("testFlaky"))
+    }
+
     /// Recursively collects all leaf `JunitTest`s from a group tree.
     private func allTests(in group: JunitTestGroup) -> [JunitTest] {
         group.subtests + group.subtestGroups.flatMap { allTests(in: $0) }

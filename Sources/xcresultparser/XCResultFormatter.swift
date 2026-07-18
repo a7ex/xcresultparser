@@ -30,7 +30,7 @@ public struct XCResultFormatter {
         let subtestGroups: [FormattedTestGroup]
 
         var hasFailedTests: Bool {
-            if subtests.contains(where: \.countsAsFailure) {
+            if subtests.contains(where: \.isFailed) {
                 return true
             }
             if subtestGroups.contains(where: \.hasFailedTests) {
@@ -49,7 +49,6 @@ public struct XCResultFormatter {
         case failed
         case skipped
         case expectedFailure
-        case flaky
     }
 
     private struct FormattedTest {
@@ -57,20 +56,14 @@ public struct XCResultFormatter {
         let name: String
         let duration: Double?
         let status: FormattedTestStatus
+        // Flakiness is tracked separately from the status: a flaky test keeps
+        // the result Xcode aggregated for it (passed when the retry recovered,
+        // failed otherwise), so failure roll-up and `--failed-tests-only`
+        // behave exactly as for non-flaky tests - flaky is only a label.
+        let isFlaky: Bool
 
         var isFailed: Bool {
             status == .failed
-        }
-
-        var isFlaky: Bool {
-            status == .flaky
-        }
-
-        // A flaky test recovered on retry but is still treated as a failure for
-        // roll-up, counting and `--failed-tests-only` purposes - it is only
-        // labeled differently in the rendered output.
-        var countsAsFailure: Bool {
-            status == .failed || status == .flaky
         }
 
         var isSkipped: Bool {
@@ -413,7 +406,7 @@ public struct XCResultFormatter {
             lines.append(outputFormatter.accordionOpenTag)
         }
         for thisTest in group.subtests {
-            if !failedTestsOnly || thisTest.countsAsFailure {
+            if !failedTestsOnly || thisTest.isFailed {
                 lines.append(
                     actionTestFileStatusString(
                         for: thisTest,
@@ -456,6 +449,10 @@ public struct XCResultFormatter {
     }
 
     private func actionTestFileStatusStringIcon(testData: FormattedTest) -> String {
+        if testData.isFlaky {
+            return outputFormatter.testFlakyIcon
+        }
+
         if testData.isSuccessful {
             return outputFormatter.testPassIcon
         }
@@ -466,10 +463,6 @@ public struct XCResultFormatter {
 
         if testData.isSkipped {
             return outputFormatter.testSkipIcon
-        }
-
-        if testData.isFlaky {
-            return outputFormatter.testFlakyIcon
         }
 
         return outputFormatter.testFailIcon
@@ -632,7 +625,8 @@ public struct XCResultFormatter {
                     identifier: mappedArgumentTest.identifier,
                     name: mappedArgumentTest.name,
                     duration: mappedArgumentTest.duration,
-                    status: mappedArgumentTest.isFlaky ? .flaky : testStatus(for: mappedArgumentTest.result)
+                    status: testStatus(for: mappedArgumentTest.result),
+                    isFlaky: mappedArgumentTest.isFlaky
                 )
             }
         )
@@ -662,7 +656,8 @@ public struct XCResultFormatter {
             identifier: identifier,
             name: node.name,
             duration: node.durationInSeconds,
-            status: node.isFlaky ? .flaky : testStatus(for: result)
+            status: testStatus(for: result),
+            isFlaky: node.isFlaky
         )
     }
 
