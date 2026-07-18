@@ -124,7 +124,7 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
         let groupName = mappedGroupName(for: node)
         let currentPath = appendName(groupName, to: parentPath)
         let nextTestClassName: String? = if node.nodeType == .testSuite {
-            groupName
+            canonicalTestContainerIdentifier(for: node) ?? groupName
         } else {
             currentTestClassName
         }
@@ -164,13 +164,13 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
 
     private func mapTest(node: XCTestNode, testClassName: String?) -> JunitTest {
         let result = node.result ?? .unknown
-        let identifier: String = if let testClassName {
+        let fallbackIdentifier: String = if let testClassName {
             "\(testClassName)/\(node.name)"
         } else {
             node.name
         }
         return JunitTest(
-            identifier: identifier,
+            identifier: node.nodeIdentifier ?? fallbackIdentifier,
             name: node.name,
             duration: node.durationInSeconds,
             isFailed: result == .failed,
@@ -193,10 +193,59 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
         case .unitTestBundle, .uiTestBundle:
             return node.name.hasSuffix(".xctest") ? node.name : "\(node.name).xctest"
         case .testSuite:
-            return node.name
+            return canonicalTestContainerIdentifier(for: node) ?? fallback
         default:
             return node.nodeIdentifier ?? fallback
         }
+    }
+
+    private func canonicalTestContainerIdentifier(for node: XCTestNode) -> String? {
+        if let identifier = testContainerIdentifier(from: node) {
+            return identifier
+        }
+        return firstDescendantTestContainerIdentifier(in: node.children ?? [])
+    }
+
+    private func firstDescendantTestContainerIdentifier(in nodes: [XCTestNode]) -> String? {
+        for node in nodes {
+            if node.nodeType == .testCase,
+               let identifier = testContainerIdentifier(from: node) {
+                return identifier
+            }
+            if let identifier = firstDescendantTestContainerIdentifier(in: node.children ?? []) {
+                return identifier
+            }
+        }
+        return nil
+    }
+
+    private func testContainerIdentifier(from node: XCTestNode) -> String? {
+        if let identifier = node.nodeIdentifier,
+           let result = testContainerIdentifier(from: identifier, nodeType: node.nodeType) {
+            return result
+        }
+        guard let url = node.nodeIdentifierURL else {
+            return nil
+        }
+        let path = url.pathComponents
+            .filter { $0 != "/" && !$0.isEmpty }
+            .joined(separator: "/")
+        return testContainerIdentifier(from: path, nodeType: node.nodeType)
+    }
+
+    private func testContainerIdentifier(from identifier: String, nodeType: XCTestNodeType) -> String? {
+        var components = identifier.split(separator: "/").map(String.init)
+        if nodeType == .testCase, components.count > 1 {
+            components.removeLast()
+        }
+        guard let candidate = components.last,
+              !candidate.isEmpty,
+              Int(candidate) == nil,
+              candidate.rangeOfCharacter(from: .whitespacesAndNewlines) == nil,
+              !candidate.hasSuffix(".xctest") else {
+            return nil
+        }
+        return candidate
     }
 
     private func appendName(_ name: String, to parentPath: String?) -> String {
@@ -228,7 +277,7 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
         var currentIdentifier = currentTestIdentifier
         var currentClassName = currentTestClassName
         if node.nodeType == .testSuite {
-            currentClassName = node.name
+            currentClassName = canonicalTestContainerIdentifier(for: node) ?? node.name
         }
         if node.nodeType == .testCase {
             currentIdentifier = testIdentifierString(for: node, testClassName: currentClassName)
@@ -251,6 +300,9 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
     }
 
     private func testIdentifierString(for node: XCTestNode, testClassName: String?) -> String {
+        if let identifier = node.nodeIdentifier, !identifier.isEmpty {
+            return identifier
+        }
         if let testClassName, !testClassName.isEmpty {
             return "\(testClassName)/\(node.name)"
         }
@@ -309,7 +361,7 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
         for node in nodes {
             var currentClassName = testClassName
             if node.nodeType == .testSuite {
-                currentClassName = node.name
+                currentClassName = canonicalTestContainerIdentifier(for: node) ?? node.name
             }
             if node.nodeType == .testCase {
                 let identifier = testIdentifierString(for: node, testClassName: currentClassName)
@@ -348,4 +400,3 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
         identifier.contains("«unknown»")
     }
 }
-

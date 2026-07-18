@@ -381,16 +381,21 @@ extension JunitTest {
     ) -> XMLElement {
         let testcase = XMLElement(name: nodeNames.testcaseName)
         testcase.addAttribute(name: "name", stringValue: name ?? "No-name")
-        if let time = duration,
-           !nodeNames.testcaseDurationName.isEmpty {
-            let correctedTime: String = if format == .sonar {
-                String(max(1, Int(time * 1000)))
+        if format == .sonar {
+            let correctedTime = if let duration {
+                String(max(1, Int(duration * 1000)))
             } else {
-                numFormatter.unwrappedString(for: time)
+                "0"
             }
             testcase.addAttribute(
                 name: nodeNames.testcaseDurationName,
                 stringValue: correctedTime
+            )
+        } else if let time = duration,
+                  !nodeNames.testcaseDurationName.isEmpty {
+            testcase.addAttribute(
+                name: nodeNames.testcaseDurationName,
+                stringValue: numFormatter.unwrappedString(for: time)
             )
             if !nodeNames.testcaseClassNameName.isEmpty {
                 testcase.addAttribute(name: nodeNames.testcaseClassNameName, stringValue: classname)
