@@ -1251,10 +1251,21 @@ struct XcresultparserTests {
 
         // Use consistent formatting options for comparison
         let formatOptions: XMLDocument.Options = [.nodePrettyPrint, .nodeCompactEmptyElement]
-        let expectedXMLString = expectedXMLDocument.xmlString(options: formatOptions)
-        let actualXMLString = actualXMLDocument.xmlString(options: formatOptions)
+        let expectedXMLString = normalizedFailureText(expectedXMLDocument.xmlString(options: formatOptions))
+        let actualXMLString = normalizedFailureText(actualXMLDocument.xmlString(options: formatOptions))
 
         #expect(expectedXMLString == actualXMLString)
+    }
+
+    /// xcresulttool up to Xcode 26 appends the source location (e.g. " (File.swift:12)")
+    /// to failure texts; Xcode 27 no longer does. Strip the suffix so the fixtures
+    /// match the output of either version.
+    private func normalizedFailureText(_ xml: String) -> String {
+        xml.replacingOccurrences(
+            of: #" \([^()\s]+:\d+\)</failure>"#,
+            with: "</failure>",
+            options: .regularExpression
+        )
     }
 
 }
