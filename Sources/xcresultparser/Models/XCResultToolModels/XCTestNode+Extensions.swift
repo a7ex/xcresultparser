@@ -14,11 +14,12 @@ extension XCTestNode {
     }
 
     func mapArgumentTest(argument: XCTestNode, testClassName: String?) -> MappedArgumentTest {
-        let baseIdentifier: String = if let testClassName {
+        let fallbackIdentifier: String = if let testClassName {
             "\(testClassName)/\(name)"
         } else {
             name
         }
+        let baseIdentifier = nodeIdentifier ?? fallbackIdentifier
         return MappedArgumentTest(
             identifier: baseIdentifier.formatWithParameter(argument.name),
             name: name.formatWithParameter(argument.name),

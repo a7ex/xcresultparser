@@ -677,6 +677,16 @@ struct XcresultparserTests {
         let xmlString = junitXML.xmlString
         #expect(!xmlString.contains("Session-level issues"))
         #expect(!xmlString.contains("Issues recorded without an associated test or suite"))
+        #expect(xmlString.contains("path=\"SessionLevelFailureTests\""))
+        #expect(!xmlString.contains("path=\"Session-level failure demo\""))
+
+        let document = try XMLDocument(xmlString: xmlString)
+        let testCases = try document.nodes(forXPath: "//testCase")
+        #expect(testCases.count == 2)
+        for testCase in testCases {
+            let duration = (testCase as? XMLElement)?.attribute(forName: "duration")?.stringValue
+            #expect(duration == "0")
+        }
     }
 
     @Test
@@ -1241,10 +1251,21 @@ struct XcresultparserTests {
 
         // Use consistent formatting options for comparison
         let formatOptions: XMLDocument.Options = [.nodePrettyPrint, .nodeCompactEmptyElement]
-        let expectedXMLString = expectedXMLDocument.xmlString(options: formatOptions)
-        let actualXMLString = actualXMLDocument.xmlString(options: formatOptions)
+        let expectedXMLString = normalizedFailureText(expectedXMLDocument.xmlString(options: formatOptions))
+        let actualXMLString = normalizedFailureText(actualXMLDocument.xmlString(options: formatOptions))
 
         #expect(expectedXMLString == actualXMLString)
+    }
+
+    /// xcresulttool up to Xcode 26 appends the source location (e.g. " (File.swift:12)")
+    /// to failure texts; Xcode 27 no longer does. Strip the suffix so the fixtures
+    /// match the output of either version.
+    private func normalizedFailureText(_ xml: String) -> String {
+        xml.replacingOccurrences(
+            of: #" \([^()\s]+:\d+\)</failure>"#,
+            with: "</failure>",
+            options: .regularExpression
+        )
     }
 
 }
