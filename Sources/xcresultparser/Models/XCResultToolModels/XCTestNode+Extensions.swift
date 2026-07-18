@@ -11,6 +11,7 @@ extension XCTestNode {
         let name: String
         let duration: TimeInterval?
         let result: XCTestResult
+        let isFlaky: Bool
     }
 
     func mapArgumentTest(argument: XCTestNode, testClassName: String?) -> MappedArgumentTest {
@@ -24,8 +25,30 @@ extension XCTestNode {
             identifier: baseIdentifier.formatWithParameter(argument.name),
             name: name.formatWithParameter(argument.name),
             duration: argument.durationInSeconds ?? durationInSeconds,
-            result: argument.result ?? result ?? .unknown
+            result: argument.result ?? result ?? .unknown,
+            isFlaky: argument.isFlaky
         )
+    }
+
+    /// The results of all `Repetition` nodes nested below this node.
+    ///
+    /// Descends through intermediate nodes (e.g. `Test Case Run` for per-device
+    /// runs) so that repetitions are found regardless of how deeply Xcode nests
+    /// them under a test case or an argument.
+    var repetitionResults: [XCTestResult] {
+        (children ?? []).flatMap { child -> [XCTestResult] in
+            child.nodeType == .repetition
+                ? [child.result ?? .unknown]
+                : child.repetitionResults
+        }
+    }
+
+    /// `true` when the test was retried and recovered: at least one repetition
+    /// passed while at least one other repetition failed. Such a test is
+    /// "flaky"/"mixed" rather than a clean pass or a clean failure.
+    var isFlaky: Bool {
+        let results = repetitionResults
+        return results.contains(.passed) && results.contains(.failed)
     }
 }
 

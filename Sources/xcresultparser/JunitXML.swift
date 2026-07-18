@@ -297,7 +297,33 @@ public struct JunitXML: XmlSerializable {
         } else if test.isSkipped {
             testcase.addChild(skippedWithoutSummary)
         }
+        if test.isFlaky {
+            markTestcaseAsFlaky(testcase)
+        }
         return testcase
+    }
+
+    // Labels a `<testcase>` as flaky (failed on first attempt, passed on retry)
+    // without changing its pass/fail semantics: it gains a `flaky="true"` marker.
+    //
+    // - When the overall result is failed, the `<testcase>` keeps its `<failure>`
+    //   children so it still counts as a failure, and each failure message gains
+    //   a `[FLAKY]` prefix.
+    // - When the overall result is passed (the retry recovered and Xcode
+    //   aggregated it as a pass), it has no `<failure>` children, so only the
+    //   `flaky="true"` marker distinguishes it from a clean pass.
+    // - The sonar generic test execution schema only allows `name` and `duration`
+    //   on `testCase`, so for sonar output the attribute is omitted and only the
+    //   `[FLAKY]` message prefix remains.
+    private func markTestcaseAsFlaky(_ testcase: XMLElement) {
+        if testReportFormat != .sonar {
+            testcase.addAttribute(name: "flaky", stringValue: "true")
+        }
+        for case let failure as XMLElement in testcase.children ?? [] where failure.name == "failure" {
+            let labeled = "[FLAKY] " + (failure.attribute(forName: "message")?.stringValue ?? "passed on retry")
+            failure.removeAttribute(forName: "message")
+            failure.addAttribute(name: "message", stringValue: labeled)
+        }
     }
 
     private var failureWithoutSummary: XMLElement {

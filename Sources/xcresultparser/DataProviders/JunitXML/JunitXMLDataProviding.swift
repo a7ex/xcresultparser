@@ -48,6 +48,10 @@ struct JunitTest {
     let duration: Double?
     let isFailed: Bool
     let isSkipped: Bool
+    /// `true` when the test failed on a first attempt but passed on retry.
+    /// The overall result (failed or, if the retry recovered, passed) is kept;
+    /// the test is only additionally labeled as flaky.
+    var isFlaky: Bool = false
 }
 
 struct JunitFailureSummary {

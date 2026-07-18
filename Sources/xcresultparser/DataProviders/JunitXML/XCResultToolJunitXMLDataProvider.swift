@@ -138,7 +138,8 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
                     name: mappedArgumentTest.name,
                     duration: mappedArgumentTest.duration,
                     isFailed: mappedArgumentTest.result == .failed,
-                    isSkipped: mappedArgumentTest.result == .skipped
+                    isSkipped: mappedArgumentTest.result == .skipped,
+                    isFlaky: mappedArgumentTest.isFlaky
                 )
             }
         )
@@ -173,7 +174,8 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
             name: node.name,
             duration: node.durationInSeconds,
             isFailed: result == .failed,
-            isSkipped: result == .skipped
+            isSkipped: result == .skipped,
+            isFlaky: node.isFlaky
         )
     }
 

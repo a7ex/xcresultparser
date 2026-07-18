@@ -28,6 +28,12 @@ All JSON parsing is done with native `Codable` models in this project.
 - For `txt`, `cli`, `html`, and `md`, expected failures are represented as a distinct test state.
 - For `junit` and sonar test execution `xml`, expected failures are emitted as regular passing test cases for schema compatibility.
 
+## Flaky Test Detection
+A test that failed on a first attempt but passed on retry (a "flaky"/"mixed" result) is detected from the per-repetition results in the xcresult bundle. This works for repeated test cases, per-device runs, and parameterized test arguments.
+- For `txt`, `cli`, `html`, and `md`, a flaky test is shown with a distinct flaky icon (🟠 in markdown, ⚠︎ otherwise) instead of the failure icon.
+- For `junit`, the test still counts as a failure: the `<testcase>` keeps its `<failure>` children but gains a `flaky="true"` attribute and a `[FLAKY]` prefix on each failure message.
+- Flaky tests still count as failures for roll-up, counts, and `--failed-tests-only`; they are only labeled differently in the rendered output.
+
 <details>
   <summary>More on converting code coverage data</summary>
   

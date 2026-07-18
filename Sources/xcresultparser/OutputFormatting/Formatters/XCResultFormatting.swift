@@ -28,6 +28,7 @@ public protocol XCResultFormatting {
     var testPassIcon: String { get }
     var testSkipIcon: String { get }
     var testExpectedFailureIcon: String { get }
+    var testFlakyIcon: String { get }
 
     func codeCoverageTargetSummary(_ item: String) -> String
     func codeCoverageFileSummary(_ item: String) -> String
@@ -49,5 +50,9 @@ public extension XCResultFormatting {
 
     var testExpectedFailureIcon: String {
         return "!"
+    }
+
+    var testFlakyIcon: String {
+        return "⚠︎"
     }
 }

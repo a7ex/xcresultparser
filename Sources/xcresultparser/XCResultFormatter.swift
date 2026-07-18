@@ -56,6 +56,11 @@ public struct XCResultFormatter {
         let name: String
         let duration: Double?
         let status: FormattedTestStatus
+        // Flakiness is tracked separately from the status: a flaky test keeps
+        // the result Xcode aggregated for it (passed when the retry recovered,
+        // failed otherwise), so failure roll-up and `--failed-tests-only`
+        // behave exactly as for non-flaky tests - flaky is only a label.
+        let isFlaky: Bool
 
         var isFailed: Bool {
             status == .failed
@@ -444,6 +449,10 @@ public struct XCResultFormatter {
     }
 
     private func actionTestFileStatusStringIcon(testData: FormattedTest) -> String {
+        if testData.isFlaky {
+            return outputFormatter.testFlakyIcon
+        }
+
         if testData.isSuccessful {
             return outputFormatter.testPassIcon
         }
@@ -616,7 +625,8 @@ public struct XCResultFormatter {
                     identifier: mappedArgumentTest.identifier,
                     name: mappedArgumentTest.name,
                     duration: mappedArgumentTest.duration,
-                    status: testStatus(for: mappedArgumentTest.result)
+                    status: testStatus(for: mappedArgumentTest.result),
+                    isFlaky: mappedArgumentTest.isFlaky
                 )
             }
         )
@@ -646,7 +656,8 @@ public struct XCResultFormatter {
             identifier: identifier,
             name: node.name,
             duration: node.durationInSeconds,
-            status: testStatus(for: result)
+            status: testStatus(for: result),
+            isFlaky: node.isFlaky
         )
     }
 

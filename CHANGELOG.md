@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix issue #69: use canonical Xcode test identifiers instead of Swift Testing suite display names when resolving SonarQube test file paths.
 - Always emit the required millisecond `duration` attribute for SonarQube test cases, using `0` when Xcode omits a duration.
 
+## Version 2.1.0 - 2026-06-24
+### CHANGES:
+- Detect flaky/mixed tests (failed on a first attempt but passed on retry) from the per-repetition results in the xcresult bundle, including repeated test cases, per-device runs, and parameterized test arguments.
+- In `txt`, `cli`, `html`, and `md` output, flaky tests are shown with a distinct flaky icon (🟠 in markdown, ⚠︎ otherwise) instead of the failure icon.
+- In `junit` output, a flaky test still counts as a failure but gains a `flaky="true"` attribute and a `[FLAKY]` prefix on each failure message.
+
 ## Version 2.0.0 - 2026-03-14
 ### CHANGES:
 - Fix issue #65: 'Session-level issues' / 'Issues recorded without an associated test or suite' are now listed in test results
