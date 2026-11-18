@@ -1,6 +1,6 @@
 import Foundation
-@testable import XcresultparserLib
 import Testing
+@testable import XcresultparserLib
 
 // End-to-end coverage for "flaky"/"mixed" tests (failed on a first attempt,
 // passed on retry). These drive the real `XCResultToolClient` with a stubbed
@@ -241,9 +241,9 @@ private final class LookupShell: Commandline {
             throw NSError(domain: "missing_response", code: 1)
         }
         switch response {
-        case .success(let data):
+        case let .success(data):
             return data
-        case .failure(let error):
+        case let .failure(error):
             throw error
         }
     }

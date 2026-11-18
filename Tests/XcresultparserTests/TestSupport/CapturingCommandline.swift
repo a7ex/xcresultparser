@@ -4,7 +4,7 @@ import Foundation
 final class CapturingCommandline: Commandline {
     let response: Data
     let error: Error?
-    var lastProgram: String = ""
+    var lastProgram = ""
     var lastArguments: [String] = []
 
     init(response: Data, error: Error? = nil) {

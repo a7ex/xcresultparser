@@ -10,15 +10,19 @@ public struct MDResultFormatter: XCResultFormatting {
     public var testFailIcon: String {
         return forGithub ? "🔴 " : "🔴&nbsp;&nbsp;"
     }
+
     public var testPassIcon: String {
         return forGithub ? "🟢 " : "🟢&nbsp;&nbsp;"
     }
+
     public var testSkipIcon: String {
         return forGithub ? "⚪️ " : "⚪️&nbsp;&nbsp;"
     }
+
     public var testExpectedFailureIcon: String {
         return forGithub ? "🟡 " : "🟡&nbsp;&nbsp;"
     }
+
     public var testFlakyIcon: String {
         return forGithub ? "🟠 " : "🟠&nbsp;&nbsp;"
     }
@@ -89,10 +93,10 @@ public struct MDResultFormatter: XCResultFormatting {
     public func failedTestItem(_ item: String, message: String) -> String {
         if forGithub {
             return "* $\\textcolor{red}{\\text{\(item.escapingQuotes)}}$\n" +
-            "  * $\\textcolor{gray}{\\text{\(message.escapingQuotes)"
+                "  * $\\textcolor{gray}{\\text{\(message.escapingQuotes)"
         } else {
             return "* <span style=\\\"color:red\\\">" + item.escapingQuotes + "</span><br />" + "\n" +
-            "  * <span style=\\\"color:gray\\\">" + message.escapingQuotes + "</span>"
+                "  * <span style=\\\"color:gray\\\">" + message.escapingQuotes + "</span>"
         }
     }
 

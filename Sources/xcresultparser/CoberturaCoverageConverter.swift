@@ -70,10 +70,8 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
 
         var fileInfo = [FileInfo]()
         for (fileName, value) in coverageJson.files {
-            guard isTargetIncluded(forFile: fileName) else {
-                continue
-            }
-            guard !isPathExcluded(fileName) else {
+            guard isTargetIncluded(forFile: fileName),
+                  !isPathExcluded(fileName) else {
                 continue
             }
             let relativePath = fileName.relativePath(relativeTo: projectRoot)
@@ -109,7 +107,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
             let packageName = createValidPackageName(from: pathComponents)
             isNewPackage = currentPackage != packageName
             currentPackage = packageName
-            
+
             if isNewPackage {
                 let currentPackageElement = XMLElement(name: "package")
                 currentClassesElement = XMLElement()
