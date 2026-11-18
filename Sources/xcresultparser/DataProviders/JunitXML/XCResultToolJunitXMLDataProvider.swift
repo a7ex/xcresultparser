@@ -328,7 +328,7 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
         let unmatchedFailures = summary.testFailures.filter { failure in
             let normalizedIdentifier = failure.testIdentifierString.replacingOccurrences(of: "/", with: ".")
             return !allTestIdentifiers.contains(failure.testIdentifierString) &&
-                   !allTestIdentifiers.contains(normalizedIdentifier)
+                !allTestIdentifiers.contains(normalizedIdentifier)
         }
 
         let failureMessageDetails = failureMessageDetailsByTestIdentifier()
@@ -397,6 +397,6 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
     private func isSessionLevelFailureIdentifier(_ identifier: String) -> Bool {
         // Swift Testing creates synthetic test nodes for session-level failures
         identifier == "Issues recorded without an associated test or suite" ||
-        identifier.contains("«unknown»")
+            identifier.contains("«unknown»")
     }
 }

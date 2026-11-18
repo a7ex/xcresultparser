@@ -43,6 +43,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
         }
     }
 
+    // swiftlint:disable:next function_body_length
     override public func xmlString(quiet: Bool) throws -> String {
         let dtd = readDTD()
         dtd.name = "coverage"
@@ -69,10 +70,8 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
 
         var fileInfo = [FileInfo]()
         for (fileName, value) in coverageJson.files {
-            guard isTargetIncluded(forFile: fileName) else {
-                continue
-            }
-            guard !isPathExcluded(fileName) else {
+            guard isTargetIncluded(forFile: fileName),
+                  !isPathExcluded(fileName) else {
                 continue
             }
             let relativePath = fileName.relativePath(relativeTo: projectRoot)
@@ -99,7 +98,6 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
         let packageLineCoverage = calculatePackageLineCoverage(in: fileInfo)
 
         var currentPackage = ""
-        var currentPackageElement: XMLElement!
         var isNewPackage = false
 
         var currentClassesElement = XMLElement()
@@ -107,17 +105,14 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
         for file in fileInfo {
             let pathComponents = file.path.split(separator: "/")
             let packageName = createValidPackageName(from: pathComponents)
-
             isNewPackage = currentPackage != packageName
+            currentPackage = packageName
 
             if isNewPackage {
-                currentPackageElement = XMLElement(name: "package")
+                let currentPackageElement = XMLElement(name: "package")
                 currentClassesElement = XMLElement()
                 packagesElement.addChild(currentPackageElement)
-            }
 
-            currentPackage = packageName
-            if isNewPackage {
                 let lineCoverage = packageLineCoverage[packageName] ?? 0.0
                 currentPackageElement.addAttribute(XMLNode.nodeAttribute(withName: "name", stringValue: packageName))
                 currentPackageElement.addAttribute(XMLNode.nodeAttribute(withName: "line-rate", stringValue: "\(lineCoverage)"))

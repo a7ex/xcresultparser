@@ -1,6 +1,6 @@
 import Foundation
-@testable import XcresultparserLib
 import Testing
+@testable import XcresultparserLib
 
 // End-to-end coverage for "flaky"/"mixed" tests (failed on a first attempt,
 // passed on retry). These drive the real `XCResultToolClient` with a stubbed
@@ -157,9 +157,7 @@ struct FlakyJunitXMLTests {
     // `junitXMLLabelsFlakyTestcase` test above.)
     @Test
     func realFlakyBundleIsDetectedAsFlaky() throws {
-        let xcresultFile = try #require(
-            Bundle.module.url(forResource: "Test-FlakyFixture", withExtension: "xcresult")
-        )
+        let xcresultFile = try TestFixtures.xcresult("Test-FlakyFixture")
         let provider = try XCResultToolJunitXMLDataProvider(url: xcresultFile)
 
         let leaves = provider.testActions
@@ -182,9 +180,7 @@ struct FlakyJunitXMLTests {
     // message prefix (which only labels actual failures).
     @Test
     func passedFlakyTestGetsFlakyMarkerWithoutFailure() throws {
-        let xcresultFile = try #require(
-            Bundle.module.url(forResource: "Test-FlakyFixture", withExtension: "xcresult")
-        )
+        let xcresultFile = try TestFixtures.xcresult("Test-FlakyFixture")
         let provider = try XCResultToolJunitXMLDataProvider(url: xcresultFile)
         let xml = JunitXML(dataProvider: provider).xmlString
 
@@ -197,9 +193,7 @@ struct FlakyJunitXMLTests {
     // on `testCase`, so sonar output must not carry the `flaky="true"` marker.
     @Test
     func sonarXMLOmitsFlakyAttribute() throws {
-        let xcresultFile = try #require(
-            Bundle.module.url(forResource: "Test-FlakyFixture", withExtension: "xcresult")
-        )
+        let xcresultFile = try TestFixtures.xcresult("Test-FlakyFixture")
         let provider = try XCResultToolJunitXMLDataProvider(url: xcresultFile)
         let xml = JunitXML(dataProvider: provider, format: .sonar).xmlString
 
@@ -210,9 +204,7 @@ struct FlakyJunitXMLTests {
     // failed tests are requested - flakiness is a label, not a failure.
     @Test
     func recoveredFlakyTestIsNotListedAsFailed() throws {
-        let xcresultFile = try #require(
-            Bundle.module.url(forResource: "Test-FlakyFixture", withExtension: "xcresult")
-        )
+        let xcresultFile = try TestFixtures.xcresult("Test-FlakyFixture")
         let allTests = try XCResultFormatter(
             with: xcresultFile,
             formatter: TextResultFormatter(),
@@ -249,9 +241,9 @@ private final class LookupShell: Commandline {
             throw NSError(domain: "missing_response", code: 1)
         }
         switch response {
-        case .success(let data):
+        case let .success(data):
             return data
-        case .failure(let error):
+        case let .failure(error):
             throw error
         }
     }

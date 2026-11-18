@@ -184,9 +184,7 @@ public struct JunitXML: XmlSerializable {
         testDirectory: String = ""
     ) -> [XMLElement] {
         guard group.identifierString.hasSuffix(".xctest") || group.subtestGroups.isEmpty else {
-            return group.subtestGroups.reduce([XMLElement]()) {
-                rslt,
-                    subGroup in
+            return group.subtestGroups.reduce([XMLElement]()) { rslt, subGroup in
                 return rslt + createTestSuite(
                     subGroup,
                     failureSummaries: failureSummaries,
@@ -205,33 +203,31 @@ public struct JunitXML: XmlSerializable {
                     configurationName: configurationName
                 )
             ]
-        } else {
-            if testReportFormat == .sonar {
-                var nodes = [XMLElement]()
-                for subGroup in group.subtestGroups {
-                    let node = subGroup.sonarFileXML(
-                        projectRoot: projectRoot,
-                        configurationName: configurationName,
-                        relativePathNames: relativePathNames,
-                        shell: shell
-                    )
-                    let testcases = createTestCases(
-                        for: subGroup.nameString, tests: subGroup.subtests, failureSummaries: failureSummaries
-                    )
-                    testcases.forEach { node.addChild($0) }
-                    nodes.append(node)
-                }
-                return nodes
-            } else {
-                let combined = group.subtestGroups.reduce([XMLElement]()) { rslt, subGroup in
-                    return rslt + createTestCases(
-                        for: subGroup.nameString, tests: subGroup.subtests, failureSummaries: failureSummaries
-                    )
-                }
-                let node = group.testSuiteXML(numFormatter: numFormatter)
-                combined.forEach { node.addChild($0) }
-                return [node]
+        } else if testReportFormat == .sonar {
+            var nodes = [XMLElement]()
+            for subGroup in group.subtestGroups {
+                let node = subGroup.sonarFileXML(
+                    projectRoot: projectRoot,
+                    configurationName: configurationName,
+                    relativePathNames: relativePathNames,
+                    shell: shell
+                )
+                let testcases = createTestCases(
+                    for: subGroup.nameString, tests: subGroup.subtests, failureSummaries: failureSummaries
+                )
+                testcases.forEach { node.addChild($0) }
+                nodes.append(node)
             }
+            return nodes
+        } else {
+            let combined = group.subtestGroups.reduce([XMLElement]()) { rslt, subGroup in
+                return rslt + createTestCases(
+                    for: subGroup.nameString, tests: subGroup.subtests, failureSummaries: failureSummaries
+                )
+            }
+            let node = group.testSuiteXML(numFormatter: numFormatter)
+            combined.forEach { node.addChild($0) }
+            return [node]
         }
     }
 
@@ -337,9 +333,9 @@ public struct JunitXML: XmlSerializable {
     private func addSessionLevelFailures(to testsuites: XMLElement) {
         // Get session-level failures that weren't matched to any specific test
         let unmatchedFailures = dataProvider.sessionLevelFailures
-        
+
         guard !unmatchedFailures.isEmpty else { return }
-        
+
         // For JUnit format, create a separate test suite for session-level failures
         // For Sonar format, we skip this as it expects file-based organization
         if testReportFormat != .sonar {
@@ -349,7 +345,7 @@ public struct JunitXML: XmlSerializable {
             sessionSuite.addAttribute(name: "failures", stringValue: String(unmatchedFailures.count))
             sessionSuite.addAttribute(name: "errors", stringValue: "0")
             sessionSuite.addAttribute(name: "time", stringValue: "0")
-            
+
             for failure in unmatchedFailures {
                 let testcase = XMLElement(name: nodeNames.testcaseName)
                 let testName = failure.testCaseName.isEmpty ? "Unknown test" : failure.testCaseName
@@ -363,7 +359,7 @@ public struct JunitXML: XmlSerializable {
                 testcase.addChild(failure.failureXML(projectRoot: projectRoot))
                 sessionSuite.addChild(testcase)
             }
-            
+
             testsuites.addChild(sessionSuite)
         }
     }
@@ -514,11 +510,11 @@ private extension JunitTestGroup {
                let path = items.first,
                !path.isEmpty,
                let className = items
-               .dropFirst()
-               .joined(separator: ":")
-               .trimmingCharacters(in: trimCharacterSet)
-               .components(separatedBy: .whitespaces)
-               .last,
+                   .dropFirst()
+                   .joined(separator: ":")
+                   .trimmingCharacters(in: trimCharacterSet)
+                   .components(separatedBy: .whitespaces)
+                   .last,
                !className.isEmpty {
                 if let existingPath = Self.cachedPathnames[className] {
                     if existingPath.components(separatedBy: "est").count <= path.withoutLocalPrefix.components(separatedBy: "est").count {

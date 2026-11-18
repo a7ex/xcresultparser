@@ -1,6 +1,11 @@
+excluded:
+  - .build
+  - Fixtures/*/.build
+
 disabled_rules:
   # - identifier_name # Disables names that start with an underscore
-  # - line_length
+  - optional_data_string_conversion
+  - line_length
   - nesting
   - redundant_discardable_let # False positives for e.g. let _: URL =
   #### disabled for work
@@ -45,28 +50,28 @@ vertical_whitespace:
 # so we show it as warning
 # cyclomatic_complexity: 10
 
-function_body_length: 100
-
 # only fir fixing
 force_cast: warning
 force_try: warning
 
 function_body_length:
   warning: 60
-  error: 10000
+  error: 1000
   
 type_body_length:
-  warning: 300
-  error: 1000
+  warning: 800
+  error: 1200
 
 file_length:
-  warning: 600
+  warning: 800
   error: 2000
   
-line_length:
-  warning: 120
-  error: 300
-  ignores_function_declarations: false
-  ignores_comments: false
-  ignores_interpolated_strings: false
-  ignores_urls: false
+# line_length:
+#   warning: 120
+#   error: 300
+#   ignores_function_declarations: false
+#   ignores_comments: false
+#   ignores_interpolated_strings: false
+#   ignores_urls: false
+
+reporter: xcode

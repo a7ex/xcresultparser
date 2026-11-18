@@ -1,6 +1,6 @@
 import Foundation
-@testable import XcresultparserLib
 import Testing
+@testable import XcresultparserLib
 
 @MainActor
 struct XCResultToolClientTests {
