@@ -1,6 +1,25 @@
 // swift-tools-version: 5.9
 import PackageDescription
 
+// SwiftLint runs as a build tool plugin during local development only.
+// On CI (GitHub Actions sets CI=true), `swift build --arch arm64 --arch x86_64` crashes with
+// the plugin on Xcode 26.7, and linting isn't needed to build or test.
+let lintOnBuild = Context.environment["CI"] == nil
+
+let swiftLintDependencies: [Package.Dependency] = lintOnBuild ? [
+    .package(
+        url: "https://github.com/SimplyDanny/SwiftLintPlugins",
+        from: "0.65.0"
+    )
+] : []
+
+let swiftLintPlugins: [Target.PluginUsage] = lintOnBuild ? [
+    .plugin(
+        name: "SwiftLintBuildToolPlugin",
+        package: "SwiftLintPlugins"
+    )
+] : []
+
 let package = Package(
     name: "Xcresultparser",
     platforms: [
@@ -20,12 +39,8 @@ let package = Package(
         .package(
             url: "https://github.com/apple/swift-argument-parser.git",
             from: "1.8.0"
-        ),
-        .package(
-            url: "https://github.com/SimplyDanny/SwiftLintPlugins",
-            from: "0.65.0"
         )
-    ],
+    ] + swiftLintDependencies,
     targets: [
         .executableTarget(
             name: "CommandlineTool",
@@ -41,12 +56,7 @@ let package = Package(
                 ),
             ],
             path: "Sources",
-            plugins: [
-                .plugin(
-                    name: "SwiftLintBuildToolPlugin",
-                    package: "SwiftLintPlugins"
-                )
-            ]
+            plugins: swiftLintPlugins
         ),
         .testTarget(
             name: "XcresultparserTests",
@@ -70,12 +80,7 @@ let package = Package(
                 .copy("TestAssets/junit_session_level_failure.xml"),
                 .copy("TestAssets/Test-FlakyFixture.xcresult")
             ],
-            plugins: [
-                .plugin(
-                    name: "SwiftLintBuildToolPlugin",
-                    package: "SwiftLintPlugins"
-                )
-            ]
+            plugins: swiftLintPlugins
         )
     ]
 )
