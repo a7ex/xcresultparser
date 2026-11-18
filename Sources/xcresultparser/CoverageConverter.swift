@@ -7,6 +7,12 @@
 
 import Foundation
 
+struct PrefetchedCoverageInputs {
+    let report: CoverageReport
+    let startTime: Double?
+    let data: FileCoverage
+}
+
 public enum CoverageConverterError: LocalizedError, Equatable {
     case couldNotLoadCoverageReport
     case unknownCoverageTargets(requested: [String], available: [String])
@@ -50,6 +56,7 @@ public class CoverageConverter {
     let excludedPaths: Set<String>
     let strictPathnames: Bool
     let startTime: Double?
+    private let prefetchedCoverage: FileCoverage?
 
     // MARK: - Dependencies
 
@@ -74,6 +81,42 @@ public class CoverageConverter {
         )
     }
 
+    /// Runs xccov and xcresulttool concurrently.
+    /// If the coverage report fails to load or a requested target doesn't exist,
+    /// the runs still in progress are terminated.
+    package convenience init(
+        loadingConcurrently url: URL,
+        projectRoot: String = "",
+        coverageTargets: [String] = [],
+        excludedPaths: [String] = [],
+        strictPathnames: Bool
+    ) async throws {
+        async let fetchedReport = try await XCCovClient().coverageReport(path: url)
+        async let fetchedStartTime = try? await XCResultToolClient().testSummary(path: url).startTime
+        async let fetchedData = try await XCCovClient().coverageData(path: url)
+
+        let report: CoverageReport
+        do {
+            report = try await fetchedReport
+        } catch {
+            throw CoverageConverterError.couldNotLoadCoverageReport
+        }
+        // Report unknown targets before waiting for the other runs, as the synchronous initialiser does.
+        _ = try CoverageConverter.selectCoverageTargets(coverageTargets, in: report)
+        let startTime = await fetchedStartTime
+        let data = try await fetchedData
+        try self.init(
+            with: url,
+            projectRoot: projectRoot,
+            coverageTargets: coverageTargets,
+            excludedPaths: excludedPaths,
+            strictPathnames: strictPathnames,
+            xcResultToolClient: XCResultToolClient(),
+            xcCovClient: XCCovClient(),
+            prefetchedInputs: PrefetchedCoverageInputs(report: report, startTime: startTime, data: data)
+        )
+    }
+
     init(
         with url: URL,
         projectRoot: String = "",
@@ -81,13 +124,18 @@ public class CoverageConverter {
         excludedPaths: [String] = [],
         strictPathnames: Bool,
         xcResultToolClient: XCResultToolProviding,
-        xcCovClient: XCCovProviding
+        xcCovClient: XCCovProviding,
+        prefetchedInputs: PrefetchedCoverageInputs? = nil
     ) throws {
         let report: CoverageReport
-        do {
-            report = try xcCovClient.getCoverageReport(path: url)
-        } catch {
-            throw CoverageConverterError.couldNotLoadCoverageReport
+        if let prefetchedInputs {
+            report = prefetchedInputs.report
+        } else {
+            do {
+                report = try xcCovClient.getCoverageReport(path: url)
+            } catch {
+                throw CoverageConverterError.couldNotLoadCoverageReport
+            }
         }
 
         self.xcresultToolClient = xcResultToolClient
@@ -96,18 +144,8 @@ public class CoverageConverter {
         coverageReport = report
         self.projectRoot = projectRoot
         self.strictPathnames = projectRoot.isEmpty ? false : strictPathnames
-        let targetSelection = CoverageTargetSelection(
-            with: coverageTargets,
-            from: report.targets.map(\.name)
-        )
-        let selectedCoverageTargets = targetSelection.selectedTargets
+        let selectedCoverageTargets = try CoverageConverter.selectCoverageTargets(coverageTargets, in: report)
         self.coverageTargets = selectedCoverageTargets
-        if !targetSelection.unmatchedRequested.isEmpty {
-            throw CoverageConverterError.unknownCoverageTargets(
-                requested: targetSelection.unmatchedRequested.sorted(),
-                available: targetSelection.availableTargets.sorted()
-            )
-        }
         let includedTargetFiles = report.targets
             .filter { selectedCoverageTargets.contains($0.name) }
             .flatMap { $0.files.map(\.path) }
@@ -116,11 +154,24 @@ public class CoverageConverter {
             projectRoot: projectRoot
         )
         self.excludedPaths = Set(excludedPaths)
-        startTime = if let summary = try? xcResultToolClient.getTestSummary(path: url) {
-            summary.startTime
+        if let prefetchedInputs {
+            startTime = prefetchedInputs.startTime
+            prefetchedCoverage = prefetchedInputs.data
         } else {
-            nil
+            startTime = try? xcResultToolClient.getTestSummary(path: url).startTime
+            prefetchedCoverage = nil
         }
+    }
+
+    static func selectCoverageTargets(_ targets: [String], in report: CoverageReport) throws -> Set<String> {
+        let selection = CoverageTargetSelection(with: targets, from: report.targets.map(\.name))
+        if !selection.unmatchedRequested.isEmpty {
+            throw CoverageConverterError.unknownCoverageTargets(
+                requested: selection.unmatchedRequested.sorted(),
+                available: selection.availableTargets.sorted()
+            )
+        }
+        return selection.selectedTargets
     }
 
     public func xmlString(quiet: Bool) throws -> String {
@@ -159,7 +210,10 @@ public class CoverageConverter {
 
     // Use the xccov commandline tool to get results as JSON.
     func getCoverageDataAsJSON() throws -> FileCoverage {
-        try xccovClient.getCoverageData(path: resultFileURL)
+        if let prefetchedCoverage {
+            return prefetchedCoverage
+        }
+        return try xccovClient.getCoverageData(path: resultFileURL)
     }
 
     func isTargetIncluded(forFile file: String) -> Bool {

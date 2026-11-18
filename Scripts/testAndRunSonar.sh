@@ -60,11 +60,11 @@ if [ ! -d "$path_to_xcresults" ]; then
 	/usr/bin/xcrun xcodebuild clean test -workspace .swiftpm/xcode/package.xcworkspace -scheme xcresultparser -destination "platform=macOS" -resultBundlePath "$path_to_xcresults"
 fi
 
-app_project_version=$(grep 'marketingVersion =' CommandlineTool/main.swift | cut -d "=" -f2 | xargs)
+app_project_version=$(grep 'marketingVersion =' CommandlineTool/XcresultparserCommand.swift | cut -d "=" -f2 | xargs)
 
 if [ -d "$path_to_xcresults" ]
 then
-	sh runSonar.sh \
+	sh "$(dirname "$0")/runSonar.sh" \
 	-s $sonarqube_host_url \
 	-p $sonarqube_login_token \
 	-k $sonarqube_project_key \
