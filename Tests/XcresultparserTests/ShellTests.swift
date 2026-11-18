@@ -4,35 +4,49 @@ import Testing
 
 struct ShellTests {
     // Catches executeCancellable leaving the program running after its task is cancelled.
+    // The test doesn't measure time: on a busy CI runner the other tests can keep this one from
+    // resuming for a long time. Instead the program records that it received SIGTERM.
     @Test
     func testExecuteCancellableTerminatesTheProgramWhenCancelled() async throws {
-        let marker = FileManager.default.temporaryDirectory
-            .appendingPathComponent("xcresultparser-shell-\(UUID().uuidString)")
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("xcresultparser-shell-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer {
-            try? FileManager.default.removeItem(at: marker)
+            try? FileManager.default.removeItem(at: directory)
         }
-        let start = Date()
+        let startedMarker = directory.appendingPathComponent("started")
+        let terminatedMarker = directory.appendingPathComponent("terminated")
+        // On SIGTERM: record it, stop sleep and exit. Without SIGTERM the script exits after 60 s
+        // without writing the terminated marker. sleep writes to /dev/null, so that only the
+        // script holds the output pipe open.
+        let script = """
+        trap 'touch "$1"; kill "$pid" 2>/dev/null; exit 143' TERM
+        /bin/sleep 60 >/dev/null 2>&1 &
+        pid=$!
+        touch "$0"
+        wait "$pid"
+        """
         let run = Task {
             try await Shell().executeCancellable(
                 program: "/bin/sh",
-                with: ["-c", "touch \"$0\" && exec /bin/sleep 60", marker.path],
+                with: ["-c", script, startedMarker.path, terminatedMarker.path],
                 at: nil
             )
         }
 
-        // Cancel once the program is running, so that only terminating it can end the call early.
+        // Cancel once the script is running and its trap is set.
         // Task.sleep(for:) needs macOS 13; the package supports macOS 12.
-        while !FileManager.default.fileExists(atPath: marker.path), Date().timeIntervalSince(start) < 10 {
-            try await Task.sleep(nanoseconds: 10000000)
+        let deadline = Date().addingTimeInterval(60)
+        while !FileManager.default.fileExists(atPath: startedMarker.path), Date() < deadline {
+            try await Task.sleep(nanoseconds: 10_000_000)
         }
-        let started = FileManager.default.fileExists(atPath: marker.path)
+        let started = FileManager.default.fileExists(atPath: startedMarker.path)
         run.cancel()
 
         #expect(started)
         await #expect(throws: CancellationError.self) {
             try await run.value
         }
-        // Without termination the call only returns once sleep exits after 60 s.
-        #expect(Date().timeIntervalSince(start) < 30)
+        #expect(FileManager.default.fileExists(atPath: terminatedMarker.path))
     }
 }
