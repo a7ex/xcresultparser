@@ -131,5 +131,25 @@
 --xcode-indentation disabled
 --xctest-symbols 
 --yoda-swap always
---disable docComments,docCommentsBeforeModifiers,fileHeader,opaqueGenericParameters,preferKeyPath,redundantReturn,trailingCommas,wrapMultilineStatementBraces
---enable isEmpty,privateStateVariables,propertyTypes,unusedPrivateDeclarations
+--test-case-name-format preserve
+
+--disable redundantMemberwiseInit # sollten wir mal AN knipsen
+#--disable redundantProperty
+--disable conditionalAssignment # sollten wir mal AN knipsen
+--disable redundantSelf # sollten wir mal AN knipsen
+--disable redundantVariable
+--disable wrapFunctionBodies
+--disable wrapPropertyBodies
+--disable wrapConditionalBodies
+--disable redundantEmptyView
+--disable docComments
+#--disable docCommentsBeforeModifiers
+--disable fileHeader
+--disable opaqueGenericParameters # sollten wir mal AN knipsen
+--disable preferKeyPath # sollten wir mal AN knipsen
+--disable redundantReturn
+--disable trailingCommas
+--disable wrapMultilineStatementBraces
+--disable wrapIfStatementBodies
+
+--enable isEmpty,privateStateVariables # ,propertyTypes,unusedPrivateDeclarations
