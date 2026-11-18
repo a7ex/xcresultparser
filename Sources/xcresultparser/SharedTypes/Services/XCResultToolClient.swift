@@ -39,7 +39,13 @@ struct XCResultToolClient: XCResultToolProviding {
     }
 
     func getTestSummary(path: URL) throws -> XCSummary {
-        let data = try execute(arguments: ["get", "test-results", "summary", "--path", path.path])
+        let data = try execute(arguments: testSummaryArguments(for: path))
+        return try decode(XCSummary.self, from: data)
+    }
+
+    /// Like `getTestSummary(path:)`, but terminates xcresulttool if the task is cancelled.
+    func testSummary(path: URL) async throws -> XCSummary {
+        let data = try await executeCancellable(arguments: testSummaryArguments(for: path))
         return try decode(XCSummary.self, from: data)
     }
 
@@ -81,8 +87,16 @@ struct XCResultToolClient: XCResultToolProviding {
         throw ToolClientError.invalidUTF8
     }
 
+    private func testSummaryArguments(for path: URL) -> [String] {
+        ["get", "test-results", "summary", "--path", path.path]
+    }
+
     private func execute(arguments: [String]) throws -> Data {
         try shell.execute(program: "/usr/bin/xcrun", with: ["xcresulttool"] + arguments)
+    }
+
+    private func executeCancellable(arguments: [String]) async throws -> Data {
+        try await shell.executeCancellable(program: "/usr/bin/xcrun", with: ["xcresulttool"] + arguments, at: nil)
     }
 
     private func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version 2.2.1 - 2026-11-18
+### CHANGES:
+- Speed up `cobertura` output on large result bundles: each package's line rate is now computed in one pass instead of rescanning every file per package.
+- For `cobertura` output, the command line tool now runs the `xccov` and `xcresulttool` calls concurrently. If the coverage report fails to load or a requested coverage target doesn't exist, the calls still running are stopped.
+- The command line tool now uses an async `@main` entry point, so `CommandlineTool/main.swift` is now `CommandlineTool/XcresultparserCommand.swift`.
+
 ## Version 2.2.0 - 2026-07-18
 ### FIXES:
 - Fix issue #69: use canonical Xcode test identifiers instead of Swift Testing suite display names when resolving SonarQube test file paths.

@@ -508,6 +508,45 @@ struct XcresultparserTests {
         }
     }
 
+    // Catches the async initialiser dropping an argument or the concurrently fetched start time.
+    @Test
+    func testCoberturaConverterLoadingConcurrently() async throws {
+        let xcresultFile = try #require(Bundle.module.url(forResource: "test", withExtension: "xcresult"))
+
+        let converter = try await CoberturaCoverageConverter(
+            loadingConcurrently: xcresultFile,
+            projectRoot: "",
+            excludedPaths: ["OutputFormatting/Formatters"],
+            strictPathnames: false
+        )
+        try assertXmlTestReportsAreEqual(expectedFileName: "coberturaExcludingDirectory", actual: converter)
+    }
+
+    // Catches the async initialiser reporting an unknown target as a report loading failure.
+    @Test
+    func testCoberturaConverterLoadingConcurrentlyRejectsUnknownTargets() async throws {
+        let xcresultFile = try #require(Bundle.module.url(forResource: "test", withExtension: "xcresult"))
+
+        do {
+            _ = try await CoberturaCoverageConverter(
+                loadingConcurrently: xcresultFile,
+                projectRoot: "",
+                coverageTargets: ["NonExistingTarget"],
+                strictPathnames: false
+            )
+            Issue.record("Expected unknown coverage target error")
+        } catch let error as CoverageConverterError {
+            switch error {
+            case let .unknownCoverageTargets(requested, _):
+                #expect(requested == ["NonExistingTarget"])
+            case .couldNotLoadCoverageReport, .notImplemented:
+                Issue.record("Unexpected error: \(error)")
+            }
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+    }
+
     @Test
     func testCoverageConverterNormalizesTargetFilePaths() {
         let projectRoot = "/Users/demo/project"

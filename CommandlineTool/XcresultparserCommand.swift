@@ -1,5 +1,5 @@
 //
-//  main.swift
+//  XcresultparserCommand.swift
 //  xcresultparser
 //
 //  Created by Alex da Franca on 11.06.21.
@@ -9,9 +9,10 @@ import ArgumentParser
 import Foundation
 import XcresultparserLib
 
-private let marketingVersion = "2.2.0"
+private let marketingVersion = "2.2.1"
 
-struct xcresultparser: ParsableCommand {
+@main
+struct xcresultparser: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "xcresultparser \(marketingVersion)\nInterpret binary .xcresult files and print summary in different formats: txt, xml, html or colored cli output."
     )
@@ -58,7 +59,7 @@ struct xcresultparser: ParsableCommand {
     @Argument(help: "The path to the .xcresult file.")
     var xcresultFile: String?
 
-    mutating func run() throws {
+    mutating func run() async throws {
         guard version != 1 else {
             print(marketingVersion)
             return
@@ -82,7 +83,7 @@ struct xcresultparser: ParsableCommand {
             try outputJUnitXML(for: xcresult, with: .junit)
         case .cobertura:
             coverage = 1
-            try outputCoberturaXML(for: xcresult)
+            try await outputCoberturaXML(for: xcresult)
         case .cli, .md, .txt, .html, .github:
             try outputDescription(for: xcresult)
         case .warnings, .errors, .warningsAndErrors:
@@ -102,9 +103,9 @@ struct xcresultparser: ParsableCommand {
         writeToStdOut(rslt)
     }
 
-    private func outputCoberturaXML(for xcresult: String) throws {
-        let converter = try CoberturaCoverageConverter(
-            with: URL(fileURLWithPath: xcresult),
+    private func outputCoberturaXML(for xcresult: String) async throws {
+        let converter = try await CoberturaCoverageConverter(
+            loadingConcurrently: URL(fileURLWithPath: xcresult),
             projectRoot: projectRoot ?? "",
             coverageTargets: coverageTargets,
             excludedPaths: excludedPaths,
@@ -193,5 +194,3 @@ struct xcresultparser: ParsableCommand {
 enum ParseError: Error {
     case argumentError
 }
-
-xcresultparser.main()

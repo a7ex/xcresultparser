@@ -9,11 +9,19 @@ import Foundation
 
 protocol Commandline {
     func execute(program: String, with arguments: [String], at executionPath: URL?) throws -> Data
+
+    /// Like `execute(program:with:at:)`, but terminates the program if the calling task is cancelled.
+    func executeCancellable(program: String, with arguments: [String], at executionPath: URL?) async throws -> Data
 }
 
 extension Commandline {
     func execute(program: String, with arguments: [String]) throws -> Data {
         return try execute(program: program, with: arguments, at: nil)
+    }
+
+    /// Test doubles have no process to terminate.
+    func executeCancellable(program: String, with arguments: [String], at executionPath: URL?) async throws -> Data {
+        try execute(program: program, with: arguments, at: executionPath)
     }
 }
 
@@ -52,6 +60,46 @@ struct Shell: Commandline {
                 return data
             }
         }
+    }
+
+    func executeCancellable(
+        program: String,
+        with arguments: [String],
+        at executionPath: URL? = nil
+    ) async throws -> Data {
+        try Task.checkCancellation()
+        let process = Process()
+        if let directoryUrl = executionPath {
+            process.currentDirectoryURL = directoryUrl
+        }
+        process.executableURL = URL(fileURLWithPath: program)
+        process.arguments = arguments
+        let errorPipe = Pipe()
+        process.standardError = errorPipe
+        let outPipe = Pipe()
+        process.standardOutput = outPipe
+        defer {
+            try? outPipe.fileHandleForReading.close()
+            try? errorPipe.fileHandleForReading.close()
+        }
+        try process.run()
+        // Terminating the program closes its end of the pipe, which ends the blocking read.
+        let data = await withTaskCancellationHandler {
+            autoreleasepool {
+                outPipe.fileHandleForReading.readDataToEndOfFile()
+            }
+        } onCancel: {
+            process.terminate()
+        }
+        process.waitUntilExit()
+        try Task.checkCancellation()
+        let status = process.terminationStatus
+        if status != 0 {
+            let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+            let errorMessage = String(decoding: errorData, as: UTF8.self)
+            throw CLIError.executionError(code: Int(status), message: errorMessage)
+        }
+        return data
     }
 
     enum CLIError: Error {

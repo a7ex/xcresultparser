@@ -70,6 +70,52 @@ struct CoverageAndFormatterDependencyTests {
         }
     }
 
+    // Catches the converter ignoring prefetched inputs and running xccov or xcresulttool again.
+    @Test
+    func testCoberturaConverterUsesPrefetchedInputsInsteadOfRunningTheTools() throws {
+        let xcresultClient = StubXCResultToolClient()
+        xcresultClient.getTestSummaryHandler = { _ in try TestModelFactory.summary(startTime: 1) }
+        let report = CoverageReport(
+            coveredLines: 1,
+            executableLines: 1,
+            lineCoverage: 1,
+            targets: [
+                CoverageTarget(
+                    name: "App",
+                    lineCoverage: 1,
+                    executableLines: 1,
+                    coveredLines: 1,
+                    files: [
+                        CoverageReportFile(
+                            name: "Foo.swift",
+                            path: "/tmp/Foo.swift",
+                            lineCoverage: 1,
+                            executableLines: 1,
+                            coveredLines: 1,
+                            functions: []
+                        )
+                    ]
+                )
+            ]
+        )
+        let lineCoverage = try JSONDecoder().decode(
+            FileCoverage.self,
+            from: Data(#"{"/tmp/Foo.swift": [{"isExecutable": true, "line": 1, "executionCount": 2}]}"#.utf8)
+        )
+
+        let converter = try CoberturaCoverageConverter(
+            with: URL(fileURLWithPath: "/tmp/fake.xcresult"),
+            strictPathnames: false,
+            xcResultToolClient: xcresultClient,
+            xcCovClient: StubXCCovClient(),
+            prefetchedInputs: PrefetchedCoverageInputs(report: report, startTime: 42, data: lineCoverage)
+        )
+        let xml = try converter.xmlString(quiet: true)
+
+        #expect(xml.contains(#"timestamp="42.0""#))
+        #expect(xml.contains(#"<line number="1" branch="false" hits="2"/>"#))
+    }
+
     @Test
     func testFormatterCanInitializeWithoutCoverageReportIfNoCoverageFilterRequested() throws {
         let xcresultClient = StubXCResultToolClient()
