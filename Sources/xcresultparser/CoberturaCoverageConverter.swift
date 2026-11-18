@@ -96,6 +96,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
         }
         // Sort files to avoid duplicated packages
         fileInfo.sort { $0.path > $1.path }
+        let packageLineCoverage = calculatePackageLineCoverage(in: fileInfo)
 
         var currentPackage = ""
         var currentPackageElement: XMLElement!
@@ -117,9 +118,9 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
 
             currentPackage = packageName
             if isNewPackage {
-                let packageLineCoverage = calculatePackageLineCoverage(for: packageName, in: fileInfo)
+                let lineCoverage = packageLineCoverage[packageName] ?? 0.0
                 currentPackageElement.addAttribute(XMLNode.nodeAttribute(withName: "name", stringValue: packageName))
-                currentPackageElement.addAttribute(XMLNode.nodeAttribute(withName: "line-rate", stringValue: "\(packageLineCoverage)"))
+                currentPackageElement.addAttribute(XMLNode.nodeAttribute(withName: "line-rate", stringValue: "\(lineCoverage)"))
                 currentPackageElement.addAttribute(XMLNode.nodeAttribute(withName: "branch-rate", stringValue: "1.0"))
                 currentPackageElement.addAttribute(XMLNode.nodeAttribute(withName: "complexity", stringValue: "0.0"))
                 currentClassesElement = XMLElement(name: "classes")
@@ -199,21 +200,18 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
         return "\(packageName).\(baseName)"
     }
 
-    private func calculatePackageLineCoverage(for packageName: String, in fileInfoArray: [FileInfo]) -> Float {
-        let packageFiles = fileInfoArray.filter { file in
+    private func calculatePackageLineCoverage(in fileInfoArray: [FileInfo]) -> [String: Float] {
+        var packageCounts = [String: (total: Int, covered: Int)]()
+        for file in fileInfoArray {
             let pathComponents = file.path.split(separator: "/")
-            let filePackageName = createValidPackageName(from: pathComponents)
-            return filePackageName == packageName
+            let packageName = createValidPackageName(from: pathComponents)
+            packageCounts[packageName, default: (0, 0)].total += file.lines.count
+            packageCounts[packageName, default: (0, 0)].covered += file.lines.count(where: { $0.coverage > 0 })
         }
 
-        guard !packageFiles.isEmpty else { return 0.0 }
-
-        let totalLines = packageFiles.reduce(0) { $0 + $1.lines.count }
-        let coveredLines = packageFiles.reduce(0) { total, file in
-            total + file.lines.count(where: { $0.coverage > 0 })
+        return packageCounts.mapValues { counts in
+            counts.total > 0 ? Float(counts.covered) / Float(counts.total) : 0.0
         }
-
-        return totalLines > 0 ? Float(coveredLines) / Float(totalLines) : 0.0
     }
 
     private var dtd04 = """
