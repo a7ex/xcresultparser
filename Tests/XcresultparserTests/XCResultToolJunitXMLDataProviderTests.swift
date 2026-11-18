@@ -1,6 +1,7 @@
 import Foundation
-@testable import XcresultparserLib
 import Testing
+@testable import XcresultparserLib
+
 // swiftlint:disable function_body_length
 @MainActor
 struct XCResultToolJunitXMLDataProviderTests {
@@ -567,6 +568,7 @@ struct XCResultToolJunitXMLDataProviderTests {
         #expect(expectedFailureTest.isFailed == false)
         #expect(expectedFailureTest.isSkipped == false)
     }
+
     @Test
     func testProviderDetectsSessionLevelFailures() throws {
         let summaryJSON = """
@@ -768,7 +770,8 @@ struct XCResultToolJunitXMLDataProviderTests {
         #expect(provider.sessionLevelFailures.isEmpty)
     }
 }
-    // swiftlint:enable function_body_length
+
+// swiftlint:enable function_body_length
 
 private final class LookupShell: Commandline {
     let responses: [String: Result<Data, Error>]
@@ -784,9 +787,9 @@ private final class LookupShell: Commandline {
             throw NSError(domain: "missing_response", code: 1)
         }
         switch response {
-        case .success(let data):
+        case let .success(data):
             return data
-        case .failure(let error):
+        case let .failure(error):
             throw error
         }
     }

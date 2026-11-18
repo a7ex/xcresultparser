@@ -1,7 +1,7 @@
 // swiftlint:disable file_length
 import Foundation
-@testable import XcresultparserLib
 import Testing
+@testable import XcresultparserLib
 
 // swiftlint:disable:next type_body_length
 struct XcresultparserTests {
@@ -49,7 +49,7 @@ struct XcresultparserTests {
             coverageTargets: [],
             coverageReportFormat: .totals
         )
-        #expect("" == resultParser.documentPrefix(title: "XCResults"))
+        #expect(resultParser.documentPrefix(title: "XCResults") == "")
 
         let expectedSummary = """
         Summary
@@ -295,8 +295,8 @@ struct XcresultparserTests {
         #expect(fileCoverage.files.count == 13)
         let firstKey = try #require(fileCoverage.files.keys.sorted().first)
         #expect(
-            "/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/CoberturaCoverageConverter.swift" ==
-            firstKey
+            firstKey ==
+                "/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/CoberturaCoverageConverter.swift"
         )
         let firstItem = try #require(fileCoverage.files[firstKey])
         #expect(firstItem.count == 199)
@@ -340,7 +340,6 @@ struct XcresultparserTests {
         } else {
             #expect(xml.contains("/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/OutputFormatting/Formatters/CLI/CLIResultFormatter.swift"))
         }
-
     }
 
     @Test(arguments: [true, false])
@@ -741,7 +740,7 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testFailureSummariesReturnsAllMatchingFailures() throws {
+    func testFailureSummariesReturnsAllMatchingFailures() {
         let test = makeJunitTest()
 
         let matchingFailure1 = makeJunitFailureSummary(
@@ -765,7 +764,7 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testFailureSummariesWithBracketNotation() throws {
+    func testFailureSummariesWithBracketNotation() {
         let test = makeJunitTest()
 
         // Objective-C bracket notation: -[TestClass testMethod]
@@ -786,7 +785,7 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testFailureSummariesReturnsEmptyForNoMatches() throws {
+    func testFailureSummariesReturnsEmptyForNoMatches() {
         let test = makeJunitTest()
         let nonMatchingFailure = makeJunitFailureSummary(
             testCaseName: "OtherClass.otherMethod",
@@ -799,7 +798,7 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testFailureSummariesWithEmptyArray() throws {
+    func testFailureSummariesWithEmptyArray() {
         let test = makeJunitTest()
 
         let result = test.failureSummaries(in: [])
@@ -1318,7 +1317,6 @@ struct XcresultparserTests {
             options: .regularExpression
         )
     }
-
 }
 
 class MockedShell: Commandline {

@@ -1,6 +1,6 @@
 import Foundation
-@testable import XcresultparserLib
 import Testing
+@testable import XcresultparserLib
 
 // Tests for detecting "flaky"/"mixed" tests: a test that failed on a first
 // attempt but passed on retry. The per-repetition results live in the
