@@ -20,6 +20,10 @@ let package = Package(
         .package(
             url: "https://github.com/apple/swift-argument-parser.git",
             from: "1.8.0"
+        ),
+        .package(
+            url: "https://github.com/SimplyDanny/SwiftLintPlugins",
+            from: "0.65.0"
         )
     ],
     targets: [
@@ -36,8 +40,13 @@ let package = Package(
                     package: "swift-argument-parser"
                 ),
             ],
-            path: "Sources"
-//            plugins: [.plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLint")]
+            path: "Sources",
+            plugins: [
+                .plugin(
+                    name: "SwiftLintBuildToolPlugin",
+                    package: "SwiftLintPlugins"
+                )
+            ]
         ),
         .testTarget(
             name: "XcresultparserTests",
@@ -60,6 +69,12 @@ let package = Package(
                 .copy("TestAssets/session_level_failure.xcresult"),
                 .copy("TestAssets/junit_session_level_failure.xml"),
                 .copy("TestAssets/Test-FlakyFixture.xcresult")
+            ],
+            plugins: [
+                .plugin(
+                    name: "SwiftLintBuildToolPlugin",
+                    package: "SwiftLintPlugins"
+                )
             ]
         )
     ]

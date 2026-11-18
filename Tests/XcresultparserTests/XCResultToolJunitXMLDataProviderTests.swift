@@ -1,7 +1,7 @@
 import Foundation
 @testable import XcresultparserLib
 import Testing
-
+// swiftlint:disable function_body_length
 @MainActor
 struct XCResultToolJunitXMLDataProviderTests {
     @Test
@@ -768,6 +768,7 @@ struct XCResultToolJunitXMLDataProviderTests {
         #expect(provider.sessionLevelFailures.isEmpty)
     }
 }
+    // swiftlint:enable function_body_length
 
 private final class LookupShell: Commandline {
     let responses: [String: Result<Data, Error>]

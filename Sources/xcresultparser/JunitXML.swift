@@ -184,9 +184,7 @@ public struct JunitXML: XmlSerializable {
         testDirectory: String = ""
     ) -> [XMLElement] {
         guard group.identifierString.hasSuffix(".xctest") || group.subtestGroups.isEmpty else {
-            return group.subtestGroups.reduce([XMLElement]()) {
-                rslt,
-                    subGroup in
+            return group.subtestGroups.reduce([XMLElement]()) { rslt, subGroup in
                 return rslt + createTestSuite(
                     subGroup,
                     failureSummaries: failureSummaries,

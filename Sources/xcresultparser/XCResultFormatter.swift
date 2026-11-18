@@ -190,6 +190,7 @@ public struct XCResultFormatter {
 
     // MARK: - Private API
 
+// swiftlint:disable:next function_body_length
     private func createSummary() -> [String] {
         let analyzerWarningCount = buildResults.analyzerWarningCount
         let errorCount = buildResults.errorCount

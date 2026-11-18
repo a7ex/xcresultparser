@@ -1,7 +1,9 @@
+// swiftlint:disable file_length
 import Foundation
 @testable import XcresultparserLib
 import Testing
 
+// swiftlint:disable:next type_body_length
 struct XcresultparserTests {
     @Test
     func testTextResultFormatter() throws {
@@ -724,12 +726,18 @@ struct XcresultparserTests {
         let document = try XMLDocument(xmlString: xmlString)
         let testCases = try document.nodes(forXPath: "//testCase")
         #expect(testCases.count == 2)
-        // Both tests ran for less than a millisecond; Sonar durations are rounded up to 1 ms.
+        // Durations recorded in the fixture, in milliseconds. passingTest() ran for less than
+        // a millisecond, which Sonar output rounds up to 1 ms.
         // Missing durations (reported as "0") are covered in XCResultToolJunitXMLDataProviderTests.
-        for testCase in testCases {
-            let duration = (testCase as? XMLElement)?.attribute(forName: "duration")?.stringValue
-            #expect(duration == "1")
-        }
+        let durations = Dictionary(uniqueKeysWithValues: testCases.compactMap { node -> (String, String)? in
+            guard let element = node as? XMLElement,
+                  let name = element.attribute(forName: "name")?.stringValue,
+                  let duration = element.attribute(forName: "duration")?.stringValue else {
+                return nil
+            }
+            return (name, duration)
+        })
+        #expect(durations == ["passingTest()": "1", "triggerSessionLevelFailure()": "2"])
     }
 
     @Test
@@ -806,7 +814,7 @@ struct XcresultparserTests {
         let rslt = try converter.jsonString(format: .warnings, quiet: true)
         let result = try JSONDecoder().decode([XcresultparserLib.Issue].self, from: Data(rslt.utf8))
 
-        let expectedFile = Bundle.module.url(forResource: "warnings", withExtension: "json")!
+        let expectedFile = try #require(Bundle.module.url(forResource: "warnings", withExtension: "json"))
         let expectedData = try Data(contentsOf: expectedFile)
         let expectedObject = try JSONDecoder().decode([XcresultparserLib.Issue].self, from: expectedData)
 
@@ -834,7 +842,7 @@ struct XcresultparserTests {
         let converter = try IssuesJSON(with: xcresultFile, excludedPaths: ["Tests/XcresultparserTests"])
         let rslt = try converter.jsonString(format: .warnings, quiet: true)
         let result = try JSONDecoder().decode([XcresultparserLib.Issue].self, from: Data(rslt.utf8))
-        #expect(result.count == 0)
+        #expect(result.isEmpty)
     }
 
     @Test
@@ -861,7 +869,7 @@ struct XcresultparserTests {
         #expect(compileError.location.path.contains("Sources/xcresultparser/CoberturaCoverageConverter.swift"))
         #expect(compileError.type == .issue)
         #expect(compileError.content.body == "Swift Compiler Error • Cannot find 'xmlString1' in scope")
-        #expect(compileError.categories.count == 0)
+        #expect(compileError.categories.isEmpty)
     }
 
     @Test
@@ -1287,7 +1295,7 @@ struct XcresultparserTests {
         file: StaticString = #filePath,
         line: UInt = #line
     ) throws {
-        let expectedResultFile = Bundle.module.url(forResource: expectedFileName, withExtension: "xml")!
+        let expectedResultFile = try #require(Bundle.module.url(forResource: expectedFileName, withExtension: "xml"))
 
         let actualXMLDocument = try XMLDocument(data: Data("\(actual.xmlString)\n".utf8), options: [])
         let expectedXMLDocument = try XMLDocument(contentsOf: expectedResultFile, options: [])
