@@ -65,7 +65,7 @@ swift build -c release --arch arm64 --arch x86_64
 if [ ! -d product ]; then
     mkdir product
 fi
-cp ".build/apple/Products/Release/$productName" "product/$productName"
+cp ".build/out/Products/Release/$productName" "product/$productName"
 
 # Now codesign the app with hardening (-o)
 codesign --sign "$teamId" -o runtime "product/$productName"
