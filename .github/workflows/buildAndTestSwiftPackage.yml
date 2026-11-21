@@ -3,8 +3,8 @@ name: Swift
 on:
   push:
     branches: [ main ]
+  # Every pull request, including ones stacked on another pull request's branch.
   pull_request:
-    branches: [ main ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
