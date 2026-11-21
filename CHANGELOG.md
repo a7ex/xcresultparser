@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - For `cobertura` output, the command line tool now runs the `xccov` and `xcresulttool` calls concurrently. If the coverage report fails to load or a requested coverage target doesn't exist, the calls still running are stopped.
 - The command line tool now uses an async `@main` entry point, so `CommandlineTool/main.swift` is now `CommandlineTool/XcresultparserCommand.swift`.
 
+Thanks to [Brett Best](https://github.com/Brett-Best) for the speed improvements to the Cobertura converter (#71)!
+
 ## Version 2.2.0 - 2026-07-18
 ### FIXES:
 - Fix issue #69: use canonical Xcode test identifiers instead of Swift Testing suite display names when resolving SonarQube test file paths.
