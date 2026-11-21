@@ -26,6 +26,7 @@ let swiftSettings: [SwiftSetting] = [
     .enableUpcomingFeature("MemberImportVisibility"), /// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0444-member-import-visibility.md
     .enableUpcomingFeature("InferIsolatedConformances"), /// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0470-isolated-conformances.md
     .enableUpcomingFeature("NonisolatedNonsendingByDefault"), /// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0461-async-function-isolation.md
+    .enableUpcomingFeature("ImmutableWeakCaptures"), /// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0481-weak-let.md
 ]
 
 let package = Package(
