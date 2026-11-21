@@ -4,7 +4,7 @@
 //  Created by Alex da Franca on 22.05.24.
 //
 
-import Foundation
+public import Foundation
 
 /// Output some infos about warnings and issues
 ///

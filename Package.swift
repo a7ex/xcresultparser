@@ -22,6 +22,7 @@ let swiftLintPlugins: [Target.PluginUsage] = lintOnBuild ? [
 
 let swiftSettings: [SwiftSetting] = [
     .enableUpcomingFeature("ExistentialAny"), /// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0335-existential-any.md
+    .enableUpcomingFeature("InternalImportsByDefault"), /// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0409-access-level-on-imports.md
 ]
 
 let package = Package(

@@ -5,7 +5,7 @@
 //  Created by Alex da Franca on 10.06.21.
 //
 
-import Foundation
+public import Foundation
 import Synchronization
 
 public enum TestReportFormat {

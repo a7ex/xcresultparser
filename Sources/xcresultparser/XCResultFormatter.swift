@@ -5,7 +5,7 @@
 //  Created by Alex da Franca on 31.05.21.
 //
 
-import Foundation
+public import Foundation
 
 public struct XCResultFormatter {
     private enum SummaryField: String {

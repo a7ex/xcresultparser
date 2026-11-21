@@ -5,7 +5,7 @@
 //  Created by Alex da Franca on 11.06.21.
 //
 
-import Foundation
+public import Foundation
 
 struct PrefetchedCoverageInputs {
     let report: CoverageReport
