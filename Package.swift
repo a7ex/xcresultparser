@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.2
 import PackageDescription
 
 // SwiftLint runs as a build tool plugin during local development only.
@@ -23,7 +23,7 @@ let swiftLintPlugins: [Target.PluginUsage] = lintOnBuild ? [
 let package = Package(
     name: "Xcresultparser",
     platforms: [
-        .macOS(.v12),
+        .macOS(.v15),
     ],
     products: [
         .executable(

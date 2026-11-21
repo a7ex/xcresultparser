@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Synchronization
 
 public enum TestReportFormat {
     case junit, sonar
@@ -414,8 +415,7 @@ extension JunitTest {
 }
 
 private extension JunitTestGroup {
-    private static let cacheLock = NSLock()
-    private static var cachedPathnames = [String: String]()
+    private static let cachedPathnames = Mutex<[String: String]>([:])
 
     struct TestMetrics {
         let tests: Int
@@ -453,18 +453,14 @@ private extension JunitTestGroup {
 
     // only used in unit testing
     static func resetCachedPathnames() {
-        cacheLock.lock()
-        defer { cacheLock.unlock() }
-        cachedPathnames.removeAll()
+        cachedPathnames.withLock { $0.removeAll() }
     }
 
     static func resolvePathFromCachedClassMap(for fileName: String) -> String? {
         guard !fileName.contains("/") else {
             return fileName
         }
-        cacheLock.lock()
-        defer { cacheLock.unlock() }
-        let candidates = cachedPathnames.values.filter { $0.hasSuffix("/\(fileName)") || $0 == fileName }
+        let candidates = cachedPathnames.withLock { $0.values.filter { $0.hasSuffix("/\(fileName)") || $0 == fileName } }
         guard !candidates.isEmpty else {
             return nil
         }
@@ -479,15 +475,20 @@ private extension JunitTestGroup {
         guard let projectRootUrl else {
             return identifierString
         }
-        Self.cacheLock.lock()
-        defer { Self.cacheLock.unlock() }
-        if Self.cachedPathnames.isEmpty {
-            cacheAllClassNames(in: projectRootUrl, relativePathNames: relativePathNames, shell: shell)
+        return Self.cachedPathnames.withLock { cache in
+            if cache.isEmpty {
+                Self.cacheAllClassNames(in: projectRootUrl, relativePathNames: relativePathNames, shell: shell, into: &cache)
+            }
+            return cache[identifierString] ?? identifierString
         }
-        return Self.cachedPathnames[identifierString] ?? identifierString
     }
 
-    private func cacheAllClassNames(in projectRootUrl: URL, relativePathNames: Bool = true, shell: Commandline) {
+    private static func cacheAllClassNames(
+        in projectRootUrl: URL,
+        relativePathNames: Bool,
+        shell: Commandline,
+        into cache: inout [String: String]
+    ) {
         let program = "/usr/bin/grep"
         let grepPathArgument = relativePathNames ? "." : projectRootUrl.path
         let arguments = [
@@ -516,12 +517,12 @@ private extension JunitTestGroup {
                    .components(separatedBy: .whitespaces)
                    .last,
                !className.isEmpty {
-                if let existingPath = Self.cachedPathnames[className] {
+                if let existingPath = cache[className] {
                     if existingPath.components(separatedBy: "est").count <= path.withoutLocalPrefix.components(separatedBy: "est").count {
-                        Self.cachedPathnames[className] = path.withoutLocalPrefix
+                        cache[className] = path.withoutLocalPrefix
                     }
                 } else {
-                    Self.cachedPathnames[className] = path.withoutLocalPrefix
+                    cache[className] = path.withoutLocalPrefix
                 }
             }
         }

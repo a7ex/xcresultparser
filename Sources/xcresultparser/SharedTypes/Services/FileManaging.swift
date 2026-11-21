@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol FileManaging {
+protocol FileManaging: Sendable {
     func fileExists(atPath path: String, isDirectory: UnsafeMutablePointer<ObjCBool>?) -> Bool
 }
 
