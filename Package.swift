@@ -28,6 +28,7 @@ let swiftSettings: [SwiftSetting] = [
     .enableUpcomingFeature("NonisolatedNonsendingByDefault"), /// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0461-async-function-isolation.md
     .enableUpcomingFeature("ImmutableWeakCaptures"), /// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0481-weak-let.md
     .strictMemorySafety(), /// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0458-strict-memory-safety.md
+    .treatAllWarnings(as: .error) /// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0480-swiftpm-warning-control.md
 ]
 
 let package = Package(
