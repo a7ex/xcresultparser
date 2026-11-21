@@ -10,6 +10,6 @@ import Foundation
 extension Data {
     func md5() -> String {
         let digest = Insecure.MD5.hash(data: self)
-        return digest.map { String(format: "%02hhx", $0) }.joined()
+        return digest.map { unsafe String(format: "%02hhx", $0) }.joined()
     }
 }

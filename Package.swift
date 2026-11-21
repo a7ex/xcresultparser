@@ -27,6 +27,7 @@ let swiftSettings: [SwiftSetting] = [
     .enableUpcomingFeature("InferIsolatedConformances"), /// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0470-isolated-conformances.md
     .enableUpcomingFeature("NonisolatedNonsendingByDefault"), /// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0461-async-function-isolation.md
     .enableUpcomingFeature("ImmutableWeakCaptures"), /// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0481-weak-let.md
+    .strictMemorySafety(), /// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0458-strict-memory-safety.md
 ]
 
 let package = Package(
