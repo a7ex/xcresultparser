@@ -7,7 +7,8 @@
 // - Deployment target: two major macOS versions behind the current release, or the oldest
 //   macOS that GitHub-hosted runners provide, whichever is newer
 //   (currently macOS 27 → macOS 15, which is also the oldest GitHub-hosted runner).
-// CI builds and tests on both macos-26 (newest stable Xcode) and macos-15 (oldest supported Xcode).
+// CI builds and tests on xcode-27 (macOS 27, newest Xcode), macos-26 (newest Xcode 26) and
+// macos-15 (oldest supported Xcode).
 import PackageDescription
 
 // SwiftLint runs as a build tool plugin during local development only.

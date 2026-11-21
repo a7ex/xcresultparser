@@ -5,30 +5,31 @@ on:
     types: [created]
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: xcode-27
+
+    permissions:
+      contents: write
+
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
 
     steps:
     - uses: actions/checkout@v7
     - name: Build
-      run: swift build -c release --arch arm64 --arch x86_64
+      run: |
+        swift build -c release --arch arm64 --arch x86_64
+        # The universal build output moved from .build/apple to .build/out in Swift 6.4, so ask SwiftPM.
+        echo "BIN_PATH=$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)" >> "$GITHUB_ENV"
 
     - name: Create release artifact
       uses: actions/upload-artifact@v7
       with:
         name: xcresultparser
-        path: .build/apple/Products/Release/xcresultparser
-
-    - name: Get release ID
-      id: get_release_id
-      run: |
-        id=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.event.release.tag_name }} | jq -r '.id')
-        echo "RELEASE_ID=$id" >> $GITHUB_ENV
+        path: ${{ env.BIN_PATH }}/xcresultparser
+        if-no-files-found: error
 
     - name: Upload release asset
-      uses: actions/upload-release-asset@v1
+      uses: softprops/action-gh-release@v3
       with:
-        upload_url: https://uploads.github.com/repos/${{ github.repository }}/releases/${{ env.RELEASE_ID }}/assets?name=xcresultparser
-        asset_path: .build/apple/Products/Release/xcresultparser
-        asset_name: xcresultparser
-        asset_content_type: application/octet-stream
-        token: ${{ secrets.GITHUB_TOKEN }}
+        files: ${{ env.BIN_PATH }}/xcresultparser
+        fail_on_unmatched_files: true
