@@ -18,7 +18,7 @@ struct XCTestFailure: Codable {
 }
 
 extension XCTestFailure {
-    init(from decoder: Decoder) throws {
+    init(from decoder: any Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         testName = try values.decode(String.self, forKey: .testName)
         targetName = try values.decode(String.self, forKey: .targetName)

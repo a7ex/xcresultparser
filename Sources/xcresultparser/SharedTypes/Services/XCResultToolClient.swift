@@ -22,11 +22,11 @@ struct XCResultToolClient: XCResultToolProviding {
         case unexpectedRootValue(String)
     }
 
-    private let shell: Commandline
+    private let shell: any Commandline
     private let decoder: JSONDecoder
 
     init(
-        shell: Commandline = Shell(),
+        shell: any Commandline = Shell(),
         decoder: JSONDecoder = JSONDecoder()
     ) {
         self.shell = shell

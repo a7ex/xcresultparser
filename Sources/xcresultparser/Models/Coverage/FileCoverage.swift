@@ -11,7 +11,7 @@ struct FileCoverage: Decodable {
     let files: [String: [LineDetail]]
 
     // Custom initializer to handle the top-level dictionary
-    init(from decoder: Decoder) throws {
+    init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         var filesDict = [String: [LineDetail]]()
 

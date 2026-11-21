@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### CHANGES:
+- Raise the minimum supported platform to macOS 15. Building from source now needs Xcode 26 or newer (swift-tools-version 6.2).
+- Build in the Swift 6 language mode with the remaining upcoming features, strict memory safety and warnings as errors enabled.
+- `make install` now finds the built binary with `swift build --show-bin-path`, so it also works with Swift 6.4, which writes universal builds to `.build/out`.
+
 ## Version 2.3.0 - 2026-11-18
 ### CHANGES:
 - Speed up `cobertura` output on large result bundles: each package's line rate is now computed in one pass instead of rescanning every file per package.

@@ -5,7 +5,7 @@
 //  Created by Alex da Franca on 11.06.21.
 //
 
-import Foundation
+public import Foundation
 
 struct PrefetchedCoverageInputs {
     let report: CoverageReport
@@ -60,8 +60,8 @@ public class CoverageConverter {
 
     // MARK: - Dependencies
 
-    let xcresultToolClient: XCResultToolProviding
-    let xccovClient: XCCovProviding
+    let xcresultToolClient: any XCResultToolProviding
+    let xccovClient: any XCCovProviding
 
     public convenience init(
         with url: URL,
@@ -123,8 +123,8 @@ public class CoverageConverter {
         coverageTargets: [String] = [],
         excludedPaths: [String] = [],
         strictPathnames: Bool,
-        xcResultToolClient: XCResultToolProviding,
-        xcCovClient: XCCovProviding,
+        xcResultToolClient: any XCResultToolProviding,
+        xcCovClient: any XCCovProviding,
         prefetchedInputs: PrefetchedCoverageInputs? = nil
     ) throws {
         let report: CoverageReport

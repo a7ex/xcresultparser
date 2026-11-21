@@ -1290,7 +1290,7 @@ struct XcresultparserTests {
 
     func assertXmlTestReportsAreEqual(
         expectedFileName: String,
-        actual: XmlSerializable,
+        actual: any XmlSerializable,
         file: StaticString = #filePath,
         line: UInt = #line
     ) throws {
@@ -1321,10 +1321,10 @@ struct XcresultparserTests {
 
 class MockedShell: Commandline {
     var response = Data()
-    var error: Error?
+    var error: (any Error)?
     var argumentValidation: ([String]) -> Bool = { _ in true }
 
-    init(response: Data, error: Error?) {
+    init(response: Data, error: (any Error)?) {
         self.response = response
         self.error = error
     }

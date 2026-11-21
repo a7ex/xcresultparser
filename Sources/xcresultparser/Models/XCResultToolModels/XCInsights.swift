@@ -13,7 +13,7 @@ struct XCInsights: Codable {
 }
 
 extension XCInsights {
-    init(from decoder: Decoder) throws {
+    init(from decoder: any Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         commonFailureInsights = (try? values.decode([XCCommonFailureInsight].self, forKey: .commonFailureInsights)) ?? []
         longestTestRunsInsights = (try? values.decode([XCLongestTestRunsInsight].self, forKey: .longestTestRunsInsights)) ?? []

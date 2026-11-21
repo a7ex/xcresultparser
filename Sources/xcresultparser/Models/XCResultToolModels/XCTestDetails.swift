@@ -31,7 +31,7 @@ struct XCTestDetails: Codable {
 }
 
 extension XCTestDetails {
-    init(from decoder: Decoder) throws {
+    init(from decoder: any Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         testIdentifier = try values.decode(String.self, forKey: .testIdentifier)
         testName = try values.decode(String.self, forKey: .testName)

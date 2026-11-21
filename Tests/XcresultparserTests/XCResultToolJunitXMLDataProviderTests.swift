@@ -774,9 +774,9 @@ struct XCResultToolJunitXMLDataProviderTests {
 // swiftlint:enable function_body_length
 
 private final class LookupShell: Commandline {
-    let responses: [String: Result<Data, Error>]
+    let responses: [String: Result<Data, any Error>]
 
-    init(responses: [String: Result<Data, Error>]) {
+    init(responses: [String: Result<Data, any Error>]) {
         self.responses = responses
     }
 
