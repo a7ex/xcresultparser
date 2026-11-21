@@ -2,34 +2,49 @@ name: Build Release
 
 on:
   release:
-    types: [created]
+    types: [ published ]
+
+permissions: {}
+
 jobs:
   build:
     runs-on: xcode-27
+    timeout-minutes: 30
 
     permissions:
-      contents: write
+      contents: write # upload the release asset
+      id-token: write # sign the build provenance attestation
+      attestations: write
+      artifact-metadata: write # create the artifact storage record
 
     env:
       DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
+      BUILD_ARGS: -c release --arch arm64 --arch x86_64
 
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@v7.0.1
+      with:
+        persist-credentials: false
     - name: Build
       run: |
-        swift build -c release --arch arm64 --arch x86_64
+        swift build $BUILD_ARGS
         # The universal build output moved from .build/apple to .build/out in Swift 6.4, so ask SwiftPM.
-        echo "BIN_PATH=$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)" >> "$GITHUB_ENV"
+        echo "BIN_PATH=$(swift build $BUILD_ARGS --show-bin-path)" >> "$GITHUB_ENV"
+
+    - name: Attest build provenance
+      uses: actions/attest@v4.2.2
+      with:
+        subject-path: ${{ env.BIN_PATH }}/xcresultparser
 
     - name: Create release artifact
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@v7.0.2
       with:
         name: xcresultparser
         path: ${{ env.BIN_PATH }}/xcresultparser
         if-no-files-found: error
 
     - name: Upload release asset
-      uses: softprops/action-gh-release@v3
+      uses: softprops/action-gh-release@v3.0.4
       with:
         files: ${{ env.BIN_PATH }}/xcresultparser
         fail_on_unmatched_files: true
