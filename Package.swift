@@ -25,6 +25,7 @@ let swiftSettings: [SwiftSetting] = [
     .enableUpcomingFeature("InternalImportsByDefault"), /// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0409-access-level-on-imports.md
     .enableUpcomingFeature("MemberImportVisibility"), /// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0444-member-import-visibility.md
     .enableUpcomingFeature("InferIsolatedConformances"), /// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0470-isolated-conformances.md
+    .enableUpcomingFeature("NonisolatedNonsendingByDefault"), /// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0461-async-function-isolation.md
 ]
 
 let package = Package(
