@@ -35,10 +35,9 @@ struct ShellTests {
         }
 
         // Cancel once the script is running and its trap is set.
-        // Task.sleep(for:) needs macOS 13; the package supports macOS 12.
         let deadline = Date().addingTimeInterval(60)
         while !FileManager.default.fileExists(atPath: startedMarker.path), Date() < deadline {
-            try await Task.sleep(nanoseconds: 10_000_000)
+            try await Task.sleep(for: .milliseconds(10))
         }
         let started = FileManager.default.fileExists(atPath: startedMarker.path)
         run.cancel()

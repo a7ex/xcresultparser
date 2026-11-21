@@ -1,4 +1,13 @@
 // swift-tools-version: 6.2
+//
+// Support policy:
+// - Tools version: the Swift version shipped with the .0 release of the previous major Xcode,
+//   so the package builds with the current Xcode and the one major version before it
+//   (currently Xcode 27 and Xcode 26.0 → Swift 6.2).
+// - Deployment target: two major macOS versions behind the current release, or the oldest
+//   macOS that GitHub-hosted runners provide, whichever is newer
+//   (currently macOS 27 → macOS 15, which is also the oldest GitHub-hosted runner).
+// CI builds and tests on both macos-26 (newest stable Xcode) and macos-15 (oldest supported Xcode).
 import PackageDescription
 
 // SwiftLint runs as a build tool plugin during local development only.
@@ -34,7 +43,7 @@ let swiftSettings: [SwiftSetting] = [
 let package = Package(
     name: "Xcresultparser",
     platforms: [
-        .macOS(.v15),
+        .macOS(.v15), // See the support policy at the top of this file.
     ],
     products: [
         .executable(

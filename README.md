@@ -22,7 +22,8 @@ This tool can read test result data and code coverage data from an `.xcresult` b
 All JSON parsing is done with native `Codable` models in this project.
 
 ## Requirements
-- macOS 12 or newer
+- macOS 15 or newer
+- Xcode 26 or newer to build from source
 
 ## Expected Failure Semantics
 - For `txt`, `cli`, `html`, and `md`, expected failures are represented as a distinct test state.
