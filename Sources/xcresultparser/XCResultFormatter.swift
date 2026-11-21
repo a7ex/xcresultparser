@@ -81,7 +81,7 @@ public struct XCResultFormatter {
 
     // MARK: - Properties
 
-    private let outputFormatter: XCResultFormatting
+    private let outputFormatter: any XCResultFormatting
     private let coverageReport: CoverageReport?
     private let buildResults: XCBuildResults
     private let testSummary: XCSummary
@@ -109,7 +109,7 @@ public struct XCResultFormatter {
 
     public init(
         with url: URL,
-        formatter: XCResultFormatting,
+        formatter: any XCResultFormatting,
         coverageTargets: [String] = [],
         failedTestsOnly: Bool = false,
         summaryFields: String = "errors|warnings|analyzerWarnings|tests|failed|skipped|duration|date",
@@ -129,13 +129,13 @@ public struct XCResultFormatter {
 
     init(
         with url: URL,
-        formatter: XCResultFormatting,
+        formatter: any XCResultFormatting,
         coverageTargets: [String] = [],
         failedTestsOnly: Bool = false,
         summaryFields: String = "errors|warnings|analyzerWarnings|tests|failed|skipped|duration|date",
         coverageReportFormat: CoverageReportFormat = .methods,
-        xcResultToolClient: XCResultToolProviding,
-        xcCovClient: XCCovProviding
+        xcResultToolClient: any XCResultToolProviding,
+        xcCovClient: any XCCovProviding
     ) throws {
         buildResults = try xcResultToolClient.getBuildResults(path: url)
         testSummary = try xcResultToolClient.getTestSummary(path: url)

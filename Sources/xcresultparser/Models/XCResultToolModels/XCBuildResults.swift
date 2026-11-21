@@ -21,7 +21,7 @@ struct XCBuildResults: Codable {
 }
 
 extension XCBuildResults {
-    init(from decoder: Decoder) throws {
+    init(from decoder: any Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         destination = try values.decode(XCDevice.self, forKey: .destination)
         startTime = try values.decode(Double.self, forKey: .startTime)

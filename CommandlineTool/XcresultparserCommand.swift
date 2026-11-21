@@ -172,7 +172,7 @@ struct xcresultparser: AsyncParsableCommand {
         return OutputFormat(string: outputFormat)
     }
 
-    private var outputFormatter: XCResultFormatting {
+    private var outputFormatter: any XCResultFormatting {
         switch format {
         case .cli:
             return CLIResultFormatter()

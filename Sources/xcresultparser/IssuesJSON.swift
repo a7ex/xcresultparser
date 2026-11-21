@@ -34,7 +34,7 @@ public struct IssuesJSON {
         with url: URL,
         projectRoot: String = "",
         excludedPaths: [String] = [],
-        xcResultToolClient: XCResultToolProviding
+        xcResultToolClient: any XCResultToolProviding
     ) throws {
         buildResults = try xcResultToolClient.getBuildResults(path: url)
         let checkdata = try? Data(contentsOf: url.appendingPathComponent("Info.plist"))

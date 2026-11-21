@@ -23,7 +23,7 @@ struct XCTestNode: Codable {
 }
 
 extension XCTestNode {
-    init(from decoder: Decoder) throws {
+    init(from decoder: any Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
 
         // mandatory values:

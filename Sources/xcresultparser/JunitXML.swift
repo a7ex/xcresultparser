@@ -47,11 +47,11 @@ public struct JunitXML: XmlSerializable {
 
     // MARK: - Properties
 
-    private let dataProvider: JunitXMLDataProviding
+    private let dataProvider: any JunitXMLDataProviding
     private let projectRoot: URL?
     private let testReportFormat: TestReportFormat
     private let relativePathNames: Bool
-    private let shell: Commandline
+    private let shell: any Commandline
 
     private let nodeNames: NodeNames
 
@@ -80,11 +80,11 @@ public struct JunitXML: XmlSerializable {
     }
 
     init(
-        dataProvider: JunitXMLDataProviding,
+        dataProvider: any JunitXMLDataProviding,
         projectRoot: String = "",
         format: TestReportFormat = .junit,
         relativePathNames: Bool = true,
-        shell: Commandline = Shell()
+        shell: any Commandline = Shell()
     ) {
         self.dataProvider = dataProvider
         var isDirectory: ObjCBool = false
@@ -441,7 +441,7 @@ private extension JunitTestGroup {
         return testsuite
     }
 
-    func sonarFileXML(projectRoot: URL?, configurationName: String, relativePathNames: Bool = true, shell: Commandline) -> XMLElement {
+    func sonarFileXML(projectRoot: URL?, configurationName: String, relativePathNames: Bool = true, shell: any Commandline) -> XMLElement {
         let testsuite = XMLElement(name: "file")
         testsuite.addAttribute(
             name: "path",
@@ -471,7 +471,7 @@ private extension JunitTestGroup {
 
     // MARK: - Private interface
 
-    private func classPath(in projectRootUrl: URL?, relativePathNames: Bool = true, shell: Commandline) -> String {
+    private func classPath(in projectRootUrl: URL?, relativePathNames: Bool = true, shell: any Commandline) -> String {
         guard let projectRootUrl else {
             return identifierString
         }
@@ -486,7 +486,7 @@ private extension JunitTestGroup {
     private static func cacheAllClassNames(
         in projectRootUrl: URL,
         relativePathNames: Bool,
-        shell: Commandline,
+        shell: any Commandline,
         into cache: inout [String: String]
     ) {
         let program = "/usr/bin/grep"

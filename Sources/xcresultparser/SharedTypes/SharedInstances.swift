@@ -8,5 +8,5 @@
 import Foundation
 
 enum SharedInstances {
-    static let fileManager: FileManaging = FileManager.default
+    static let fileManager: any FileManaging = FileManager.default
 }

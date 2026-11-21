@@ -20,6 +20,10 @@ let swiftLintPlugins: [Target.PluginUsage] = lintOnBuild ? [
     )
 ] : []
 
+let swiftSettings: [SwiftSetting] = [
+    .enableUpcomingFeature("ExistentialAny"), /// https://github.com/swiftlang/swift-evolution/blob/main/proposals/0335-existential-any.md
+]
+
 let package = Package(
     name: "Xcresultparser",
     platforms: [
@@ -45,7 +49,8 @@ let package = Package(
         .executableTarget(
             name: "CommandlineTool",
             dependencies: ["XcresultparserLib"],
-            path: "CommandlineTool"
+            path: "CommandlineTool",
+            swiftSettings: swiftSettings
         ),
         .target(
             name: "XcresultparserLib",
@@ -56,6 +61,7 @@ let package = Package(
                 ),
             ],
             path: "Sources",
+            swiftSettings: swiftSettings,
             plugins: swiftLintPlugins
         ),
         .testTarget(
@@ -80,6 +86,7 @@ let package = Package(
                 .copy("TestAssets/junit_session_level_failure.xml"),
                 .copy("TestAssets/Test-FlakyFixture.xcresult")
             ],
+            swiftSettings: swiftSettings,
             plugins: swiftLintPlugins
         )
     ]

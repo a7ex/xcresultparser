@@ -19,7 +19,7 @@ struct XCFailureDistributionInsight: Codable {
 }
 
 extension XCFailureDistributionInsight {
-    init(from decoder: Decoder) throws {
+    init(from decoder: any Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         title = try values.decode(String.self, forKey: .title)
         distributionPercent = try values.decode(Double.self, forKey: .distributionPercent)

@@ -27,7 +27,7 @@ enum XCTestNodeType: String, Codable {
 }
 
 extension XCTestNodeType {
-    init(from decoder: Decoder) throws {
+    init(from decoder: any Decoder) throws {
         let container = try decoder.singleValueContainer()
         let value = try container.decode(String.self)
         self = XCTestNodeType(rawValue: value) ?? .unknown
