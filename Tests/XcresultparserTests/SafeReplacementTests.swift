@@ -23,9 +23,28 @@ struct SafeReplacementTests {
         let file = directory.appending(path: "file.txt")
         try Data().write(to: file)
 
+        let directoryLink = directory.appending(path: "directory-link")
+        let fileLink = directory.appending(path: "file-link")
+        let missing = directory.appending(path: "missing")
+        let danglingLink = directory.appending(path: "dangling-link")
+        let hardLink = directory.appending(path: "hard-link")
+        try FileManager.default.createSymbolicLink(at: directoryLink, withDestinationURL: directory)
+        try FileManager.default.createSymbolicLink(at: fileLink, withDestinationURL: file)
+        try FileManager.default.createSymbolicLink(at: danglingLink, withDestinationURL: missing)
+        try FileManager.default.linkItem(at: file, to: hardLink)
+
         #expect(FileManager.default.directoryExists(atPath: directory.path))
         #expect(!FileManager.default.directoryExists(atPath: file.path))
-        #expect(!FileManager.default.directoryExists(atPath: directory.appending(path: "missing").path))
+        #expect(FileManager.default.directoryExists(atPath: directoryLink.path))
+        #expect(!FileManager.default.directoryExists(atPath: fileLink.path))
+        #expect(!FileManager.default.directoryExists(atPath: danglingLink.path))
+        #expect(!FileManager.default.directoryExists(atPath: hardLink.path))
+        #expect(!FileManager.default.directoryExists(atPath: missing.path))
         #expect(!FileManager.default.directoryExists(atPath: ""))
+
+        // Each component before ".." must itself resolve to a directory.
+        #expect(!FileManager.default.directoryExists(atPath: file.path + "/.."))
+        #expect(!FileManager.default.directoryExists(atPath: missing.path + "/.."))
+        #expect(FileManager.default.directoryExists(atPath: directoryLink.path + "/.."))
     }
 }

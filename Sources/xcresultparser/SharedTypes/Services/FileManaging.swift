@@ -15,11 +15,9 @@ protocol FileManaging: Sendable {
 
 extension FileManager: FileManaging {
     func directoryExists(atPath path: String) -> Bool {
-        // An empty path would resolve to the current working directory.
-        guard !path.isEmpty else {
-            return false
-        }
-        let values = try? URL(filePath: path).resourceValues(forKeys: [.isDirectoryKey])
-        return values?.isDirectory == true
+        guard !path.isEmpty else { return false }
+        // A trailing slash requires the destination to be a directory. The filesystem
+        // follows symbolic links and checks every component before traversing "..".
+        return fileExists(atPath: path.hasSuffix("/") ? path : path + "/")
     }
 }
