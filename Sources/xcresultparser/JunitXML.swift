@@ -6,7 +6,6 @@
 //
 
 public import Foundation
-import Synchronization
 
 public enum TestReportFormat {
     case junit, sonar
@@ -50,8 +49,8 @@ public struct JunitXML: XmlSerializable {
     private let dataProvider: any JunitXMLDataProviding
     private let projectRoot: URL?
     private let testReportFormat: TestReportFormat
-    private let relativePathNames: Bool
-    private let shell: any Commandline
+    /// Found once by the initialiser for Sonar reports with a project root, and reused by every `xmlString`.
+    private let classPaths: ClassPaths
 
     private let nodeNames: NodeNames
 
@@ -69,9 +68,9 @@ public struct JunitXML: XmlSerializable {
         projectRoot: String = "",
         format: TestReportFormat = .junit,
         relativePathNames: Bool = true
-    ) throws {
-        let dataProvider = try XCResultToolJunitXMLDataProvider(url: url)
-        self.init(
+    ) async throws {
+        let dataProvider = try await XCResultToolJunitXMLDataProvider(url: url)
+        await self.init(
             dataProvider: dataProvider,
             projectRoot: projectRoot,
             format: format,
@@ -85,13 +84,14 @@ public struct JunitXML: XmlSerializable {
         format: TestReportFormat = .junit,
         relativePathNames: Bool = true,
         shell: any Commandline = Shell()
-    ) {
+    ) async {
         self.dataProvider = dataProvider
-        self.projectRoot = if SharedInstances.fileManager.directoryExists(atPath: projectRoot) {
+        let projectRootURL: URL? = if SharedInstances.fileManager.directoryExists(atPath: projectRoot) {
             URL(fileURLWithPath: projectRoot)
         } else {
             nil
         }
+        self.projectRoot = projectRootURL
 
         testReportFormat = format
         nodeNames = if testReportFormat == .sonar {
@@ -99,8 +99,11 @@ public struct JunitXML: XmlSerializable {
         } else {
             NodeNames.defaultNodeNames
         }
-        self.relativePathNames = relativePathNames
-        self.shell = shell
+        classPaths = if format == .sonar, let projectRootURL {
+            await ClassPaths.find(in: projectRootURL, relativePathNames: relativePathNames, shell: shell)
+        } else {
+            ClassPaths()
+        }
     }
 
     func createRootElement() -> XMLElement {
@@ -169,11 +172,6 @@ public struct JunitXML: XmlSerializable {
         return xml.xmlString(options: [.nodePrettyPrint, .nodeCompactEmptyElement])
     }
 
-    // only used in unit testing
-    static func resetCachedPathnames() {
-        JunitTestGroup.resetCachedPathnames()
-    }
-
     // MARK: - Private interface
 
     private func createTestSuite(
@@ -206,13 +204,13 @@ public struct JunitXML: XmlSerializable {
             var nodes = [XMLElement]()
             for subGroup in group.subtestGroups {
                 let node = subGroup.sonarFileXML(
-                    projectRoot: projectRoot,
                     configurationName: configurationName,
-                    relativePathNames: relativePathNames,
-                    shell: shell
+                    classPaths: classPaths
                 )
                 let testcases = createTestCases(
-                    for: subGroup.nameString, tests: subGroup.subtests, failureSummaries: failureSummaries
+                    for: subGroup.nameString,
+                    tests: subGroup.subtests,
+                    failureSummaries: failureSummaries
                 )
                 testcases.forEach { node.addChild($0) }
                 nodes.append(node)
@@ -221,7 +219,9 @@ public struct JunitXML: XmlSerializable {
         } else {
             let combined = group.subtestGroups.reduce([XMLElement]()) { rslt, subGroup in
                 return rslt + createTestCases(
-                    for: subGroup.nameString, tests: subGroup.subtests, failureSummaries: failureSummaries
+                    for: subGroup.nameString,
+                    tests: subGroup.subtests,
+                    failureSummaries: failureSummaries
                 )
             }
             let node = group.testSuiteXML(numFormatter: numFormatter)
@@ -239,10 +239,8 @@ public struct JunitXML: XmlSerializable {
     ) -> XMLElement {
         let node = testReportFormat == .sonar ?
             group.sonarFileXML(
-                projectRoot: projectRoot,
                 configurationName: configurationName,
-                relativePathNames: relativePathNames,
-                shell: shell
+                classPaths: classPaths
             ) : group.testSuiteXML(numFormatter: numFormatter)
 
         for thisTest in tests {
@@ -286,7 +284,7 @@ public struct JunitXML: XmlSerializable {
                 testcase.addChild(failureWithoutSummary)
             } else {
                 for summary in summaries {
-                    testcase.addChild(summary.failureXML(projectRoot: projectRoot))
+                    testcase.addChild(summary.failureXML(projectRoot: projectRoot, classPaths: classPaths))
                 }
             }
         } else if test.isSkipped {
@@ -355,7 +353,7 @@ public struct JunitXML: XmlSerializable {
                 if !nodeNames.testcaseDurationName.isEmpty {
                     testcase.addAttribute(name: nodeNames.testcaseDurationName, stringValue: "0")
                 }
-                testcase.addChild(failure.failureXML(projectRoot: projectRoot))
+                testcase.addChild(failure.failureXML(projectRoot: projectRoot, classPaths: classPaths))
                 sessionSuite.addChild(testcase)
             }
 
@@ -413,8 +411,6 @@ extension JunitTest {
 }
 
 private extension JunitTestGroup {
-    private static let cachedPathnames = Mutex<[String: String]>([:])
-
     struct TestMetrics {
         let tests: Int
         let failures: Int
@@ -439,91 +435,11 @@ private extension JunitTestGroup {
         return testsuite
     }
 
-    func sonarFileXML(projectRoot: URL?, configurationName: String, relativePathNames: Bool = true, shell: any Commandline) -> XMLElement {
+    func sonarFileXML(configurationName: String, classPaths: ClassPaths) -> XMLElement {
         let testsuite = XMLElement(name: "file")
-        testsuite.addAttribute(
-            name: "path",
-            stringValue: classPath(in: projectRoot, relativePathNames: relativePathNames, shell: shell)
-        )
+        testsuite.addAttribute(name: "path", stringValue: classPaths.path(forClass: identifierString) ?? identifierString)
         testsuite.addAttribute(name: "configuration", stringValue: configurationName)
         return testsuite
-    }
-
-    // only used in unit testing
-    static func resetCachedPathnames() {
-        cachedPathnames.withLock { $0.removeAll() }
-    }
-
-    static func resolvePathFromCachedClassMap(for fileName: String) -> String? {
-        guard !fileName.contains("/") else {
-            return fileName
-        }
-        let candidates = cachedPathnames.withLock { $0.values.filter { $0.hasSuffix("/\(fileName)") || $0 == fileName } }
-        guard !candidates.isEmpty else {
-            return nil
-        }
-        return candidates.max { lhs, rhs in
-            lhs.components(separatedBy: "est").count < rhs.components(separatedBy: "est").count
-        }
-    }
-
-    // MARK: - Private interface
-
-    private func classPath(in projectRootUrl: URL?, relativePathNames: Bool = true, shell: any Commandline) -> String {
-        guard let projectRootUrl else {
-            return identifierString
-        }
-        return Self.cachedPathnames.withLock { cache in
-            if cache.isEmpty {
-                Self.cacheAllClassNames(in: projectRootUrl, relativePathNames: relativePathNames, shell: shell, into: &cache)
-            }
-            return cache[identifierString] ?? identifierString
-        }
-    }
-
-    private static func cacheAllClassNames(
-        in projectRootUrl: URL,
-        relativePathNames: Bool,
-        shell: any Commandline,
-        into cache: inout [String: String]
-    ) {
-        let program = "/usr/bin/grep"
-        let grepPathArgument = relativePathNames ? "." : projectRootUrl.path
-        let arguments = [
-            "-E",
-            "-rio",
-            "--include", "*.swift",
-            "--include", "*.m",
-            "--include", "*.mm",
-            "^(?:public )?(?:final )?(?:public )?(?:(class|\\@implementation|struct) )[a-zA-Z0-9_]+",
-            grepPathArgument
-        ]
-        guard let filelistData = try? shell.execute(program: program, with: arguments, at: projectRootUrl) else {
-            return
-        }
-        let trimCharacterSet = CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: ":"))
-        let result = String(decoding: filelistData, as: UTF8.self).components(separatedBy: "\n")
-        for match in result {
-            let items = match.components(separatedBy: ":")
-            if items.count > 1,
-               let path = items.first,
-               !path.isEmpty,
-               let className = items
-                   .dropFirst()
-                   .joined(separator: ":")
-                   .trimmingCharacters(in: trimCharacterSet)
-                   .components(separatedBy: .whitespaces)
-                   .last,
-               !className.isEmpty {
-                if let existingPath = cache[className] {
-                    if existingPath.components(separatedBy: "est").count <= path.withoutLocalPrefix.components(separatedBy: "est").count {
-                        cache[className] = path.withoutLocalPrefix
-                    }
-                } else {
-                    cache[className] = path.withoutLocalPrefix
-                }
-            }
-        }
     }
 
     private var statistics: TestMetrics {
@@ -546,6 +462,69 @@ private extension JunitTestGroup {
     }
 }
 
+/// The source file declaring each class in the project, found with grep.
+struct ClassPaths: Sendable {
+    private var pathsByClassName = [String: String]()
+
+    func path(forClass className: String) -> String? {
+        pathsByClassName[className]
+    }
+
+    /// Resolves a bare file name, such as one in a failure location, to its path in the project.
+    func path(forFile fileName: String) -> String? {
+        guard !fileName.contains("/") else {
+            return fileName
+        }
+        let candidates = pathsByClassName.values.filter { $0.hasSuffix("/\(fileName)") || $0 == fileName }
+        return candidates.max { lhs, rhs in
+            lhs.components(separatedBy: "est").count < rhs.components(separatedBy: "est").count
+        }
+    }
+
+    static func find(in projectRootUrl: URL, relativePathNames: Bool, shell: any Commandline) async -> ClassPaths {
+        var classPaths = ClassPaths()
+        let program = "/usr/bin/grep"
+        let grepPathArgument = relativePathNames ? "." : projectRootUrl.path
+        let arguments = [
+            "-E",
+            "-rio",
+            "--include", "*.swift",
+            "--include", "*.m",
+            "--include", "*.mm",
+            "^(?:public )?(?:final )?(?:public )?(?:(class|\\@implementation|struct) )[a-zA-Z0-9_]+",
+            grepPathArgument
+        ]
+        guard let filelistData = try? await shell.execute(program: program, with: arguments, at: projectRootUrl) else {
+            return classPaths
+        }
+        let trimCharacterSet = CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: ":"))
+        let result = String(decoding: filelistData, as: UTF8.self).components(separatedBy: "\n")
+        for match in result {
+            let items = match.components(separatedBy: ":")
+            if items.count > 1,
+               let path = items.first,
+               !path.isEmpty,
+               let className = items
+                   .dropFirst()
+                   .joined(separator: ":")
+                   .trimmingCharacters(in: trimCharacterSet)
+                   .components(separatedBy: .whitespaces)
+                   .last,
+               !className.isEmpty {
+                let candidate = path.withoutLocalPrefix
+                if let existingPath = classPaths.pathsByClassName[className] {
+                    if existingPath.components(separatedBy: "est").count <= candidate.components(separatedBy: "est").count {
+                        classPaths.pathsByClassName[className] = candidate
+                    }
+                } else {
+                    classPaths.pathsByClassName[className] = candidate
+                }
+            }
+        }
+        return classPaths
+    }
+}
+
 private extension String {
     var withoutLocalPrefix: String {
         if hasPrefix("./") {
@@ -556,7 +535,7 @@ private extension String {
 }
 
 private extension JunitFailureSummary {
-    func failureXML(projectRoot: URL? = nil) -> XMLElement {
+    func failureXML(projectRoot: URL? = nil, classPaths: ClassPaths) -> XMLElement {
         let failure = XMLElement(name: "failure")
         var value = message
         if let loc = documentLocation {
@@ -572,7 +551,7 @@ private extension JunitFailureSummary {
                     value += " (\(loc))"
                 }
             } else {
-                value += " (\(resolvedDocumentLocation(loc, projectRoot: projectRoot)))"
+                value += " (\(resolvedDocumentLocation(loc, projectRoot: projectRoot, classPaths: classPaths)))"
             }
         }
         if !value.isEmpty {
@@ -590,7 +569,7 @@ private extension JunitFailureSummary {
         return failure
     }
 
-    private func resolvedDocumentLocation(_ location: String, projectRoot: URL?) -> String {
+    private func resolvedDocumentLocation(_ location: String, projectRoot: URL?, classPaths: ClassPaths) -> String {
         guard projectRoot != nil else {
             return location
         }
@@ -600,7 +579,7 @@ private extension JunitFailureSummary {
         }
         let file = String(components[0])
         let linePart = String(components[1])
-        guard let resolvedPath = JunitTestGroup.resolvePathFromCachedClassMap(for: file) else {
+        guard let resolvedPath = classPaths.path(forFile: file) else {
             return location
         }
         return "\(resolvedPath):\(linePart)"

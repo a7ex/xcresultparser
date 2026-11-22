@@ -100,23 +100,23 @@ struct FlakyJunitXMLTests {
     }
     """
 
-    private func makeProvider() throws -> XCResultToolJunitXMLDataProvider {
+    private func makeProvider() async throws -> XCResultToolJunitXMLDataProvider {
         let shell = LookupShell(
             responses: [
-                "xcresulttool get test-results summary --path /tmp/test.xcresult": .success(Data(flakySummaryJSON.utf8)),
-                "xcresulttool get test-results tests --path /tmp/test.xcresult": .success(Data(flakyTestsJSON.utf8))
+                "xcresulttool get test-results summary --path /tmp/test.xcresult --compact": .success(Data(flakySummaryJSON.utf8)),
+                "xcresulttool get test-results tests --path /tmp/test.xcresult --compact": .success(Data(flakyTestsJSON.utf8))
             ]
         )
         let client = XCResultToolClient(shell: shell)
-        return try XCResultToolJunitXMLDataProvider(
+        return try await XCResultToolJunitXMLDataProvider(
             url: URL(fileURLWithPath: "/tmp/test.xcresult"),
             client: client
         )
     }
 
     @Test
-    func providerMarksMixedRepetitionTestAsFlaky() throws {
-        let provider = try makeProvider()
+    func providerMarksMixedRepetitionTestAsFlaky() async throws {
+        let provider = try await makeProvider()
 
         let action = try #require(provider.testActions.first)
         let plan = try #require(action.testPlanRunSummaries.first)
@@ -130,9 +130,9 @@ struct FlakyJunitXMLTests {
     }
 
     @Test
-    func junitXMLLabelsFlakyTestcase() throws {
-        let provider = try makeProvider()
-        let xml = JunitXML(dataProvider: provider).xmlString
+    func junitXMLLabelsFlakyTestcase() async throws {
+        let provider = try await makeProvider()
+        let xml = await JunitXML(dataProvider: provider).xmlString
 
         // The failing testcase keeps its failure but gains a flaky marker and a
         // `[FLAKY]` prefix on the failure message.
@@ -156,9 +156,9 @@ struct FlakyJunitXMLTests {
     // when the overall result is failed; that is covered by the stubbed
     // `junitXMLLabelsFlakyTestcase` test above.)
     @Test
-    func realFlakyBundleIsDetectedAsFlaky() throws {
+    func realFlakyBundleIsDetectedAsFlaky() async throws {
         let xcresultFile = try TestFixtures.xcresult("Test-FlakyFixture")
-        let provider = try XCResultToolJunitXMLDataProvider(url: xcresultFile)
+        let provider = try await XCResultToolJunitXMLDataProvider(url: xcresultFile)
 
         let leaves = provider.testActions
             .flatMap { $0.testPlanRunSummaries }
@@ -179,10 +179,10 @@ struct FlakyJunitXMLTests {
     // clean pass. It must NOT carry a `<failure>` (it passed) nor the `[FLAKY]`
     // message prefix (which only labels actual failures).
     @Test
-    func passedFlakyTestGetsFlakyMarkerWithoutFailure() throws {
+    func passedFlakyTestGetsFlakyMarkerWithoutFailure() async throws {
         let xcresultFile = try TestFixtures.xcresult("Test-FlakyFixture")
-        let provider = try XCResultToolJunitXMLDataProvider(url: xcresultFile)
-        let xml = JunitXML(dataProvider: provider).xmlString
+        let provider = try await XCResultToolJunitXMLDataProvider(url: xcresultFile)
+        let xml = await JunitXML(dataProvider: provider).xmlString
 
         #expect(xml.contains("flaky=\"true\""))
         #expect(!xml.contains("[FLAKY]"))
@@ -192,10 +192,10 @@ struct FlakyJunitXMLTests {
     // The sonar generic test execution schema only allows `name` and `duration`
     // on `testCase`, so sonar output must not carry the `flaky="true"` marker.
     @Test
-    func sonarXMLOmitsFlakyAttribute() throws {
+    func sonarXMLOmitsFlakyAttribute() async throws {
         let xcresultFile = try TestFixtures.xcresult("Test-FlakyFixture")
-        let provider = try XCResultToolJunitXMLDataProvider(url: xcresultFile)
-        let xml = JunitXML(dataProvider: provider, format: .sonar).xmlString
+        let provider = try await XCResultToolJunitXMLDataProvider(url: xcresultFile)
+        let xml = await JunitXML(dataProvider: provider, format: .sonar).xmlString
 
         #expect(!xml.contains("flaky"))
     }
@@ -203,16 +203,16 @@ struct FlakyJunitXMLTests {
     // A recovered flaky test is overall passed, so it must not surface when only
     // failed tests are requested - flakiness is a label, not a failure.
     @Test
-    func recoveredFlakyTestIsNotListedAsFailed() throws {
+    func recoveredFlakyTestIsNotListedAsFailed() async throws {
         let xcresultFile = try TestFixtures.xcresult("Test-FlakyFixture")
-        let allTests = try XCResultFormatter(
+        let allTests = try await XCResultFormatter(
             with: xcresultFile,
             formatter: TextResultFormatter(),
             coverageTargets: []
         )
         #expect(allTests.testDetails.contains("testFlaky"))
 
-        let failedOnly = try XCResultFormatter(
+        let failedOnly = try await XCResultFormatter(
             with: xcresultFile,
             formatter: TextResultFormatter(),
             coverageTargets: [],
@@ -234,7 +234,7 @@ private final class LookupShell: Commandline {
         self.responses = responses
     }
 
-    func execute(program: String, with arguments: [String], at executionPath: URL?) throws -> Data {
+    func execute(program: String, with arguments: [String], at executionPath: URL?) async throws -> Data {
         #expect(program == "/usr/bin/xcrun")
         let key = arguments.joined(separator: " ")
         guard let response = responses[key] else {

@@ -17,17 +17,11 @@ import PackageDescription
 let lintOnBuild = Context.environment["CI"] == nil
 
 let swiftLintDependencies: [Package.Dependency] = lintOnBuild ? [
-    .package(
-        url: "https://github.com/SimplyDanny/SwiftLintPlugins",
-        from: "0.65.0"
-    )
+    .package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.65.0")
 ] : []
 
 let swiftLintPlugins: [Target.PluginUsage] = lintOnBuild ? [
-    .plugin(
-        name: "SwiftLintBuildToolPlugin",
-        package: "SwiftLintPlugins"
-    )
+    .plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins")
 ] : []
 
 let swiftSettings: [SwiftSetting] = [
@@ -43,25 +37,15 @@ let swiftSettings: [SwiftSetting] = [
 
 let package = Package(
     name: "Xcresultparser",
-    platforms: [
-        .macOS(.v15), // See the support policy at the top of this file.
-    ],
+    platforms: [.macOS(.v15)], // See the support policy at the top of this file.
     products: [
-        .executable(
-            name: "xcresultparser",
-            targets: ["CommandlineTool"]
-        ),
-        .library(
-            name: "XcresultparserLib",
-            targets: ["XcresultparserLib"]
-        )
+        .executable(name: "xcresultparser", targets: ["CommandlineTool"]),
+        .library(name: "XcresultparserLib", targets: ["XcresultparserLib"])
     ],
     dependencies: [
-        .package(
-            url: "https://github.com/apple/swift-argument-parser.git",
-            from: "1.8.0"
-        ),
-        .package(url: "https://github.com/apple/swift-system.git", from: "1.9.0")
+        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.8.0"),
+        .package(url: "https://github.com/apple/swift-system.git", from: "1.9.0"),
+        .package(url: "https://github.com/swiftlang/swift-subprocess.git", from: "1.0.2")
     ] + swiftLintDependencies,
     targets: [
         .executableTarget(
@@ -73,11 +57,9 @@ let package = Package(
         .target(
             name: "XcresultparserLib",
             dependencies: [
-                .product(
-                    name: "ArgumentParser",
-                    package: "swift-argument-parser"
-                ),
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "SystemPackage", package: "swift-system"),
+                .product(name: "Subprocess", package: "swift-subprocess"),
             ],
             path: "Sources",
             swiftSettings: swiftSettings,

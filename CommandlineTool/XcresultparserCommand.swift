@@ -69,30 +69,30 @@ struct xcresultparser: AsyncParsableCommand {
             throw ParseError.argumentError
         }
         guard printTargets != 1 else {
-            try outputTargetNames(for: xcresult)
+            try await outputTargetNames(for: xcresult)
             return
         }
         switch format {
         case .xml:
             if coverage == 1 {
-                try outputSonarXML(for: xcresult)
+                try await outputSonarXML(for: xcresult)
             } else {
-                try outputJUnitXML(for: xcresult, with: .sonar)
+                try await outputJUnitXML(for: xcresult, with: .sonar)
             }
         case .junit:
-            try outputJUnitXML(for: xcresult, with: .junit)
+            try await outputJUnitXML(for: xcresult, with: .junit)
         case .cobertura:
             coverage = 1
             try await outputCoberturaXML(for: xcresult)
         case .cli, .md, .txt, .html, .github:
-            try outputDescription(for: xcresult)
+            try await outputDescription(for: xcresult)
         case .warnings, .errors, .warningsAndErrors:
-            try outputIssuesJSON(for: xcresult, format: format)
+            try await outputIssuesJSON(for: xcresult, format: format)
         }
     }
 
-    private func outputSonarXML(for xcresult: String) throws {
-        let converter = try SonarCoverageConverter(
+    private func outputSonarXML(for xcresult: String) async throws {
+        let converter = try await SonarCoverageConverter(
             with: URL(fileURLWithPath: xcresult),
             projectRoot: projectRoot ?? "",
             coverageTargets: coverageTargets,
@@ -105,7 +105,7 @@ struct xcresultparser: AsyncParsableCommand {
 
     private func outputCoberturaXML(for xcresult: String) async throws {
         let converter = try await CoberturaCoverageConverter(
-            loadingConcurrently: URL(fileURLWithPath: xcresult),
+            with: URL(fileURLWithPath: xcresult),
             projectRoot: projectRoot ?? "",
             coverageTargets: coverageTargets,
             excludedPaths: excludedPaths,
@@ -115,8 +115,8 @@ struct xcresultparser: AsyncParsableCommand {
         writeToStdOut(rslt)
     }
 
-    private func outputIssuesJSON(for xcresult: String, format: OutputFormat) throws {
-        let converter = try IssuesJSON(
+    private func outputIssuesJSON(for xcresult: String, format: OutputFormat) async throws {
+        let converter = try await IssuesJSON(
             with: URL(fileURLWithPath: xcresult),
             projectRoot: projectRoot ?? "",
             excludedPaths: excludedPaths
@@ -125,21 +125,16 @@ struct xcresultparser: AsyncParsableCommand {
         writeToStdOut(rslt)
     }
 
-    private func outputTargetNames(for xcresult: String) throws {
-        let converter = try SonarCoverageConverter(
-            with: URL(fileURLWithPath: xcresult),
-            projectRoot: projectRoot ?? "",
-            coverageTargets: [],
-            strictPathnames: strictPathnames == 1
-        )
-        writeToStdOut(converter.targetsInfo)
+    private func outputTargetNames(for xcresult: String) async throws {
+        let targets = try await CoverageConverter.targetsInfo(with: URL(fileURLWithPath: xcresult))
+        writeToStdOut(targets)
     }
 
     private func outputJUnitXML(
         for xcresult: String,
         with format: TestReportFormat
-    ) throws {
-        let junitXML = try JunitXML(
+    ) async throws {
+        let junitXML = try await JunitXML(
             with: URL(fileURLWithPath: xcresult),
             projectRoot: projectRoot ?? "",
             format: format
@@ -147,14 +142,15 @@ struct xcresultparser: AsyncParsableCommand {
         writeToStdOut(junitXML.xmlString)
     }
 
-    private func outputDescription(for xcresult: String) throws {
-        let resultParser = try XCResultFormatter(
+    private func outputDescription(for xcresult: String) async throws {
+        let resultParser = try await XCResultFormatter(
             with: URL(fileURLWithPath: xcresult),
             formatter: outputFormatter,
             coverageTargets: coverageTargets,
             failedTestsOnly: failedTestsOnly == 1,
             summaryFields: summaryFields ?? "errors|warnings|analyzerWarnings|tests|failed|skipped|duration|date",
-            coverageReportFormat: CoverageReportFormat(string: coverageReportFormat)
+            coverageReportFormat: CoverageReportFormat(string: coverageReportFormat),
+            includesCoverage: coverage == 1
         )
         writeToStdOutLn(resultParser.documentPrefix(title: "XCResults"))
         writeToStdOutLn(resultParser.summary)

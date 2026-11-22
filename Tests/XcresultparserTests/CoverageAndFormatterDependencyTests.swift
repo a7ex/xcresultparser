@@ -4,14 +4,14 @@ import Testing
 
 struct CoverageAndFormatterDependencyTests {
     @Test
-    func testCoverageConverterMapsCoverageReportClientFailureToCouldNotLoadCoverageReport() throws {
-        let xcresultClient = StubXCResultToolClient()
+    func testCoverageConverterMapsCoverageReportClientFailureToCouldNotLoadCoverageReport() async throws {
+        var xcresultClient = StubXCResultToolClient()
         xcresultClient.getTestSummaryHandler = { _ in try TestModelFactory.summary(startTime: 1, finishTime: 2) }
-        let xccovClient = StubXCCovClient()
+        var xccovClient = StubXCCovClient()
         xccovClient.getCoverageReportHandler = { _ in throw TestDoubleError.forced }
 
         do {
-            _ = try CoverageConverter(
+            _ = try await CoverageConverter(
                 with: URL(fileURLWithPath: "/tmp/fake.xcresult"),
                 strictPathnames: false,
                 xcResultToolClient: xcresultClient,
@@ -24,13 +24,15 @@ struct CoverageAndFormatterDependencyTests {
     }
 
     @Test
-    func testCoverageConverterAcceptsNormalizedCoverageTargetFromProtocolClient() throws {
-        let xcresultClient = StubXCResultToolClient()
+    func testCoverageConverterAcceptsNormalizedCoverageTargetFromProtocolClient() async throws {
+        var xcresultClient = StubXCResultToolClient()
         xcresultClient.getTestSummaryHandler = { _ in try TestModelFactory.summary() }
-        let xccovClient = StubXCCovClient()
+        var xccovClient = StubXCCovClient()
         xccovClient.getCoverageReportHandler = { _ in TestModelFactory.coverageReport(targetNames: ["App.framework", "Lib"]) }
+        // The initialiser loads the line coverage along with the report.
+        xccovClient.getCoverageDataHandler = { _ in try JSONDecoder().decode(FileCoverage.self, from: Data("{}".utf8)) }
 
-        let converter = try CoverageConverter(
+        let converter = try await CoverageConverter(
             with: URL(fileURLWithPath: "/tmp/fake.xcresult"),
             coverageTargets: ["App"],
             strictPathnames: false,
@@ -41,15 +43,42 @@ struct CoverageAndFormatterDependencyTests {
         #expect(converter.targetsInfo.contains("App.framework"))
     }
 
+    // Catches listing targets running more than xccov's coverage report, e.g. loading the line coverage too.
     @Test
-    func testCoverageConverterUnknownTargetErrorIncludesAvailableTargetsFromProtocolClient() throws {
-        let xcresultClient = StubXCResultToolClient()
+    func testTargetsInfoLoadsOnlyTheCoverageReport() async throws {
+        var xccovClient = StubXCCovClient()
+        xccovClient.getCoverageReportHandler = { _ in TestModelFactory.coverageReport(targetNames: ["App.framework", "Lib"]) }
+
+        let info = try await CoverageConverter.targetsInfo(
+            with: URL(fileURLWithPath: "/tmp/fake.xcresult"),
+            xcCovClient: xccovClient
+        )
+
+        #expect(info == "\nApp.framework\nLib")
+    }
+
+    @Test
+    func testTargetsInfoMapsCoverageReportClientFailureToCouldNotLoadCoverageReport() async {
+        var xccovClient = StubXCCovClient()
+        xccovClient.getCoverageReportHandler = { _ in throw TestDoubleError.forced }
+
+        await #expect(throws: CoverageConverterError.couldNotLoadCoverageReport) {
+            try await CoverageConverter.targetsInfo(
+                with: URL(fileURLWithPath: "/tmp/fake.xcresult"),
+                xcCovClient: xccovClient
+            )
+        }
+    }
+
+    @Test
+    func testCoverageConverterUnknownTargetErrorIncludesAvailableTargetsFromProtocolClient() async throws {
+        var xcresultClient = StubXCResultToolClient()
         xcresultClient.getTestSummaryHandler = { _ in try TestModelFactory.summary() }
-        let xccovClient = StubXCCovClient()
+        var xccovClient = StubXCCovClient()
         xccovClient.getCoverageReportHandler = { _ in TestModelFactory.coverageReport(targetNames: ["App.framework", "Lib"]) }
 
         do {
-            _ = try CoverageConverter(
+            _ = try await CoverageConverter(
                 with: URL(fileURLWithPath: "/tmp/fake.xcresult"),
                 coverageTargets: ["Missing"],
                 strictPathnames: false,
@@ -70,11 +99,11 @@ struct CoverageAndFormatterDependencyTests {
         }
     }
 
-    // Catches the converter ignoring prefetched inputs and running xccov or xcresulttool again.
+    // Catches the converter dropping the start time or line coverage it loads from the clients.
     @Test
-    func testCoberturaConverterUsesPrefetchedInputsInsteadOfRunningTheTools() throws {
-        let xcresultClient = StubXCResultToolClient()
-        xcresultClient.getTestSummaryHandler = { _ in try TestModelFactory.summary(startTime: 1) }
+    func testCoberturaConverterUsesTheInputsLoadedFromTheClients() async throws {
+        var xcresultClient = StubXCResultToolClient()
+        xcresultClient.getTestSummaryHandler = { _ in try TestModelFactory.summary(startTime: 42) }
         let report = CoverageReport(
             coveredLines: 1,
             executableLines: 1,
@@ -103,12 +132,15 @@ struct CoverageAndFormatterDependencyTests {
             from: Data(#"{"/tmp/Foo.swift": [{"isExecutable": true, "line": 1, "executionCount": 2}]}"#.utf8)
         )
 
-        let converter = try CoberturaCoverageConverter(
+        var xccovClient = StubXCCovClient()
+        xccovClient.getCoverageReportHandler = { _ in report }
+        xccovClient.getCoverageDataHandler = { _ in lineCoverage }
+
+        let converter = try await CoberturaCoverageConverter(
             with: URL(fileURLWithPath: "/tmp/fake.xcresult"),
             strictPathnames: false,
             xcResultToolClient: xcresultClient,
-            xcCovClient: StubXCCovClient(),
-            prefetchedInputs: PrefetchedCoverageInputs(report: report, startTime: 42, data: lineCoverage)
+            xcCovClient: xccovClient
         )
         let xml = try converter.xmlString(quiet: true)
 
@@ -117,15 +149,15 @@ struct CoverageAndFormatterDependencyTests {
     }
 
     @Test
-    func testFormatterCanInitializeWithoutCoverageReportIfNoCoverageFilterRequested() throws {
-        let xcresultClient = StubXCResultToolClient()
+    func testFormatterCanInitializeWithoutCoverageReportIfNoCoverageFilterRequested() async throws {
+        var xcresultClient = StubXCResultToolClient()
         xcresultClient.getBuildResultsHandler = { _ in try TestModelFactory.buildResults() }
         xcresultClient.getTestSummaryHandler = { _ in try TestModelFactory.summary() }
         xcresultClient.getTestsHandler = { _ in try TestModelFactory.tests() }
-        let xccovClient = StubXCCovClient()
+        var xccovClient = StubXCCovClient()
         xccovClient.getCoverageReportHandler = { _ in throw TestDoubleError.forced }
 
-        _ = try XCResultFormatter(
+        _ = try await XCResultFormatter(
             with: URL(fileURLWithPath: "/tmp/fake.xcresult"),
             formatter: TextResultFormatter(),
             coverageTargets: [],
@@ -135,16 +167,16 @@ struct CoverageAndFormatterDependencyTests {
     }
 
     @Test
-    func testFormatterFailsIfCoverageFilterRequestedAndCoverageReportUnavailable() throws {
-        let xcresultClient = StubXCResultToolClient()
+    func testFormatterFailsIfCoverageFilterRequestedAndCoverageReportUnavailable() async throws {
+        var xcresultClient = StubXCResultToolClient()
         xcresultClient.getBuildResultsHandler = { _ in try TestModelFactory.buildResults() }
         xcresultClient.getTestSummaryHandler = { _ in try TestModelFactory.summary() }
         xcresultClient.getTestsHandler = { _ in try TestModelFactory.tests() }
-        let xccovClient = StubXCCovClient()
+        var xccovClient = StubXCCovClient()
         xccovClient.getCoverageReportHandler = { _ in throw TestDoubleError.forced }
 
-        #expect(throws: CoverageConverterError.self) {
-            try XCResultFormatter(
+        await #expect(throws: CoverageConverterError.self) {
+            try await XCResultFormatter(
                 with: URL(fileURLWithPath: "/tmp/fake.xcresult"),
                 formatter: TextResultFormatter(),
                 coverageTargets: ["App"],
@@ -155,22 +187,57 @@ struct CoverageAndFormatterDependencyTests {
     }
 
     @Test
-    func testFormatterAcceptsNormalizedCoverageTargetFromProtocolClient() throws {
-        let xcresultClient = StubXCResultToolClient()
+    func testFormatterAcceptsNormalizedCoverageTargetFromProtocolClient() async throws {
+        var xcresultClient = StubXCResultToolClient()
         xcresultClient.getBuildResultsHandler = { _ in try TestModelFactory.buildResults() }
         xcresultClient.getTestSummaryHandler = { _ in try TestModelFactory.summary() }
         xcresultClient.getTestsHandler = { _ in try TestModelFactory.tests() }
-        let xccovClient = StubXCCovClient()
+        var xccovClient = StubXCCovClient()
         xccovClient.getCoverageReportHandler = { _ in
             TestModelFactory.coverageReport(targetNames: ["App.framework"])
         }
 
-        _ = try XCResultFormatter(
+        _ = try await XCResultFormatter(
             with: URL(fileURLWithPath: "/tmp/fake.xcresult"),
             formatter: TextResultFormatter(),
             coverageTargets: ["App"],
             xcResultToolClient: xcresultClient,
             xcCovClient: xccovClient
         )
+    }
+
+    // Catches the formatter starting xccov, which takes about 600 ms, when no coverage is shown.
+    @Test(arguments: [
+        (includesCoverage: false, coverageTargets: [String](), expectedReportLoads: 0),
+        (includesCoverage: true, coverageTargets: [], expectedReportLoads: 1),
+        // Requested targets are checked against the report even when coverage isn't shown.
+        (includesCoverage: false, coverageTargets: ["App"], expectedReportLoads: 1)
+    ])
+    func testFormatterLoadsTheCoverageReportOnlyWhenNeeded(
+        includesCoverage: Bool,
+        coverageTargets: [String],
+        expectedReportLoads: Int
+    ) async throws {
+        let reportLoads = CallCounter()
+        var xcresultClient = StubXCResultToolClient()
+        xcresultClient.getBuildResultsHandler = { _ in try TestModelFactory.buildResults() }
+        xcresultClient.getTestSummaryHandler = { _ in try TestModelFactory.summary() }
+        xcresultClient.getTestsHandler = { _ in try TestModelFactory.tests() }
+        var xccovClient = StubXCCovClient()
+        xccovClient.getCoverageReportHandler = { _ in
+            await reportLoads.increment()
+            return TestModelFactory.coverageReport(targetNames: ["App"])
+        }
+
+        _ = try await XCResultFormatter(
+            with: URL(fileURLWithPath: "/tmp/fake.xcresult"),
+            formatter: TextResultFormatter(),
+            coverageTargets: coverageTargets,
+            includesCoverage: includesCoverage,
+            xcResultToolClient: xcresultClient,
+            xcCovClient: xccovClient
+        )
+
+        #expect(await reportLoads.count == expectedReportLoads)
     }
 }

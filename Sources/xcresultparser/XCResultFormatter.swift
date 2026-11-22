@@ -113,15 +113,17 @@ public struct XCResultFormatter {
         coverageTargets: [String] = [],
         failedTestsOnly: Bool = false,
         summaryFields: String = "errors|warnings|analyzerWarnings|tests|failed|skipped|duration|date",
-        coverageReportFormat: CoverageReportFormat = .methods
-    ) throws {
-        try self.init(
+        coverageReportFormat: CoverageReportFormat = .methods,
+        includesCoverage: Bool = true
+    ) async throws {
+        try await self.init(
             with: url,
             formatter: formatter,
             coverageTargets: coverageTargets,
             failedTestsOnly: failedTestsOnly,
             summaryFields: summaryFields,
             coverageReportFormat: coverageReportFormat,
+            includesCoverage: includesCoverage,
             xcResultToolClient: XCResultToolClient(),
             xcCovClient: XCCovClient()
         )
@@ -134,17 +136,30 @@ public struct XCResultFormatter {
         failedTestsOnly: Bool = false,
         summaryFields: String = "errors|warnings|analyzerWarnings|tests|failed|skipped|duration|date",
         coverageReportFormat: CoverageReportFormat = .methods,
+        includesCoverage: Bool = true,
         xcResultToolClient: any XCResultToolProviding,
         xcCovClient: any XCCovProviding
-    ) throws {
-        buildResults = try xcResultToolClient.getBuildResults(path: url)
-        testSummary = try xcResultToolClient.getTestSummary(path: url)
-        tests = try xcResultToolClient.getTests(path: url)
+    ) async throws {
+        // xccov is slow to start, so it only runs when coverage is shown or coverage targets must be checked.
+        let loadsCoverageReport = includesCoverage || !coverageTargets.isEmpty
+        async let coverageReport = loadsCoverageReport ? try? await xcCovClient.getCoverageReport(path: url) : nil
+        async let buildResults = Result { try await xcResultToolClient.getBuildResults(path: url) }
+        async let testSummary = Result { try await xcResultToolClient.getTestSummary(path: url) }
+        async let tests = Result { try await xcResultToolClient.getTests(path: url) }
+        // A call that failed while xcresulttool was upgrading the bundle is run again on its own.
+        let (concurrentBuildResults, concurrentTestSummary, concurrentTests) = await (buildResults, testSummary, tests)
+        self.buildResults = try await concurrentBuildResults.valueOrRetrying {
+            try await xcResultToolClient.getBuildResults(path: url)
+        }
+        self.testSummary = try await concurrentTestSummary.valueOrRetrying {
+            try await xcResultToolClient.getTestSummary(path: url)
+        }
+        self.tests = try await concurrentTests.valueOrRetrying { try await xcResultToolClient.getTests(path: url) }
         outputFormatter = formatter
-        coverageReport = try? xcCovClient.getCoverageReport(path: url)
+        self.coverageReport = await coverageReport
         let targetSelection = CoverageTargetSelection(
             with: coverageTargets,
-            from: coverageReport?.targets.map(\.name) ?? []
+            from: self.coverageReport?.targets.map(\.name) ?? []
         )
         guard targetSelection.unmatchedRequested.isEmpty else {
             throw CoverageConverterError.unknownCoverageTargets(
@@ -321,6 +336,7 @@ public struct XCResultFormatter {
         var lines = [String]()
         let runDestination = tests.devices.first?.deviceName ?? "Unknown destination"
         let failureMessageDetails = failureMessageDetailsByTestIdentifier()
+        let failureSummaries = FailureSummaryIndex(testSummary.testFailures)
 
         let configuredNodes = tests.testPlanConfigurations.map { config in
             (
@@ -353,7 +369,7 @@ public struct XCResultFormatter {
                     lines += createTestSummaryInfo(
                         group,
                         level: 0,
-                        failureSummaries: testSummary.testFailures,
+                        failureSummaries: failureSummaries,
                         failureMessageDetails: failureMessageDetails
                     )
                 }
@@ -375,7 +391,7 @@ public struct XCResultFormatter {
     private func createTestSummaryInfo(
         _ group: FormattedTestGroup,
         level: Int,
-        failureSummaries: [XCTestFailure],
+        failureSummaries: FailureSummaryIndex,
         failureMessageDetails: [String: [FailureMessageDetail]]
     ) -> [String] {
         var lines = [String]()
@@ -425,17 +441,14 @@ public struct XCResultFormatter {
 
     private func actionTestFileStatusString(
         for testData: FormattedTest,
-        failureSummaries: [XCTestFailure],
+        failureSummaries: FailureSummaryIndex,
         failureMessageDetails: [String: [FailureMessageDetail]]
     ) -> String {
         let duration = formattedDurationString(for: testData.duration)
         let icon = actionTestFileStatusStringIcon(testData: testData)
         let testTitle = "\(icon) \(testData.name) (\(duration))"
         let testCaseName = testData.identifier
-        if let summary = failureSummaries.first(where: {
-            $0.testIdentifierString == testCaseName ||
-                $0.testIdentifierString.replacingOccurrences(of: "/", with: ".") == testCaseName
-        }) {
+        if let summary = failureSummaries.firstSummary(forTestIdentifier: testCaseName) {
             let candidates = failureMessageDetails[summary.testIdentifierString] ??
                 failureMessageDetails[summary.testIdentifierString.replacingOccurrences(of: "/", with: ".")] ?? []
             let matchingDetail = bestFailureMessage(for: summary, in: candidates)
@@ -754,5 +767,31 @@ public struct XCResultFormatter {
 extension NumberFormatter {
     func unwrappedString(for input: Double?) -> String {
         return string(for: input) ?? ""
+    }
+}
+
+/// Finds a test's failure summary without scanning every summary for every test.
+private struct FailureSummaryIndex {
+    private let summariesByIdentifier: [String: XCTestFailure]
+
+    /// Each summary is found by its identifier and by the identifier with `/` replaced by `.`.
+    /// The first summary for an identifier wins, as with a linear search.
+    init(_ summaries: [XCTestFailure]) {
+        var summariesByIdentifier = [String: XCTestFailure]()
+        for summary in summaries {
+            let identifier = summary.testIdentifierString
+            if summariesByIdentifier[identifier] == nil {
+                summariesByIdentifier[identifier] = summary
+            }
+            let dotted = identifier.replacingOccurrences(of: "/", with: ".")
+            if summariesByIdentifier[dotted] == nil {
+                summariesByIdentifier[dotted] = summary
+            }
+        }
+        self.summariesByIdentifier = summariesByIdentifier
+    }
+
+    func firstSummary(forTestIdentifier identifier: String) -> XCTestFailure? {
+        summariesByIdentifier[identifier]
     }
 }

@@ -11,9 +11,13 @@ struct XCResultToolJunitXMLDataProvider: JunitXMLDataProviding {
     private let summary: XCSummary
     private let tests: XCTests
 
-    init(url: URL, client: any XCResultToolProviding = XCResultToolClient()) throws {
-        summary = try client.getTestSummary(path: url)
-        tests = try client.getTests(path: url)
+    init(url: URL, client: any XCResultToolProviding = XCResultToolClient()) async throws {
+        async let summary = Result { try await client.getTestSummary(path: url) }
+        async let tests = Result { try await client.getTests(path: url) }
+        // A call that failed while xcresulttool was upgrading the bundle is run again on its own.
+        let (concurrentSummary, concurrentTests) = await (summary, tests)
+        self.summary = try await concurrentSummary.valueOrRetrying { try await client.getTestSummary(path: url) }
+        self.tests = try await concurrentTests.valueOrRetrying { try await client.getTests(path: url) }
     }
 
     var metrics: JunitInvocationMetrics {

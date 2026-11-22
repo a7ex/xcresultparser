@@ -29,10 +29,10 @@ extension XCBuildResults {
         analyzerWarnings = try values.decode([XCIssue].self, forKey: .analyzerWarnings)
         warnings = try values.decode([XCIssue].self, forKey: .warnings)
         errors = try values.decode([XCIssue].self, forKey: .errors)
-        status = try? values.decode(String.self, forKey: .status)
-        analyzerWarningCount = (try? values.decode(Int.self, forKey: .analyzerWarningCount)) ?? 0
-        errorCount = (try? values.decode(Int.self, forKey: .errorCount)) ?? 0
-        warningCount = (try? values.decode(Int.self, forKey: .warningCount)) ?? 0
-        actionTitle = try? values.decode(String.self, forKey: .actionTitle)
+        status = try? values.decodeIfPresent(String.self, forKey: .status)
+        analyzerWarningCount = (try? values.decodeIfPresent(Int.self, forKey: .analyzerWarningCount)) ?? 0
+        errorCount = (try? values.decodeIfPresent(Int.self, forKey: .errorCount)) ?? 0
+        warningCount = (try? values.decodeIfPresent(Int.self, forKey: .warningCount)) ?? 0
+        actionTitle = try? values.decodeIfPresent(String.self, forKey: .actionTitle)
     }
 }

@@ -25,7 +25,7 @@ extension XCTestFailure {
         failureText = try values.decode(String.self, forKey: .failureText)
         testIdentifier = try values.decode(Int64.self, forKey: .testIdentifier)
         testIdentifierString = try values.decode(String.self, forKey: .testIdentifierString)
-        let testIdentifierURLString = try? values.decode(String.self, forKey: .testIdentifierURL)
+        let testIdentifierURLString = try? values.decodeIfPresent(String.self, forKey: .testIdentifierURL)
         testIdentifierURL = if let testIdentifierURLString {
             URL(string: testIdentifierURLString)
         } else {

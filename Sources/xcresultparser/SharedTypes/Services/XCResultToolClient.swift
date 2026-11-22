@@ -7,13 +7,13 @@
 
 import Foundation
 
-protocol XCResultToolProviding {
-    func getBuildResults(path: URL) throws -> XCBuildResults
-    func getTestSummary(path: URL) throws -> XCSummary
-    func getTests(path: URL) throws -> XCTests
-    func getTestDetails(path: URL, testId: String) throws -> XCTestDetails
-    func getActivities(path: URL, testId: String) throws -> XCActivities
-    func getMetrics(path: URL, testId: String) throws -> [XCTestWithMetrics]
+protocol XCResultToolProviding: Sendable {
+    func getBuildResults(path: URL) async throws -> XCBuildResults
+    func getTestSummary(path: URL) async throws -> XCSummary
+    func getTests(path: URL) async throws -> XCTests
+    func getTestDetails(path: URL, testId: String) async throws -> XCTestDetails
+    func getActivities(path: URL, testId: String) async throws -> XCActivities
+    func getMetrics(path: URL, testId: String) async throws -> [XCTestWithMetrics]
 }
 
 struct XCResultToolClient: XCResultToolProviding {
@@ -33,44 +33,38 @@ struct XCResultToolClient: XCResultToolProviding {
         self.decoder = decoder
     }
 
-    func getBuildResults(path: URL) throws -> XCBuildResults {
-        let data = try execute(arguments: ["get", "build-results", "--path", path.path])
+    func getBuildResults(path: URL) async throws -> XCBuildResults {
+        let data = try await execute(arguments: ["get", "build-results", "--path", path.path])
         return try decode(XCBuildResults.self, from: data)
     }
 
-    func getTestSummary(path: URL) throws -> XCSummary {
-        let data = try execute(arguments: testSummaryArguments(for: path))
+    func getTestSummary(path: URL) async throws -> XCSummary {
+        let data = try await execute(arguments: testSummaryArguments(for: path))
         return try decode(XCSummary.self, from: data)
     }
 
-    /// Like `getTestSummary(path:)`, but terminates xcresulttool if the task is cancelled.
-    func testSummary(path: URL) async throws -> XCSummary {
-        let data = try await executeCancellable(arguments: testSummaryArguments(for: path))
-        return try decode(XCSummary.self, from: data)
-    }
-
-    func getTests(path: URL) throws -> XCTests {
-        let data = try execute(arguments: ["get", "test-results", "tests", "--path", path.path])
+    func getTests(path: URL) async throws -> XCTests {
+        let data = try await execute(arguments: ["get", "test-results", "tests", "--path", path.path])
         return try decode(XCTests.self, from: data)
     }
 
-    func getTestDetails(path: URL, testId: String) throws -> XCTestDetails {
-        let data = try execute(
+    func getTestDetails(path: URL, testId: String) async throws -> XCTestDetails {
+        let data = try await execute(
             arguments: ["get", "test-results", "test-details", "--path", path.path, "--test-id", testId]
         )
         return try decode(XCTestDetails.self, from: data)
     }
 
-    func getActivities(path: URL, testId: String) throws -> XCActivities {
-        let data = try execute(
+    func getActivities(path: URL, testId: String) async throws -> XCActivities {
+        let data = try await execute(
             arguments: ["get", "test-results", "activities", "--path", path.path, "--test-id", testId]
         )
         return try decode(XCActivities.self, from: data)
     }
 
     // xcresulttool currently returns [] for tests without performance metrics.
-    func getMetrics(path: URL, testId: String) throws -> [XCTestWithMetrics] {
-        let data = try execute(
+    func getMetrics(path: URL, testId: String) async throws -> [XCTestWithMetrics] {
+        let data = try await execute(
             arguments: ["get", "test-results", "metrics", "--path", path.path, "--test-id", testId]
         )
 
@@ -91,12 +85,9 @@ struct XCResultToolClient: XCResultToolProviding {
         ["get", "test-results", "summary", "--path", path.path]
     }
 
-    private func execute(arguments: [String]) throws -> Data {
-        try shell.execute(program: "/usr/bin/xcrun", with: ["xcresulttool"] + arguments)
-    }
-
-    private func executeCancellable(arguments: [String]) async throws -> Data {
-        try await shell.executeCancellable(program: "/usr/bin/xcrun", with: ["xcresulttool"] + arguments, at: nil)
+    private func execute(arguments: [String]) async throws -> Data {
+        // Compact JSON carries the same data in about 40% fewer bytes, which is faster to read and decode.
+        try await shell.execute(program: "/usr/bin/xcrun", with: ["xcresulttool"] + arguments + ["--compact"])
     }
 
     private func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {

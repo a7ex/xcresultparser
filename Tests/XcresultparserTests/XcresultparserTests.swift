@@ -6,12 +6,12 @@ import Testing
 // swiftlint:disable:next type_body_length
 struct XcresultparserTests {
     @Test
-    func testTextResultFormatter() throws {
+    func testTextResultFormatter() async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
-        let durationValue = executionTimeValue(for: xcresultFile)
-        let dateValue = executionDateValue(for: xcresultFile)
+        let durationValue = await executionTimeValue(for: xcresultFile)
+        let dateValue = await executionDateValue(for: xcresultFile)
 
-        let resultParser = try XCResultFormatter(
+        let resultParser = try await XCResultFormatter(
             with: xcresultFile,
             formatter: TextResultFormatter(),
             coverageTargets: []
@@ -38,12 +38,12 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testTextResultFormatterTotalCoverageReportFormat() throws {
+    func testTextResultFormatterTotalCoverageReportFormat() async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
-        let durationValue = executionTimeValue(for: xcresultFile)
-        let dateValue = executionDateValue(for: xcresultFile)
+        let durationValue = await executionTimeValue(for: xcresultFile)
+        let dateValue = await executionDateValue(for: xcresultFile)
 
-        let resultParser = try XCResultFormatter(
+        let resultParser = try await XCResultFormatter(
             with: xcresultFile,
             formatter: TextResultFormatter(),
             coverageTargets: [],
@@ -73,12 +73,12 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testTextResultFormatterMethodsCoverageReportFormat() throws {
+    func testTextResultFormatterMethodsCoverageReportFormat() async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
-        let durationValue = executionTimeValue(for: xcresultFile)
-        let dateValue = executionDateValue(for: xcresultFile)
+        let durationValue = await executionTimeValue(for: xcresultFile)
+        let dateValue = await executionDateValue(for: xcresultFile)
 
-        let resultParser = try XCResultFormatter(
+        let resultParser = try await XCResultFormatter(
             with: xcresultFile,
             formatter: TextResultFormatter(),
             coverageTargets: [],
@@ -110,10 +110,10 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testTextResultFormatterCanExcludeDateAndDurationFromSummary() throws {
+    func testTextResultFormatterCanExcludeDateAndDurationFromSummary() async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
 
-        let resultParser = try XCResultFormatter(
+        let resultParser = try await XCResultFormatter(
             with: xcresultFile,
             formatter: TextResultFormatter(),
             coverageTargets: [],
@@ -126,12 +126,12 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testCLIResultFormatter() throws {
+    func testCLIResultFormatter() async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
-        let durationValue = executionTimeValue(for: xcresultFile)
-        let dateValue = executionDateValue(for: xcresultFile)
+        let durationValue = await executionTimeValue(for: xcresultFile)
+        let dateValue = await executionDateValue(for: xcresultFile)
 
-        let resultParser = try XCResultFormatter(
+        let resultParser = try await XCResultFormatter(
             with: xcresultFile,
             formatter: CLIResultFormatter(),
             coverageTargets: []
@@ -160,12 +160,12 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testHTMLResultFormatter() throws {
+    func testHTMLResultFormatter() async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
-        let durationValue = executionTimeValue(for: xcresultFile)
-        let dateValue = executionDateValue(for: xcresultFile)
+        let durationValue = await executionTimeValue(for: xcresultFile)
+        let dateValue = await executionDateValue(for: xcresultFile)
 
-        let resultParser = try XCResultFormatter(
+        let resultParser = try await XCResultFormatter(
             with: xcresultFile,
             formatter: HTMLResultFormatter(),
             coverageTargets: []
@@ -198,10 +198,10 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testHTMLResultFormatterParameterizedArguments() throws {
+    func testHTMLResultFormatterParameterizedArguments() async throws {
         let xcresultFile = try TestFixtures.xcresult("parametrized")
 
-        let resultParser = try XCResultFormatter(
+        let resultParser = try await XCResultFormatter(
             with: xcresultFile,
             formatter: HTMLResultFormatter(),
             coverageTargets: []
@@ -215,12 +215,12 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testMDResultFormatter() throws {
+    func testMDResultFormatter() async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
-        let durationValue = executionTimeValue(for: xcresultFile)
-        let dateValue = executionDateValue(for: xcresultFile)
+        let durationValue = await executionTimeValue(for: xcresultFile)
+        let dateValue = await executionDateValue(for: xcresultFile)
 
-        let resultParser = try XCResultFormatter(
+        let resultParser = try await XCResultFormatter(
             with: xcresultFile,
             formatter: MDResultFormatter(),
             coverageTargets: []
@@ -245,10 +245,10 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testMDResultFormatterParameterizedArguments() throws {
+    func testMDResultFormatterParameterizedArguments() async throws {
         let xcresultFile = try TestFixtures.xcresult("parametrized")
 
-        let resultParser = try XCResultFormatter(
+        let resultParser = try await XCResultFormatter(
             with: xcresultFile,
             formatter: MDResultFormatter(),
             coverageTargets: []
@@ -262,10 +262,10 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testTextResultFormatterParameterizedArguments() throws {
+    func testTextResultFormatterParameterizedArguments() async throws {
         let xcresultFile = try TestFixtures.xcresult("parametrized")
 
-        let resultParser = try XCResultFormatter(
+        let resultParser = try await XCResultFormatter(
             with: xcresultFile,
             formatter: TextResultFormatter(),
             coverageTargets: []
@@ -279,11 +279,11 @@ struct XcresultparserTests {
     }
 
     @Test(arguments: [true, false])
-    func testCoverageConverter(strictPathnames: Bool) throws {
+    func testCoverageConverter(strictPathnames: Bool) async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
         let projectRoot = ""
 
-        let converter = try CoverageConverter(
+        let converter = try await CoverageConverter(
             with: xcresultFile,
             projectRoot: projectRoot,
             strictPathnames: strictPathnames
@@ -291,7 +291,7 @@ struct XcresultparserTests {
         let info = converter.targetsInfo
         #expect(info == "\nXcresultparserLib\nXcresultparserTests")
 
-        let fileCoverage = try converter.getCoverageDataAsJSON()
+        let fileCoverage = converter.getCoverageDataAsJSON()
         #expect(fileCoverage.files.count == 13)
         let firstKey = try #require(fileCoverage.files.keys.sorted().first)
         #expect(
@@ -314,20 +314,20 @@ struct XcresultparserTests {
 
         // Deprecated methods
 
-        let fileList = try converter.coverageFileList()
+        let fileList = try await converter.coverageFileList()
         #expect(fileList.count == 14)
         let firstFile = "/Users/fhaeser/code/xcresultparser/Sources/xcresultparser/CoberturaCoverageConverter.swift"
         #expect(fileList.first == firstFile)
-        let coverageForFile = try converter.coverageForFile(path: firstFile)
+        let coverageForFile = try await converter.coverageForFile(path: firstFile)
         #expect(coverageForFile.starts(with: "  1: *\n  2: *\n  3: *"))
         #expect(coverageForFile.contains(" 35: 0"))
     }
 
     @Test(arguments: [true, false], ["/Users/notexistant/code/xcresultparser", "/Users/fhaser/code/"])
-    func testCoverageConverterPathnames(strictPathnames: Bool, projectRoot: String) throws {
+    func testCoverageConverterPathnames(strictPathnames: Bool, projectRoot: String) async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
 
-        let converter = try SonarCoverageConverter(
+        let converter = try await SonarCoverageConverter(
             with: xcresultFile,
             projectRoot: projectRoot,
             strictPathnames: strictPathnames
@@ -343,12 +343,12 @@ struct XcresultparserTests {
     }
 
     @Test(arguments: [true, false])
-    func testSonarCoverageConverter(strictPathnames: Bool) throws {
+    func testSonarCoverageConverter(strictPathnames: Bool) async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
         let projectRoot = ""
         let quiet = 1
 
-        let converter = try SonarCoverageConverter(
+        let converter = try await SonarCoverageConverter(
             with: xcresultFile,
             projectRoot: projectRoot,
             strictPathnames: strictPathnames
@@ -367,11 +367,11 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testCoverageTargetFilterWithNoMatchesThrowsError() throws {
+    func testCoverageTargetFilterWithNoMatchesThrowsError() async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
 
         do {
-            _ = try SonarCoverageConverter(
+            _ = try await SonarCoverageConverter(
                 with: xcresultFile,
                 projectRoot: "",
                 coverageTargets: ["NonExistingTarget"],
@@ -394,11 +394,11 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testCoverageTargetFilterWithPartialUnknownThrowsError() throws {
+    func testCoverageTargetFilterWithPartialUnknownThrowsError() async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
 
         do {
-            _ = try SonarCoverageConverter(
+            _ = try await SonarCoverageConverter(
                 with: xcresultFile,
                 projectRoot: "",
                 coverageTargets: ["XcresultparserLib", "MissingTarget"],
@@ -420,11 +420,11 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testFormatterInitFailsForUnknownCoverageTarget() throws {
+    func testFormatterInitFailsForUnknownCoverageTarget() async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
 
-        #expect(throws: CoverageConverterError.self) {
-            try XCResultFormatter(
+        await #expect(throws: CoverageConverterError.self) {
+            try await XCResultFormatter(
                 with: xcresultFile,
                 formatter: TextResultFormatter(),
                 coverageTargets: ["NonExistingTarget"]
@@ -433,12 +433,12 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testSonarCoverageConverterExcludeFiles() throws {
+    func testSonarCoverageConverterExcludeFiles() async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
         let projectRoot = ""
         let quiet = 1
 
-        let converter = try SonarCoverageConverter(
+        let converter = try await SonarCoverageConverter(
             with: xcresultFile,
             projectRoot: projectRoot,
             excludedPaths: ["OutputFormatting/Formatters"],
@@ -457,11 +457,11 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testCoberturaConverter() throws {
+    func testCoberturaConverter() async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
         let projectRoot = ""
 
-        let converter = try CoberturaCoverageConverter(
+        let converter = try await CoberturaCoverageConverter(
             with: xcresultFile,
             projectRoot: projectRoot,
             strictPathnames: false
@@ -470,11 +470,11 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testCoberturaConverterExcludeFiles() throws {
+    func testCoberturaConverterExcludeFiles() async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
         let projectRoot = ""
 
-        let converter = try CoberturaCoverageConverter(
+        let converter = try await CoberturaCoverageConverter(
             with: xcresultFile,
             projectRoot: projectRoot,
             excludedPaths: ["OutputFormatting/Formatters"],
@@ -484,11 +484,11 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testCoberturaCoverageTargetFilterWithNoMatchesThrowsError() throws {
+    func testCoberturaCoverageTargetFilterWithNoMatchesThrowsError() async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
 
         do {
-            _ = try CoberturaCoverageConverter(
+            _ = try await CoberturaCoverageConverter(
                 with: xcresultFile,
                 projectRoot: "",
                 coverageTargets: ["NonExistingTarget"],
@@ -515,7 +515,7 @@ struct XcresultparserTests {
         let xcresultFile = try TestFixtures.xcresult("test")
 
         let converter = try await CoberturaCoverageConverter(
-            loadingConcurrently: xcresultFile,
+            with: xcresultFile,
             projectRoot: "",
             excludedPaths: ["OutputFormatting/Formatters"],
             strictPathnames: false
@@ -530,7 +530,7 @@ struct XcresultparserTests {
 
         do {
             _ = try await CoberturaCoverageConverter(
-                loadingConcurrently: xcresultFile,
+                with: xcresultFile,
                 projectRoot: "",
                 coverageTargets: ["NonExistingTarget"],
                 strictPathnames: false
@@ -565,80 +565,69 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testJunitXMLSonar() throws {
-        try ClassPathCacheLock.withLock {
-            JunitXML.resetCachedPathnames()
-            let xcresultFile = try TestFixtures.xcresult("test")
-            let projectRoot = ""
-            let junitXML = try JunitXML(
-                with: xcresultFile,
-                projectRoot: projectRoot,
-                format: .sonar
-            )
-            try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecution", actual: junitXML)
-        }
+    func testJunitXMLSonar() async throws {
+        let xcresultFile = try TestFixtures.xcresult("test")
+        let projectRoot = ""
+        let junitXML = try await JunitXML(
+            with: xcresultFile,
+            projectRoot: projectRoot,
+            format: .sonar
+        )
+        try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecution", actual: junitXML)
     }
 
     // The project root only has to be an existing directory: the mocked grep output supplies the paths.
     // Don't mock SharedInstances.fileManager for this: it is global, and tests running in parallel
     // would then treat "" as an existing project root and grep the real working directory.
     @Test
-    func testJunitXMLSonarRelativePaths() throws {
-        try ClassPathCacheLock.withLock {
-            JunitXML.resetCachedPathnames()
-            let cliResult = """
-            ./Tests/XcresultparserTests.swift:class XcresultparserTests
-            """
+    func testJunitXMLSonarRelativePaths() async throws {
+        let cliResult = """
+        ./Tests/XcresultparserTests.swift:class XcresultparserTests
+        """
 
-            let xcresultFile = try TestFixtures.xcresult("test")
-            let projectRoot = FileManager.default.temporaryDirectory.path
-            let dataProvider = try XCResultToolJunitXMLDataProvider(url: xcresultFile)
-            let mockedShell = MockedShell(response: Data(cliResult.utf8), error: nil)
-            mockedShell.argumentValidation = { arguments in
-                return arguments.last == "."
-            }
-            let junitXML = JunitXML(
-                dataProvider: dataProvider,
-                projectRoot: projectRoot,
-                format: .sonar,
-                relativePathNames: true,
-                shell: mockedShell
-            )
-            try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecutionWithProjectRootRelative", actual: junitXML)
+        let xcresultFile = try TestFixtures.xcresult("test")
+        let projectRoot = FileManager.default.temporaryDirectory.path
+        let dataProvider = try await XCResultToolJunitXMLDataProvider(url: xcresultFile)
+        let mockedShell = MockedShell(response: Data(cliResult.utf8)) { arguments in
+            arguments.last == "."
         }
+        let junitXML = await JunitXML(
+            dataProvider: dataProvider,
+            projectRoot: projectRoot,
+            format: .sonar,
+            relativePathNames: true,
+            shell: mockedShell
+        )
+        try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecutionWithProjectRootRelative", actual: junitXML)
     }
 
     @Test
-    func testJunitXMLSonarAbsolutePaths() throws {
-        try ClassPathCacheLock.withLock {
-            JunitXML.resetCachedPathnames()
-            let cliResult = """
-            /Users/actual/project/Tests/XcresultparserTests.swift:class XcresultparserTests
-            """
+    func testJunitXMLSonarAbsolutePaths() async throws {
+        let cliResult = """
+        /Users/actual/project/Tests/XcresultparserTests.swift:class XcresultparserTests
+        """
 
-            let xcresultFile = try TestFixtures.xcresult("test")
-            let projectRoot = FileManager.default.temporaryDirectory.path
-            let dataProvider = try XCResultToolJunitXMLDataProvider(url: xcresultFile)
-            let mockedShell = MockedShell(response: Data(cliResult.utf8), error: nil)
-            mockedShell.argumentValidation = { arguments in
-                return arguments.last != "."
-            }
-            let junitXML = JunitXML(
-                dataProvider: dataProvider,
-                projectRoot: projectRoot,
-                format: .sonar,
-                relativePathNames: false,
-                shell: mockedShell
-            )
-            try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecutionWithProjectRootAbsolute", actual: junitXML)
+        let xcresultFile = try TestFixtures.xcresult("test")
+        let projectRoot = FileManager.default.temporaryDirectory.path
+        let dataProvider = try await XCResultToolJunitXMLDataProvider(url: xcresultFile)
+        let mockedShell = MockedShell(response: Data(cliResult.utf8)) { arguments in
+            arguments.last != "."
         }
+        let junitXML = await JunitXML(
+            dataProvider: dataProvider,
+            projectRoot: projectRoot,
+            format: .sonar,
+            relativePathNames: false,
+            shell: mockedShell
+        )
+        try assertXmlTestReportsAreEqual(expectedFileName: "sonarTestExecutionWithProjectRootAbsolute", actual: junitXML)
     }
 
     @Test
-    func testJunitXMLJunit() throws {
+    func testJunitXMLJunit() async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
         let projectRoot = ""
-        let junitXML = try JunitXML(
+        let junitXML = try await JunitXML(
             with: xcresultFile,
             projectRoot: projectRoot,
             format: .junit
@@ -647,10 +636,10 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testJunitXMLMergedJunit() throws {
+    func testJunitXMLMergedJunit() async throws {
         let xcresultFile = try TestFixtures.xcresult("test_merged")
         let projectRoot = ""
-        let junitXML = try JunitXML(
+        let junitXML = try await JunitXML(
             with: xcresultFile,
             projectRoot: projectRoot,
             format: .junit
@@ -659,10 +648,10 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testJunitXMLRepeated() throws {
+    func testJunitXMLRepeated() async throws {
         let xcresultFile = try TestFixtures.xcresult("test_repeated")
         let projectRoot = ""
-        let junitXML = try JunitXML(
+        let junitXML = try await JunitXML(
             with: xcresultFile,
             projectRoot: projectRoot,
             format: .junit
@@ -671,10 +660,10 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testJunitXMLIncludesParameterizedArguments() throws {
+    func testJunitXMLIncludesParameterizedArguments() async throws {
         let xcresultFile = try TestFixtures.xcresult("parametrized")
         let projectRoot = ""
-        let junitXML = try JunitXML(
+        let junitXML = try await JunitXML(
             with: xcresultFile,
             projectRoot: projectRoot,
             format: .junit
@@ -696,10 +685,10 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testJunitXMLSessionLevelFailure() throws {
+    func testJunitXMLSessionLevelFailure() async throws {
         let xcresultFile = try TestFixtures.xcresult("session_level_failure")
         let projectRoot = ""
-        let junitXML = try JunitXML(
+        let junitXML = try await JunitXML(
             with: xcresultFile,
             projectRoot: projectRoot,
             format: .junit
@@ -708,10 +697,10 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testSonarXMLOmitsSessionLevelFailures() throws {
+    func testSonarXMLOmitsSessionLevelFailures() async throws {
         let xcresultFile = try TestFixtures.xcresult("session_level_failure")
         let projectRoot = ""
-        let junitXML = try JunitXML(
+        let junitXML = try await JunitXML(
             with: xcresultFile,
             projectRoot: projectRoot,
             format: .sonar
@@ -807,9 +796,9 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testCleanCodeWarnings() throws {
+    func testCleanCodeWarnings() async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
-        let converter = try IssuesJSON(with: xcresultFile)
+        let converter = try await IssuesJSON(with: xcresultFile)
         let rslt = try converter.jsonString(format: .warnings, quiet: true)
         let result = try JSONDecoder().decode([XcresultparserLib.Issue].self, from: Data(rslt.utf8))
 
@@ -825,9 +814,9 @@ struct XcresultparserTests {
     }
 
     @Test
-    func testCleanCodeWarningsWithRelativePath() throws {
+    func testCleanCodeWarningsWithRelativePath() async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
-        let converter = try IssuesJSON(with: xcresultFile, projectRoot: "xcresultparser/")
+        let converter = try await IssuesJSON(with: xcresultFile, projectRoot: "xcresultparser/")
         let rslt = try converter.jsonString(format: .warnings, quiet: true)
         let result = try JSONDecoder().decode([XcresultparserLib.Issue].self, from: Data(rslt.utf8))
             .sorted { lhs, rhs in
@@ -836,26 +825,26 @@ struct XcresultparserTests {
         #expect(result.first?.location.path == "Tests/XcresultparserTests/XcresultparserTests.swift")
     }
 
-    func testCleanCodeWarningsExcludingFiles() throws {
+    func testCleanCodeWarningsExcludingFiles() async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
-        let converter = try IssuesJSON(with: xcresultFile, excludedPaths: ["Tests/XcresultparserTests"])
+        let converter = try await IssuesJSON(with: xcresultFile, excludedPaths: ["Tests/XcresultparserTests"])
         let rslt = try converter.jsonString(format: .warnings, quiet: true)
         let result = try JSONDecoder().decode([XcresultparserLib.Issue].self, from: Data(rslt.utf8))
         #expect(result.isEmpty)
     }
 
     @Test
-    func testCleanCodeNoErrors() throws {
+    func testCleanCodeNoErrors() async throws {
         let xcresultFile = try TestFixtures.xcresult("test")
-        let converter = try IssuesJSON(with: xcresultFile)
+        let converter = try await IssuesJSON(with: xcresultFile)
         let rslt = try converter.jsonString(format: .errors, quiet: true)
         #expect(rslt == "[\n\n]")
     }
 
     @Test
-    func testCleanCodeErrors() throws {
+    func testCleanCodeErrors() async throws {
         let xcresultFile = try TestFixtures.xcresult("resultWithCompileError")
-        let converter = try IssuesJSON(with: xcresultFile)
+        let converter = try await IssuesJSON(with: xcresultFile)
         let rslt = try converter.jsonString(format: .errors, quiet: true)
         let result = try JSONDecoder().decode([XcresultparserLib.Issue].self, from: Data(rslt.utf8))
             .sorted { lhs, rhs in
@@ -1235,8 +1224,8 @@ struct XcresultparserTests {
 
     // MARK: helper functions
 
-    private func executionTimeValue(for xcresultFile: URL) -> String {
-        guard let summary = try? XCResultToolClient().getTestSummary(path: xcresultFile),
+    private func executionTimeValue(for xcresultFile: URL) async -> String {
+        guard let summary = try? await XCResultToolClient().getTestSummary(path: xcresultFile),
               let start = summary.startTime,
               let finish = summary.finishTime else {
             return ""
@@ -1248,8 +1237,8 @@ struct XcresultparserTests {
         return formatter.unwrappedString(for: duration)
     }
 
-    private func executionDateValue(for xcresultFile: URL) -> String {
-        guard let summary = try? XCResultToolClient().getTestSummary(path: xcresultFile),
+    private func executionDateValue(for xcresultFile: URL) async -> String {
+        guard let summary = try? await XCResultToolClient().getTestSummary(path: xcresultFile),
               let start = summary.startTime else {
             return ""
         }
@@ -1319,17 +1308,22 @@ struct XcresultparserTests {
     }
 }
 
-class MockedShell: Commandline {
-    var response = Data()
+struct MockedShell: Commandline {
+    let response: Data
     var error: (any Error)?
-    var argumentValidation: ([String]) -> Bool = { _ in true }
+    var argumentValidation: @Sendable ([String]) -> Bool = { _ in true }
 
-    init(response: Data, error: (any Error)?) {
+    init(
+        response: Data,
+        error: (any Error)? = nil,
+        argumentValidation: @escaping @Sendable ([String]) -> Bool = { _ in true }
+    ) {
         self.response = response
         self.error = error
+        self.argumentValidation = argumentValidation
     }
 
-    func execute(program: String, with arguments: [String], at executionPath: URL?) throws -> Data {
+    func execute(program: String, with arguments: [String], at executionPath: URL?) async throws -> Data {
         if !argumentValidation(arguments) {
             throw NSError(domain: "error", code: 17)
         }
