@@ -87,9 +87,7 @@ public struct JunitXML: XmlSerializable {
         shell: any Commandline = Shell()
     ) {
         self.dataProvider = dataProvider
-        var isDirectory: ObjCBool = false
-        self.projectRoot = if unsafe SharedInstances.fileManager.fileExists(atPath: projectRoot, isDirectory: &isDirectory),
-                              isDirectory.boolValue == true {
+        self.projectRoot = if SharedInstances.fileManager.directoryExists(atPath: projectRoot) {
             URL(fileURLWithPath: projectRoot)
         } else {
             nil
