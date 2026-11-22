@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### CHANGES:
 - **Breaking change for Swift library clients:** Use `try await` when creating `XCResultFormatter`, `JunitXML`, `IssuesJSON`, or a coverage converter. For example, change `try JunitXML(with: url)` to `try await JunitXML(with: url)` in an async context.
-- Raise the minimum supported platform to macOS 15. Building from source now needs Xcode 26 or newer (swift-tools-version 6.2).
+- Raise the minimum supported platform to macOS 15. Building from source now needs Xcode 26.2 or newer (swift-tools-version 6.2.3; swift-subprocess needs the Xcode 26.2 SDK).
 - Build in the Swift 6 language mode with the remaining upcoming features, strict memory safety and warnings as errors enabled.
 - `make install` now finds the built binary with `swift build --show-bin-path`, so it also works with Swift 6.4, which writes universal builds to `.build/out`.
 

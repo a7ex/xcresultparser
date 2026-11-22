@@ -1,9 +1,12 @@
-// swift-tools-version: 6.2
+// swift-tools-version: 6.2.3
 //
 // Support policy:
-// - Tools version: the Swift version shipped with the .0 release of the previous major Xcode,
-//   so the package builds with the current Xcode and the one major version before it
-//   (currently Xcode 27 and Xcode 26.0 → Swift 6.2).
+// - Minimum Xcode: the previous major's .0 release, so the package builds with the current Xcode
+//   and the one major version before it, unless a dependency needs a later one.
+//   swift-subprocess 1.0 uses `Span.bytes`, which the Xcode 26.0 and 26.1 SDKs limit to
+//   macOS 26, so the minimum is currently Xcode 26.2.
+// - Tools version: the Swift version shipped with the minimum Xcode
+//   (currently Xcode 26.2 → Swift 6.2.3).
 // - Deployment target: two major macOS versions behind the current release, or the oldest
 //   macOS that GitHub-hosted runners provide, whichever is newer
 //   (currently macOS 27 → macOS 15, which is also the oldest GitHub-hosted runner).
