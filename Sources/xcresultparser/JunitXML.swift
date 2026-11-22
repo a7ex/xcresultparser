@@ -70,7 +70,7 @@ public struct JunitXML: XmlSerializable {
         relativePathNames: Bool = true
     ) async throws {
         let dataProvider = try await XCResultToolJunitXMLDataProvider(url: url)
-        await self.init(
+        try await self.init(
             dataProvider: dataProvider,
             projectRoot: projectRoot,
             format: format,
@@ -84,7 +84,7 @@ public struct JunitXML: XmlSerializable {
         format: TestReportFormat = .junit,
         relativePathNames: Bool = true,
         shell: any Commandline = Shell()
-    ) async {
+    ) async throws {
         self.dataProvider = dataProvider
         let projectRootURL: URL? = if SharedInstances.fileManager.directoryExists(atPath: projectRoot) {
             URL(fileURLWithPath: projectRoot)
@@ -100,7 +100,7 @@ public struct JunitXML: XmlSerializable {
             NodeNames.defaultNodeNames
         }
         classPaths = if format == .sonar, let projectRootURL {
-            await ClassPaths.find(in: projectRootURL, relativePathNames: relativePathNames, shell: shell)
+            try await ClassPaths.find(in: projectRootURL, relativePathNames: relativePathNames, shell: shell)
         } else {
             ClassPaths()
         }
@@ -481,7 +481,7 @@ struct ClassPaths: Sendable {
         }
     }
 
-    static func find(in projectRootUrl: URL, relativePathNames: Bool, shell: any Commandline) async -> ClassPaths {
+    static func find(in projectRootUrl: URL, relativePathNames: Bool, shell: any Commandline) async throws -> ClassPaths {
         var classPaths = ClassPaths()
         let program = "/usr/bin/grep"
         let grepPathArgument = relativePathNames ? "." : projectRootUrl.path
@@ -494,7 +494,8 @@ struct ClassPaths: Sendable {
             "^(?:public )?(?:final )?(?:public )?(?:(class|\\@implementation|struct) )[a-zA-Z0-9_]+",
             grepPathArgument
         ]
-        guard let filelistData = try? await shell.execute(program: program, with: arguments, at: projectRootUrl) else {
+        let lookup = await Result { try await shell.execute(program: program, with: arguments, at: projectRootUrl) }
+        guard let filelistData = try lookup.optionalValueUnlessCancelled() else {
             return classPaths
         }
         let trimCharacterSet = CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: ":"))

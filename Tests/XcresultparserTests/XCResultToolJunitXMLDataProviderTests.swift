@@ -232,7 +232,7 @@ struct XCResultToolJunitXMLDataProviderTests {
         ])
         #expect(action.failureSummaries.first?.documentLocation == "SomeClassTests.swift:42")
 
-        let junitXML = await JunitXML(
+        let junitXML = try await JunitXML(
             dataProvider: provider,
             format: .sonar
         )

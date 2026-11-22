@@ -54,7 +54,6 @@ public class CoverageConverter {
 
     // MARK: - Dependencies
 
-    let xcresultToolClient: any XCResultToolProviding
     let xccovClient: any XCCovProviding
 
     /// Runs xccov and xcresulttool concurrently.
@@ -91,16 +90,10 @@ public class CoverageConverter {
         async let fetchedCoverageData = xcCovClient.getCoverageData(path: url)
         async let fetchedStartTime = try? await xcResultToolClient.getTestSummary(path: url).startTime
 
-        let report: CoverageReport
-        do {
-            report = try await xcCovClient.getCoverageReport(path: url)
-        } catch {
-            throw CoverageConverterError.couldNotLoadCoverageReport
-        }
+        let report = try await Self.loadCoverageReport(at: url, using: xcCovClient)
         // Report unknown targets before waiting for the other calls.
         let selectedCoverageTargets = try CoverageConverter.selectCoverageTargets(coverageTargets, in: report)
 
-        self.xcresultToolClient = xcResultToolClient
         xccovClient = xcCovClient
         resultFileURL = url
         coverageReport = report
@@ -144,13 +137,19 @@ public class CoverageConverter {
     }
 
     static func targetsInfo(with url: URL, xcCovClient: any XCCovProviding) async throws -> String {
-        let report: CoverageReport
+        let report = try await loadCoverageReport(at: url, using: xcCovClient)
+        return targetsInfo(for: report)
+    }
+
+    private static func loadCoverageReport(at url: URL, using client: any XCCovProviding) async throws -> CoverageReport {
         do {
-            report = try await xcCovClient.getCoverageReport(path: url)
+            return try await client.getCoverageReport(path: url)
+        } catch let error as CancellationError {
+            throw error
         } catch {
+            try Task.checkCancellation()
             throw CoverageConverterError.couldNotLoadCoverageReport
         }
-        return targetsInfo(for: report)
     }
 
     private static func targetsInfo(for report: CoverageReport) -> String {

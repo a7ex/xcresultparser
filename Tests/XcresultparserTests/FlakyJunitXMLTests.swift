@@ -130,9 +130,23 @@ struct FlakyJunitXMLTests {
     }
 
     @Test
+    func sonarSourceLookupPropagatesCancellation() async throws {
+        let provider = try await makeProvider()
+        let shell = CapturingCommandline(response: Data(), error: CancellationError())
+        await #expect(throws: CancellationError.self) {
+            try await JunitXML(
+                dataProvider: provider,
+                projectRoot: FileManager.default.temporaryDirectory.path,
+                format: .sonar,
+                shell: shell
+            )
+        }
+    }
+
+    @Test
     func junitXMLLabelsFlakyTestcase() async throws {
         let provider = try await makeProvider()
-        let xml = await JunitXML(dataProvider: provider).xmlString
+        let xml = try await JunitXML(dataProvider: provider).xmlString
 
         // The failing testcase keeps its failure but gains a flaky marker and a
         // `[FLAKY]` prefix on the failure message.
@@ -182,7 +196,7 @@ struct FlakyJunitXMLTests {
     func passedFlakyTestGetsFlakyMarkerWithoutFailure() async throws {
         let xcresultFile = try TestFixtures.xcresult("Test-FlakyFixture")
         let provider = try await XCResultToolJunitXMLDataProvider(url: xcresultFile)
-        let xml = await JunitXML(dataProvider: provider).xmlString
+        let xml = try await JunitXML(dataProvider: provider).xmlString
 
         #expect(xml.contains("flaky=\"true\""))
         #expect(!xml.contains("[FLAKY]"))
@@ -195,7 +209,7 @@ struct FlakyJunitXMLTests {
     func sonarXMLOmitsFlakyAttribute() async throws {
         let xcresultFile = try TestFixtures.xcresult("Test-FlakyFixture")
         let provider = try await XCResultToolJunitXMLDataProvider(url: xcresultFile)
-        let xml = await JunitXML(dataProvider: provider, format: .sonar).xmlString
+        let xml = try await JunitXML(dataProvider: provider, format: .sonar).xmlString
 
         #expect(!xml.contains("flaky"))
     }

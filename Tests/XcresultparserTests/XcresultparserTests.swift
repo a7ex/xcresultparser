@@ -591,7 +591,7 @@ struct XcresultparserTests {
         let mockedShell = MockedShell(response: Data(cliResult.utf8)) { arguments in
             arguments.last == "."
         }
-        let junitXML = await JunitXML(
+        let junitXML = try await JunitXML(
             dataProvider: dataProvider,
             projectRoot: projectRoot,
             format: .sonar,
@@ -613,7 +613,7 @@ struct XcresultparserTests {
         let mockedShell = MockedShell(response: Data(cliResult.utf8)) { arguments in
             arguments.last != "."
         }
-        let junitXML = await JunitXML(
+        let junitXML = try await JunitXML(
             dataProvider: dataProvider,
             projectRoot: projectRoot,
             format: .sonar,

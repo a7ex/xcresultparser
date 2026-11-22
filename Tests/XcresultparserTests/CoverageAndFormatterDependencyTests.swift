@@ -4,6 +4,38 @@ import Testing
 
 struct CoverageAndFormatterDependencyTests {
     @Test
+    func coverageReportCancellationReachesBothCallers() async {
+        var client = StubXCCovClient()
+        client.getCoverageReportHandler = { _ in throw CancellationError() }
+        let url = URL(filePath: "/tmp/fake.xcresult")
+        await #expect(throws: CancellationError.self) {
+            try await CoverageConverter.targetsInfo(with: url, xcCovClient: client)
+        }
+        await #expect(throws: CancellationError.self) {
+            try await CoverageConverter(
+                with: url, strictPathnames: false, xcResultToolClient: StubXCResultToolClient(), xcCovClient: client
+            )
+        }
+    }
+
+    @Test
+    func cancelledReadsSkipRetry() async {
+        let cancelled = Result<Int, any Error>.failure(CancellationError())
+        await #expect(throws: CancellationError.self) {
+            try await cancelled.valueOrRetrying { 1 }
+        }
+
+        await withThrowingTaskGroup(of: Int.self) { group in
+            group.cancelAll()
+            group.addTask {
+                let failed = Result<Int, any Error>.failure(TestDoubleError.forced)
+                return try await failed.valueOrRetrying { 1 }
+            }
+            await #expect(throws: CancellationError.self) { try await group.next() }
+        }
+    }
+
+    @Test
     func testCoverageConverterMapsCoverageReportClientFailureToCouldNotLoadCoverageReport() async throws {
         var xcresultClient = StubXCResultToolClient()
         xcresultClient.getTestSummaryHandler = { _ in try TestModelFactory.summary(startTime: 1, finishTime: 2) }
@@ -146,6 +178,22 @@ struct CoverageAndFormatterDependencyTests {
 
         #expect(xml.contains(#"timestamp="42.0""#))
         #expect(xml.contains(#"<line number="1" branch="false" hits="2"/>"#))
+    }
+
+    @Test
+    func formatterCoverageCancellationReachesCaller() async {
+        var results = StubXCResultToolClient()
+        results.getBuildResultsHandler = { _ in try TestModelFactory.buildResults() }
+        results.getTestSummaryHandler = { _ in try TestModelFactory.summary() }
+        results.getTestsHandler = { _ in try TestModelFactory.tests() }
+        var coverage = StubXCCovClient()
+        coverage.getCoverageReportHandler = { _ in throw CancellationError() }
+        await #expect(throws: CancellationError.self) {
+            try await XCResultFormatter(
+                with: URL(filePath: "/tmp/fake.xcresult"), formatter: TextResultFormatter(),
+                coverageTargets: ["App"], xcResultToolClient: results, xcCovClient: coverage
+            )
+        }
     }
 
     @Test

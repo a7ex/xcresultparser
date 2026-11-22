@@ -142,7 +142,7 @@ public struct XCResultFormatter {
     ) async throws {
         // xccov is slow to start, so it only runs when coverage is shown or coverage targets must be checked.
         let loadsCoverageReport = includesCoverage || !coverageTargets.isEmpty
-        async let coverageReport = loadsCoverageReport ? try? await xcCovClient.getCoverageReport(path: url) : nil
+        async let coverageReport = loadsCoverageReport ? await Result { try await xcCovClient.getCoverageReport(path: url) } : nil
         async let buildResults = Result { try await xcResultToolClient.getBuildResults(path: url) }
         async let testSummary = Result { try await xcResultToolClient.getTestSummary(path: url) }
         async let tests = Result { try await xcResultToolClient.getTests(path: url) }
@@ -156,7 +156,7 @@ public struct XCResultFormatter {
         }
         self.tests = try await concurrentTests.valueOrRetrying { try await xcResultToolClient.getTests(path: url) }
         outputFormatter = formatter
-        self.coverageReport = await coverageReport
+        self.coverageReport = try await coverageReport?.optionalValueUnlessCancelled()
         let targetSelection = CoverageTargetSelection(
             with: coverageTargets,
             from: self.coverageReport?.targets.map(\.name) ?? []
