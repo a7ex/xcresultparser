@@ -31,7 +31,7 @@ jobs:
             xcode: '26.6'
           # Oldest supported Xcode (see Package.swift) on the oldest runner.
           - os: macos-15
-            xcode: '26.0.1'
+            xcode: '26.2'
 
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30

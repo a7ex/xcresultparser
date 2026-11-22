@@ -23,7 +23,7 @@ All JSON parsing is done with native `Codable` models in this project.
 
 ## Requirements
 - macOS 15 or newer
-- Xcode 26 or newer to build from source
+- Xcode 26.2 or newer to build from source
 
 ## Expected Failure Semantics
 - For `txt`, `cli`, `html`, and `md`, expected failures are represented as a distinct test state.
@@ -94,12 +94,10 @@ cp ~/Desktop/xcresultparser /usr/local/bin/
 ```
 Verify `xcresultparser` is in your search path by running this in Terminal:
 ```
-xcresultparser
+xcresultparser --help
 ```
 You should see the tool respond like this:
 ```
-Error: Missing expected argument '<xcresult-file>'
-
 OVERVIEW: xcresultparser 2.3.0
 Interpret binary .xcresult files and print summary in different formats: txt,
 xml, html or colored cli output.
@@ -251,13 +249,13 @@ xcresultparser -o errors test.xcresult > errors.json
 The tools to get the data from the xcresult archive yield absolute path names.
 So you must provide an absolute pathname to the *sonar.sources* paramater of the *sonar-scanner* CLI tool and it must of course match the directory, where *xcodebuild* ran the tests and created the *.xcresult* archive.
 
-If you want to use the test results for sonarqube, there is another twist: the .xcresult bundle only lists the test by testclass, but not by file. However the sonarqube CLI tool expects the file paths of the tests. In this case you must provide a --project-root to *xcresultparser*. Only then *xcresultparser* can convert the classnames to file names, by *egrep*-ing for `^(?:public )?(?:final )?(?:public )?(?:(class|\@implementation) )\w+`. If such a file is found in the directory provided in *--project-root*, then the file path can be detrmined and the *sonar-scanner* happily can scan the files for tests. The pattern matches all swift and objective-c classes.
+If you want to use the test results for sonarqube, there is another twist: the .xcresult bundle only lists the test by testclass, but not by file. However the sonarqube CLI tool expects the file paths of the tests. In this case you must provide a --project-root to *xcresultparser*. Only then *xcresultparser* can convert the classnames to file names, by *grep*-ing for `^(?:public )?(?:final )?(?:public )?(?:(class|\@implementation|struct) )[a-zA-Z0-9_]+`. If such a file is found in the directory provided in *--project-root*, then the file path can be detrmined and the *sonar-scanner* happily can scan the files for tests. The pattern matches Swift classes and structs, and Objective-C classes.
 
 Since searching all files in `project-root` takes some time, an index path names for class names is created beforehand and used as lookup table.
 
-The following egrep expression is used to create the lookup table for the filenames of classes:
+The following grep command is used to create the lookup table for the filenames of classes:
 ```
-egrep -rio --include "*.swift" --include "*.m" "^(?:public )?(?:final )?(?:public )?(?:(class|\@implementation) )\w+" $project-root
+grep -E -rio --include "*.swift" --include "*.m" --include "*.mm" "^(?:public )?(?:final )?(?:public )?(?:(class|\@implementation|struct) )[a-zA-Z0-9_]+" $project-root
 ```
 
 In cases where the xcresult archive is not created on the same machine and the paths used for *sonar-scanner* differ, the pathnames need to be adjusted.

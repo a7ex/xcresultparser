@@ -6,7 +6,7 @@ import Testing
 @MainActor
 struct XCResultToolJunitXMLDataProviderTests {
     @Test
-    func testProviderMapsSummaryAndTestNodes() throws {
+    func testProviderMapsSummaryAndTestNodes() async throws {
         let summaryJSON = """
         {
           "title": "Test - Demo",
@@ -94,12 +94,12 @@ struct XCResultToolJunitXMLDataProviderTests {
 
         let shell = LookupShell(
             responses: [
-                "xcresulttool get test-results summary --path /tmp/test.xcresult": .success(Data(summaryJSON.utf8)),
-                "xcresulttool get test-results tests --path /tmp/test.xcresult": .success(Data(testsJSON.utf8))
+                "xcresulttool get test-results summary --path /tmp/test.xcresult --compact": .success(Data(summaryJSON.utf8)),
+                "xcresulttool get test-results tests --path /tmp/test.xcresult --compact": .success(Data(testsJSON.utf8))
             ]
         )
         let client = XCResultToolClient(shell: shell)
-        let provider = try XCResultToolJunitXMLDataProvider(
+        let provider = try await XCResultToolJunitXMLDataProvider(
             url: URL(fileURLWithPath: "/tmp/test.xcresult"),
             client: client
         )
@@ -125,7 +125,7 @@ struct XCResultToolJunitXMLDataProviderTests {
     }
 
     @Test
-    func testProviderUsesCanonicalTestIdentifierForDisplayNamedSuite() throws {
+    func testProviderUsesCanonicalTestIdentifierForDisplayNamedSuite() async throws {
         let summaryJSON = """
         {
           "title": "Test - Demo",
@@ -212,11 +212,11 @@ struct XCResultToolJunitXMLDataProviderTests {
 
         let shell = LookupShell(
             responses: [
-                "xcresulttool get test-results summary --path /tmp/test.xcresult": .success(Data(summaryJSON.utf8)),
-                "xcresulttool get test-results tests --path /tmp/test.xcresult": .success(Data(testsJSON.utf8))
+                "xcresulttool get test-results summary --path /tmp/test.xcresult --compact": .success(Data(summaryJSON.utf8)),
+                "xcresulttool get test-results tests --path /tmp/test.xcresult --compact": .success(Data(testsJSON.utf8))
             ]
         )
-        let provider = try XCResultToolJunitXMLDataProvider(
+        let provider = try await XCResultToolJunitXMLDataProvider(
             url: URL(fileURLWithPath: "/tmp/test.xcresult"),
             client: XCResultToolClient(shell: shell)
         )
@@ -232,7 +232,7 @@ struct XCResultToolJunitXMLDataProviderTests {
         ])
         #expect(action.failureSummaries.first?.documentLocation == "SomeClassTests.swift:42")
 
-        let junitXML = JunitXML(
+        let junitXML = try await JunitXML(
             dataProvider: provider,
             format: .sonar
         )
@@ -250,7 +250,7 @@ struct XCResultToolJunitXMLDataProviderTests {
     }
 
     @Test
-    func testProviderAddsFailureDocumentLocation() throws {
+    func testProviderAddsFailureDocumentLocation() async throws {
         let summaryJSON = """
         {
           "title": "Test - Demo",
@@ -330,12 +330,12 @@ struct XCResultToolJunitXMLDataProviderTests {
 
         let shell = LookupShell(
             responses: [
-                "xcresulttool get test-results summary --path /tmp/test.xcresult": .success(Data(summaryJSON.utf8)),
-                "xcresulttool get test-results tests --path /tmp/test.xcresult": .success(Data(testsJSON.utf8))
+                "xcresulttool get test-results summary --path /tmp/test.xcresult --compact": .success(Data(summaryJSON.utf8)),
+                "xcresulttool get test-results tests --path /tmp/test.xcresult --compact": .success(Data(testsJSON.utf8))
             ]
         )
         let client = XCResultToolClient(shell: shell)
-        let provider = try XCResultToolJunitXMLDataProvider(
+        let provider = try await XCResultToolJunitXMLDataProvider(
             url: URL(fileURLWithPath: "/tmp/test.xcresult"),
             client: client
         )
@@ -346,16 +346,16 @@ struct XCResultToolJunitXMLDataProviderTests {
     }
 
     @Test
-    func testProviderInitFailsIfXCResultToolFails() {
+    func testProviderInitFailsIfXCResultToolFails() async {
         let shell = LookupShell(
             responses: [
-                "xcresulttool get test-results summary --path /tmp/test.xcresult": .failure(NSError(domain: "test", code: 42))
+                "xcresulttool get test-results summary --path /tmp/test.xcresult --compact": .failure(NSError(domain: "test", code: 42))
             ]
         )
         let client = XCResultToolClient(shell: shell)
 
-        #expect(throws: (any Error).self) {
-            try XCResultToolJunitXMLDataProvider(
+        await #expect(throws: (any Error).self) {
+            try await XCResultToolJunitXMLDataProvider(
                 url: URL(fileURLWithPath: "/tmp/test.xcresult"),
                 client: client
             )
@@ -363,7 +363,7 @@ struct XCResultToolJunitXMLDataProviderTests {
     }
 
     @Test
-    func testProviderMapsParameterizedTests() throws {
+    func testProviderMapsParameterizedTests() async throws {
         let summaryJSON = """
         {
           "title": "Test - Demo",
@@ -457,12 +457,12 @@ struct XCResultToolJunitXMLDataProviderTests {
 
         let shell = LookupShell(
             responses: [
-                "xcresulttool get test-results summary --path /tmp/test.xcresult": .success(Data(summaryJSON.utf8)),
-                "xcresulttool get test-results tests --path /tmp/test.xcresult": .success(Data(testsJSON.utf8))
+                "xcresulttool get test-results summary --path /tmp/test.xcresult --compact": .success(Data(summaryJSON.utf8)),
+                "xcresulttool get test-results tests --path /tmp/test.xcresult --compact": .success(Data(testsJSON.utf8))
             ]
         )
         let client = XCResultToolClient(shell: shell)
-        let provider = try XCResultToolJunitXMLDataProvider(
+        let provider = try await XCResultToolJunitXMLDataProvider(
             url: URL(fileURLWithPath: "/tmp/test.xcresult"),
             client: client
         )
@@ -483,7 +483,7 @@ struct XCResultToolJunitXMLDataProviderTests {
     }
 
     @Test
-    func testProviderDoesNotMapExpectedFailureAsSkipped() throws {
+    func testProviderDoesNotMapExpectedFailureAsSkipped() async throws {
         let summaryJSON = """
         {
           "title": "Test - Demo",
@@ -549,12 +549,12 @@ struct XCResultToolJunitXMLDataProviderTests {
 
         let shell = LookupShell(
             responses: [
-                "xcresulttool get test-results summary --path /tmp/test.xcresult": .success(Data(summaryJSON.utf8)),
-                "xcresulttool get test-results tests --path /tmp/test.xcresult": .success(Data(testsJSON.utf8))
+                "xcresulttool get test-results summary --path /tmp/test.xcresult --compact": .success(Data(summaryJSON.utf8)),
+                "xcresulttool get test-results tests --path /tmp/test.xcresult --compact": .success(Data(testsJSON.utf8))
             ]
         )
         let client = XCResultToolClient(shell: shell)
-        let provider = try XCResultToolJunitXMLDataProvider(
+        let provider = try await XCResultToolJunitXMLDataProvider(
             url: URL(fileURLWithPath: "/tmp/test.xcresult"),
             client: client
         )
@@ -570,7 +570,7 @@ struct XCResultToolJunitXMLDataProviderTests {
     }
 
     @Test
-    func testProviderDetectsSessionLevelFailures() throws {
+    func testProviderDetectsSessionLevelFailures() async throws {
         let summaryJSON = """
         {
           "title": "Test - Demo",
@@ -661,12 +661,12 @@ struct XCResultToolJunitXMLDataProviderTests {
 
         let shell = LookupShell(
             responses: [
-                "xcresulttool get test-results summary --path /tmp/test.xcresult": .success(Data(summaryJSON.utf8)),
-                "xcresulttool get test-results tests --path /tmp/test.xcresult": .success(Data(testsJSON.utf8))
+                "xcresulttool get test-results summary --path /tmp/test.xcresult --compact": .success(Data(summaryJSON.utf8)),
+                "xcresulttool get test-results tests --path /tmp/test.xcresult --compact": .success(Data(testsJSON.utf8))
             ]
         )
         let client = XCResultToolClient(shell: shell)
-        let provider = try XCResultToolJunitXMLDataProvider(
+        let provider = try await XCResultToolJunitXMLDataProvider(
             url: URL(fileURLWithPath: "/tmp/test.xcresult"),
             client: client
         )
@@ -683,7 +683,7 @@ struct XCResultToolJunitXMLDataProviderTests {
     }
 
     @Test
-    func testProviderReturnsNoSessionLevelFailuresWhenAllMatchTests() throws {
+    func testProviderReturnsNoSessionLevelFailuresWhenAllMatchTests() async throws {
         let summaryJSON = """
         {
           "title": "Test - Demo",
@@ -757,12 +757,12 @@ struct XCResultToolJunitXMLDataProviderTests {
 
         let shell = LookupShell(
             responses: [
-                "xcresulttool get test-results summary --path /tmp/test.xcresult": .success(Data(summaryJSON.utf8)),
-                "xcresulttool get test-results tests --path /tmp/test.xcresult": .success(Data(testsJSON.utf8))
+                "xcresulttool get test-results summary --path /tmp/test.xcresult --compact": .success(Data(summaryJSON.utf8)),
+                "xcresulttool get test-results tests --path /tmp/test.xcresult --compact": .success(Data(testsJSON.utf8))
             ]
         )
         let client = XCResultToolClient(shell: shell)
-        let provider = try XCResultToolJunitXMLDataProvider(
+        let provider = try await XCResultToolJunitXMLDataProvider(
             url: URL(fileURLWithPath: "/tmp/test.xcresult"),
             client: client
         )
@@ -780,7 +780,7 @@ private final class LookupShell: Commandline {
         self.responses = responses
     }
 
-    func execute(program: String, with arguments: [String], at executionPath: URL?) throws -> Data {
+    func execute(program: String, with arguments: [String], at executionPath: URL?) async throws -> Data {
         #expect(program == "/usr/bin/xcrun")
         let key = arguments.joined(separator: " ")
         guard let response = responses[key] else {

@@ -6,103 +6,74 @@
 //
 
 import Foundation
+import Subprocess
+import System
 
-protocol Commandline {
-    func execute(program: String, with arguments: [String], at executionPath: URL?) throws -> Data
-
-    /// Like `execute(program:with:at:)`, but terminates the program if the calling task is cancelled.
-    func executeCancellable(program: String, with arguments: [String], at executionPath: URL?) async throws -> Data
+protocol Commandline: Sendable {
+    /// Runs the program and returns its standard output.
+    ///
+    /// If the calling task is cancelled, the program is sent `SIGTERM` (and `SIGKILL` if it
+    /// doesn't exit in time), and the call throws `CancellationError`.
+    func execute(program: String, with arguments: [String], at executionPath: URL?) async throws -> Data
 }
 
 extension Commandline {
-    func execute(program: String, with arguments: [String]) throws -> Data {
-        return try execute(program: program, with: arguments, at: nil)
-    }
-
-    /// Test doubles have no process to terminate.
-    func executeCancellable(program: String, with arguments: [String], at executionPath: URL?) async throws -> Data {
-        try execute(program: program, with: arguments, at: executionPath)
+    func execute(program: String, with arguments: [String]) async throws -> Data {
+        try await execute(program: program, with: arguments, at: nil)
     }
 }
 
 struct Shell: Commandline {
-    func execute(
-        program: String,
-        with arguments: [String],
-        at executionPath: URL? = nil
-    ) throws -> Data {
-        try autoreleasepool {
-            let task = Process()
-            if let directoryUrl = executionPath {
-                task.currentDirectoryURL = directoryUrl
-            }
-            task.executableURL = URL(fileURLWithPath: program)
-            task.arguments = arguments
-            let errorPipe = Pipe()
-            task.standardError = errorPipe
-            let outPipe = Pipe()
-            task.standardOutput = outPipe
-            defer {
-                try? outPipe.fileHandleForReading.close()
-                try? errorPipe.fileHandleForReading.close()
-            }
-            try task.run()
-            let fileHandle = outPipe.fileHandleForReading
-            let data = fileHandle.readDataToEndOfFile()
-            task.waitUntilExit()
-            let status = task.terminationStatus
-            if status != 0 {
-                let fileHandle = errorPipe.fileHandleForReading
-                let data = fileHandle.readDataToEndOfFile()
-                let errorMessage = String(decoding: data, as: UTF8.self)
-                throw CLIError.executionError(code: Int(status), message: errorMessage)
-            } else {
-                return data
-            }
-        }
-    }
+    /// How long a program gets to exit after `SIGTERM` before it is killed.
+    private static let gracefulShutDownDuration: Duration = .seconds(5)
 
-    func executeCancellable(
+    func execute(
         program: String,
         with arguments: [String],
         at executionPath: URL? = nil
     ) async throws -> Data {
         try Task.checkCancellation()
-        let process = Process()
-        if let directoryUrl = executionPath {
-            process.currentDirectoryURL = directoryUrl
+        var platformOptions = PlatformOptions()
+        platformOptions.teardownSequence = [
+            .gracefulShutDown(allowedDurationToNextStep: Self.gracefulShutDownDuration)
+        ]
+        let result: ExecutionResult<Void, DataOutput, StringOutput<UTF8>>
+        do {
+            // Standard output and standard error are read concurrently, so a program that writes a
+            // lot to either one can't block on a full pipe.
+            result = try await run(
+                .path(FilePath(program)),
+                arguments: Arguments(arguments),
+                workingDirectory: executionPath.map { FilePath($0.path) },
+                platformOptions: platformOptions,
+                output: .data(limit: .max),
+                error: .string(limit: .max)
+            )
+        } catch {
+            try Task.checkCancellation()
+            throw error
         }
-        process.executableURL = URL(fileURLWithPath: program)
-        process.arguments = arguments
-        let errorPipe = Pipe()
-        process.standardError = errorPipe
-        let outPipe = Pipe()
-        process.standardOutput = outPipe
-        defer {
-            try? outPipe.fileHandleForReading.close()
-            try? errorPipe.fileHandleForReading.close()
-        }
-        try process.run()
-        // Terminating the program closes its end of the pipe, which ends the blocking read.
-        let data = await withTaskCancellationHandler {
-            autoreleasepool {
-                outPipe.fileHandleForReading.readDataToEndOfFile()
-            }
-        } onCancel: {
-            process.terminate()
-        }
-        process.waitUntilExit()
         try Task.checkCancellation()
-        let status = process.terminationStatus
-        if status != 0 {
-            let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-            let errorMessage = String(decoding: errorData, as: UTF8.self)
-            throw CLIError.executionError(code: Int(status), message: errorMessage)
+        guard result.terminationStatus.isSuccess else {
+            throw CLIError.executionError(
+                code: Int(result.terminationStatus.code),
+                message: result.standardError
+            )
         }
-        return data
+        return result.standardOutput
     }
 
     enum CLIError: Error {
         case executionError(code: Int, message: String)
+    }
+}
+
+private extension TerminationStatus {
+    /// The exit code, or the signal number if the program was terminated by a signal.
+    var code: Code {
+        switch self {
+        case let .exited(code), let .signaled(code):
+            code
+        }
     }
 }

@@ -41,9 +41,9 @@ extension XCSummary {
         skippedTests = try values.decode(Int.self, forKey: .skippedTests)
         expectedFailures = try values.decode(Int.self, forKey: .expectedFailures)
         statistics = try values.decode([XCStatistic].self, forKey: .statistics)
-        devicesAndConfigurations = (try? values.decode([XCDeviceAndConfigurationSummary].self, forKey: .devicesAndConfigurations)) ?? []
-        testFailures = (try? values.decode([XCTestFailure].self, forKey: .testFailures)) ?? []
-        startTime = try? values.decode(Double.self, forKey: .startTime)
-        finishTime = try? values.decode(Double.self, forKey: .finishTime)
+        devicesAndConfigurations = (try? values.decodeIfPresent([XCDeviceAndConfigurationSummary].self, forKey: .devicesAndConfigurations)) ?? []
+        testFailures = (try? values.decodeIfPresent([XCTestFailure].self, forKey: .testFailures)) ?? []
+        startTime = try? values.decodeIfPresent(Double.self, forKey: .startTime)
+        finishTime = try? values.decodeIfPresent(Double.self, forKey: .finishTime)
     }
 }

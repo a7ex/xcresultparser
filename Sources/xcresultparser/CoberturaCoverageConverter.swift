@@ -66,7 +66,7 @@ public class CoberturaCoverageConverter: CoverageConverter, XmlSerializable {
         rootElement.addChild(packagesElement)
 
         // Get the xccov results as a JSON.
-        let coverageJson = try getCoverageDataAsJSON()
+        let coverageJson = getCoverageDataAsJSON()
 
         var fileInfo = [FileInfo]()
         for (fileName, value) in coverageJson.files {

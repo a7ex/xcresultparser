@@ -21,8 +21,8 @@ public struct IssuesJSON {
         with url: URL,
         projectRoot: String = "",
         excludedPaths: [String] = []
-    ) throws {
-        try self.init(
+    ) async throws {
+        try await self.init(
             with: url,
             projectRoot: projectRoot,
             excludedPaths: excludedPaths,
@@ -35,8 +35,8 @@ public struct IssuesJSON {
         projectRoot: String = "",
         excludedPaths: [String] = [],
         xcResultToolClient: any XCResultToolProviding
-    ) throws {
-        buildResults = try xcResultToolClient.getBuildResults(path: url)
+    ) async throws {
+        buildResults = try await xcResultToolClient.getBuildResults(path: url)
         let checkdata = try? Data(contentsOf: url.appendingPathComponent("Info.plist"))
         checkName = checkdata?.md5() ?? ""
         self.projectRoot = projectRoot

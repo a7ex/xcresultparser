@@ -6,59 +6,67 @@ enum TestDoubleError: Error {
     case unimplemented
 }
 
-final class StubXCResultToolClient: XCResultToolProviding {
-    var getBuildResultsHandler: (URL) throws -> XCBuildResults = { _ in throw TestDoubleError.unimplemented }
-    var getTestSummaryHandler: (URL) throws -> XCSummary = { _ in throw TestDoubleError.unimplemented }
-    var getTestsHandler: (URL) throws -> XCTests = { _ in throw TestDoubleError.unimplemented }
-    var getTestDetailsHandler: (URL, String) throws -> XCTestDetails = { _, _ in throw TestDoubleError.unimplemented }
-    var getActivitiesHandler: (URL, String) throws -> XCActivities = { _, _ in throw TestDoubleError.unimplemented }
-    var getMetricsHandler: (URL, String) throws -> [XCTestWithMetrics] = { _, _ in throw TestDoubleError.unimplemented }
-
-    func getBuildResults(path: URL) throws -> XCBuildResults {
-        try getBuildResultsHandler(path)
+struct StubXCResultToolClient: XCResultToolProviding {
+    var getBuildResultsHandler: @Sendable (URL) async throws -> XCBuildResults = { _ in throw TestDoubleError.unimplemented }
+    var getTestSummaryHandler: @Sendable (URL) async throws -> XCSummary = { _ in throw TestDoubleError.unimplemented }
+    var getTestsHandler: @Sendable (URL) async throws -> XCTests = { _ in throw TestDoubleError.unimplemented }
+    var getTestDetailsHandler: @Sendable (URL, String) async throws -> XCTestDetails = { _, _ in
+        throw TestDoubleError.unimplemented
+    }
+    var getActivitiesHandler: @Sendable (URL, String) async throws -> XCActivities = { _, _ in
+        throw TestDoubleError.unimplemented
+    }
+    var getMetricsHandler: @Sendable (URL, String) async throws -> [XCTestWithMetrics] = { _, _ in
+        throw TestDoubleError.unimplemented
     }
 
-    func getTestSummary(path: URL) throws -> XCSummary {
-        try getTestSummaryHandler(path)
+    func getBuildResults(path: URL) async throws -> XCBuildResults {
+        try await getBuildResultsHandler(path)
     }
 
-    func getTests(path: URL) throws -> XCTests {
-        try getTestsHandler(path)
+    func getTestSummary(path: URL) async throws -> XCSummary {
+        try await getTestSummaryHandler(path)
     }
 
-    func getTestDetails(path: URL, testId: String) throws -> XCTestDetails {
-        try getTestDetailsHandler(path, testId)
+    func getTests(path: URL) async throws -> XCTests {
+        try await getTestsHandler(path)
     }
 
-    func getActivities(path: URL, testId: String) throws -> XCActivities {
-        try getActivitiesHandler(path, testId)
+    func getTestDetails(path: URL, testId: String) async throws -> XCTestDetails {
+        try await getTestDetailsHandler(path, testId)
     }
 
-    func getMetrics(path: URL, testId: String) throws -> [XCTestWithMetrics] {
-        try getMetricsHandler(path, testId)
+    func getActivities(path: URL, testId: String) async throws -> XCActivities {
+        try await getActivitiesHandler(path, testId)
+    }
+
+    func getMetrics(path: URL, testId: String) async throws -> [XCTestWithMetrics] {
+        try await getMetricsHandler(path, testId)
     }
 }
 
-final class StubXCCovClient: XCCovProviding {
-    var getCoverageDataHandler: (URL) throws -> FileCoverage = { _ in throw TestDoubleError.unimplemented }
-    var getCoverageReportHandler: (URL) throws -> CoverageReport = { _ in throw TestDoubleError.unimplemented }
-    var getCoverageForFileHandler: (URL, String) throws -> String = { _, _ in throw TestDoubleError.unimplemented }
-    var getCoverageFileListHandler: (URL) throws -> [String] = { _ in throw TestDoubleError.unimplemented }
+struct StubXCCovClient: XCCovProviding {
+    var getCoverageDataHandler: @Sendable (URL) async throws -> FileCoverage = { _ in throw TestDoubleError.unimplemented }
+    var getCoverageReportHandler: @Sendable (URL) async throws -> CoverageReport = { _ in throw TestDoubleError.unimplemented }
+    var getCoverageForFileHandler: @Sendable (URL, String) async throws -> String = { _, _ in
+        throw TestDoubleError.unimplemented
+    }
+    var getCoverageFileListHandler: @Sendable (URL) async throws -> [String] = { _ in throw TestDoubleError.unimplemented }
 
-    func getCoverageData(path: URL) throws -> FileCoverage {
-        try getCoverageDataHandler(path)
+    func getCoverageData(path: URL) async throws -> FileCoverage {
+        try await getCoverageDataHandler(path)
     }
 
-    func getCoverageReport(path: URL) throws -> CoverageReport {
-        try getCoverageReportHandler(path)
+    func getCoverageReport(path: URL) async throws -> CoverageReport {
+        try await getCoverageReportHandler(path)
     }
 
-    func getCoverageForFile(path: URL, filePath: String) throws -> String {
-        try getCoverageForFileHandler(path, filePath)
+    func getCoverageForFile(path: URL, filePath: String) async throws -> String {
+        try await getCoverageForFileHandler(path, filePath)
     }
 
-    func getCoverageFileList(path: URL) throws -> [String] {
-        try getCoverageFileListHandler(path)
+    func getCoverageFileList(path: URL) async throws -> [String] {
+        try await getCoverageFileListHandler(path)
     }
 }
 

@@ -3,11 +3,11 @@ import Testing
 @testable import XcresultparserLib
 
 struct ShellTests {
-    // Catches executeCancellable leaving the program running after its task is cancelled.
+    // Catches execute leaving the program running after its task is cancelled.
     // The test doesn't measure time: on a busy CI runner the other tests can keep this one from
     // resuming for a long time. Instead the program records that it received SIGTERM.
     @Test
-    func testExecuteCancellableTerminatesTheProgramWhenCancelled() async throws {
+    func testExecuteTerminatesTheProgramWhenCancelled() async throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("xcresultparser-shell-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -27,7 +27,7 @@ struct ShellTests {
         wait "$pid"
         """
         let run = Task {
-            try await Shell().executeCancellable(
+            try await Shell().execute(
                 program: "/bin/sh",
                 with: ["-c", script, startedMarker.path, terminatedMarker.path],
                 at: nil

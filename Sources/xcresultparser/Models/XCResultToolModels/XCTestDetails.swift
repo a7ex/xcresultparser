@@ -41,22 +41,22 @@ extension XCTestDetails {
         devices = try values.decode([XCDevice].self, forKey: .devices)
         testRuns = try values.decode([XCTestNode].self, forKey: .testRuns)
         testResult = try values.decode(XCTestResult.self, forKey: .testResult)
-        hasPerformanceMetrics = if let performanceFlag = try? values.decode(Bool.self, forKey: .hasPerformanceMetrics) {
+        hasPerformanceMetrics = if let performanceFlag = try? values.decodeIfPresent(Bool.self, forKey: .hasPerformanceMetrics) {
             performanceFlag
         } else {
-            (try? values.decode(String.self, forKey: .hasPerformanceMetrics)) == "true"
+            (try? values.decodeIfPresent(String.self, forKey: .hasPerformanceMetrics)) == "true"
         }
-        hasMediaAttachments = if let mediaFlag = try? values.decode(Bool.self, forKey: .hasMediaAttachments) {
+        hasMediaAttachments = if let mediaFlag = try? values.decodeIfPresent(Bool.self, forKey: .hasMediaAttachments) {
             mediaFlag
         } else {
-            (try? values.decode(String.self, forKey: .hasMediaAttachments)) == "true"
+            (try? values.decodeIfPresent(String.self, forKey: .hasMediaAttachments)) == "true"
         }
-        testIdentifierURL = try? values.decode(String.self, forKey: .testIdentifierURL)
-        durationInSeconds = try? values.decode(Double.self, forKey: .durationInSeconds)
-        startTime = try? values.decode(Double.self, forKey: .startTime)
-        arguments = (try? values.decode([XCArgument].self, forKey: .arguments)) ?? []
-        tags = (try? values.decode([String].self, forKey: .tags)) ?? []
-        bugs = (try? values.decode([XCBug].self, forKey: .bugs)) ?? []
-        functionName = try? values.decode(String.self, forKey: .functionName)
+        testIdentifierURL = try? values.decodeIfPresent(String.self, forKey: .testIdentifierURL)
+        durationInSeconds = try? values.decodeIfPresent(Double.self, forKey: .durationInSeconds)
+        startTime = try? values.decodeIfPresent(Double.self, forKey: .startTime)
+        arguments = (try? values.decodeIfPresent([XCArgument].self, forKey: .arguments)) ?? []
+        tags = (try? values.decodeIfPresent([String].self, forKey: .tags)) ?? []
+        bugs = (try? values.decodeIfPresent([XCBug].self, forKey: .bugs)) ?? []
+        functionName = try? values.decodeIfPresent(String.self, forKey: .functionName)
     }
 }

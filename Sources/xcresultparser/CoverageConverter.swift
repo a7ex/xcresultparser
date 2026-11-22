@@ -7,12 +7,6 @@
 
 public import Foundation
 
-struct PrefetchedCoverageInputs {
-    let report: CoverageReport
-    let startTime: Double?
-    let data: FileCoverage
-}
-
 public enum CoverageConverterError: LocalizedError, Equatable {
     case couldNotLoadCoverageReport
     case unknownCoverageTargets(requested: [String], available: [String])
@@ -56,21 +50,23 @@ public class CoverageConverter {
     let excludedPaths: Set<String>
     let strictPathnames: Bool
     let startTime: Double?
-    private let prefetchedCoverage: FileCoverage?
+    private let coverageData: FileCoverage
 
     // MARK: - Dependencies
 
-    let xcresultToolClient: any XCResultToolProviding
     let xccovClient: any XCCovProviding
 
+    /// Runs xccov and xcresulttool concurrently.
+    /// If the coverage report fails to load or a requested target doesn't exist,
+    /// the runs still in progress are terminated.
     public convenience init(
         with url: URL,
         projectRoot: String = "",
         coverageTargets: [String] = [],
         excludedPaths: [String] = [],
         strictPathnames: Bool
-    ) throws {
-        try self.init(
+    ) async throws {
+        try await self.init(
             with: url,
             projectRoot: projectRoot,
             coverageTargets: coverageTargets,
@@ -81,42 +77,6 @@ public class CoverageConverter {
         )
     }
 
-    /// Runs xccov and xcresulttool concurrently.
-    /// If the coverage report fails to load or a requested target doesn't exist,
-    /// the runs still in progress are terminated.
-    package convenience init(
-        loadingConcurrently url: URL,
-        projectRoot: String = "",
-        coverageTargets: [String] = [],
-        excludedPaths: [String] = [],
-        strictPathnames: Bool
-    ) async throws {
-        async let fetchedReport = try await XCCovClient().coverageReport(path: url)
-        async let fetchedStartTime = try? await XCResultToolClient().testSummary(path: url).startTime
-        async let fetchedData = try await XCCovClient().coverageData(path: url)
-
-        let report: CoverageReport
-        do {
-            report = try await fetchedReport
-        } catch {
-            throw CoverageConverterError.couldNotLoadCoverageReport
-        }
-        // Report unknown targets before waiting for the other runs, as the synchronous initialiser does.
-        _ = try CoverageConverter.selectCoverageTargets(coverageTargets, in: report)
-        let startTime = await fetchedStartTime
-        let data = try await fetchedData
-        try self.init(
-            with: url,
-            projectRoot: projectRoot,
-            coverageTargets: coverageTargets,
-            excludedPaths: excludedPaths,
-            strictPathnames: strictPathnames,
-            xcResultToolClient: XCResultToolClient(),
-            xcCovClient: XCCovClient(),
-            prefetchedInputs: PrefetchedCoverageInputs(report: report, startTime: startTime, data: data)
-        )
-    }
-
     init(
         with url: URL,
         projectRoot: String = "",
@@ -124,27 +84,21 @@ public class CoverageConverter {
         excludedPaths: [String] = [],
         strictPathnames: Bool,
         xcResultToolClient: any XCResultToolProviding,
-        xcCovClient: any XCCovProviding,
-        prefetchedInputs: PrefetchedCoverageInputs? = nil
-    ) throws {
-        let report: CoverageReport
-        if let prefetchedInputs {
-            report = prefetchedInputs.report
-        } else {
-            do {
-                report = try xcCovClient.getCoverageReport(path: url)
-            } catch {
-                throw CoverageConverterError.couldNotLoadCoverageReport
-            }
-        }
+        xcCovClient: any XCCovProviding
+    ) async throws {
+        // The calls still running are cancelled, terminating their tools, if the initialiser throws.
+        async let fetchedCoverageData = xcCovClient.getCoverageData(path: url)
+        async let fetchedStartTime = try? await xcResultToolClient.getTestSummary(path: url).startTime
 
-        self.xcresultToolClient = xcResultToolClient
+        let report = try await Self.loadCoverageReport(at: url, using: xcCovClient)
+        // Report unknown targets before waiting for the other calls.
+        let selectedCoverageTargets = try CoverageConverter.selectCoverageTargets(coverageTargets, in: report)
+
         xccovClient = xcCovClient
         resultFileURL = url
         coverageReport = report
         self.projectRoot = projectRoot
         self.strictPathnames = projectRoot.isEmpty ? false : strictPathnames
-        let selectedCoverageTargets = try CoverageConverter.selectCoverageTargets(coverageTargets, in: report)
         self.coverageTargets = selectedCoverageTargets
         let includedTargetFiles = report.targets
             .filter { selectedCoverageTargets.contains($0.name) }
@@ -154,13 +108,8 @@ public class CoverageConverter {
             projectRoot: projectRoot
         )
         self.excludedPaths = Set(excludedPaths)
-        if let prefetchedInputs {
-            startTime = prefetchedInputs.startTime
-            prefetchedCoverage = prefetchedInputs.data
-        } else {
-            startTime = try? xcResultToolClient.getTestSummary(path: url).startTime
-            prefetchedCoverage = nil
-        }
+        startTime = await fetchedStartTime
+        coverageData = try await fetchedCoverageData
     }
 
     static func selectCoverageTargets(_ targets: [String], in report: CoverageReport) throws -> Set<String> {
@@ -179,8 +128,33 @@ public class CoverageConverter {
     }
 
     public var targetsInfo: String {
-        return coverageReport.targets.reduce("") { rslt, item in
-            return "\(rslt)\n\(item.name)"
+        CoverageConverter.targetsInfo(for: coverageReport)
+    }
+
+    /// Lists the coverage targets, loading only the coverage report rather than a whole converter.
+    public static func targetsInfo(with url: URL) async throws -> String {
+        try await targetsInfo(with: url, xcCovClient: XCCovClient())
+    }
+
+    static func targetsInfo(with url: URL, xcCovClient: any XCCovProviding) async throws -> String {
+        let report = try await loadCoverageReport(at: url, using: xcCovClient)
+        return targetsInfo(for: report)
+    }
+
+    private static func loadCoverageReport(at url: URL, using client: any XCCovProviding) async throws -> CoverageReport {
+        do {
+            return try await client.getCoverageReport(path: url)
+        } catch let error as CancellationError {
+            throw error
+        } catch {
+            try Task.checkCancellation()
+            throw CoverageConverterError.couldNotLoadCoverageReport
+        }
+    }
+
+    private static func targetsInfo(for report: CoverageReport) -> String {
+        report.targets.reduce("") { rslt, item in
+            "\(rslt)\n\(item.name)"
         }
     }
 
@@ -209,11 +183,8 @@ public class CoverageConverter {
     }
 
     // Use the xccov commandline tool to get results as JSON.
-    func getCoverageDataAsJSON() throws -> FileCoverage {
-        if let prefetchedCoverage {
-            return prefetchedCoverage
-        }
-        return try xccovClient.getCoverageData(path: resultFileURL)
+    func getCoverageDataAsJSON() -> FileCoverage {
+        coverageData
     }
 
     func isTargetIncluded(forFile file: String) -> Bool {
@@ -232,13 +203,13 @@ public class CoverageConverter {
     }
 
     // Maintained to support the public API used by tests and existing consumers.
-    func coverageForFile(path: String) throws -> String {
-        try xccovClient.getCoverageForFile(path: resultFileURL, filePath: path)
+    func coverageForFile(path: String) async throws -> String {
+        try await xccovClient.getCoverageForFile(path: resultFileURL, filePath: path)
     }
 
     // Maintained to support the public API used by tests and existing consumers.
-    func coverageFileList() throws -> [String] {
-        try xccovClient.getCoverageFileList(path: resultFileURL)
+    func coverageFileList() async throws -> [String] {
+        try await xccovClient.getCoverageFileList(path: resultFileURL)
     }
 
     static func normalizedFilePaths(for paths: [String], projectRoot: String) -> Set<String> {

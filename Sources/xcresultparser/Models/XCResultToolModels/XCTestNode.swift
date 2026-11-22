@@ -31,18 +31,18 @@ extension XCTestNode {
         nodeType = try values.decode(XCTestNodeType.self, forKey: .nodeType)
 
         // optional values:
-        result = try? values.decode(XCTestResult.self, forKey: .result)
-        nodeIdentifier = try? values.decode(String.self, forKey: .nodeIdentifier)
-        let nodeIdentifierURLString = try? values.decode(String.self, forKey: .nodeIdentifierURL)
+        result = try? values.decodeIfPresent(XCTestResult.self, forKey: .result)
+        nodeIdentifier = try? values.decodeIfPresent(String.self, forKey: .nodeIdentifier)
+        let nodeIdentifierURLString = try? values.decodeIfPresent(String.self, forKey: .nodeIdentifierURL)
         nodeIdentifierURL = if let nodeIdentifierURLString {
             URL(string: nodeIdentifierURLString)
         } else {
             nil
         }
-        children = (try? values.decode([XCTestNode].self, forKey: .children)) ?? [XCTestNode]()
-        duration = try? values.decode(String.self, forKey: .duration)
-        durationInSeconds = try? values.decode(TimeInterval.self, forKey: .durationInSeconds)
-        details = try? values.decode(String.self, forKey: .details)
-        tags = (try? values.decode([String].self, forKey: .tags)) ?? []
+        children = (try? values.decodeIfPresent([XCTestNode].self, forKey: .children)) ?? [XCTestNode]()
+        duration = try? values.decodeIfPresent(String.self, forKey: .duration)
+        durationInSeconds = try? values.decodeIfPresent(TimeInterval.self, forKey: .durationInSeconds)
+        details = try? values.decodeIfPresent(String.self, forKey: .details)
+        tags = (try? values.decodeIfPresent([String].self, forKey: .tags)) ?? []
     }
 }

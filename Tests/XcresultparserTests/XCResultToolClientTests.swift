@@ -5,7 +5,7 @@ import Testing
 @MainActor
 struct XCResultToolClientTests {
     @Test
-    func testGetBuildResultsUsesExpectedCommandAndDecodes() throws {
+    func testGetBuildResultsUsesExpectedCommandAndDecodes() async throws {
         let json = """
         {
           "destination": {
@@ -23,15 +23,15 @@ struct XCResultToolClientTests {
         let client = XCResultToolClient(shell: shell)
         let path = URL(fileURLWithPath: "/tmp/test.xcresult")
 
-        let result = try client.getBuildResults(path: path)
+        let result = try await client.getBuildResults(path: path)
 
         #expect(result.destination.deviceName == "My Mac")
-        #expect(shell.lastProgram == "/usr/bin/xcrun")
-        #expect(shell.lastArguments == ["xcresulttool", "get", "build-results", "--path", "/tmp/test.xcresult"])
+        #expect(await shell.lastProgram == "/usr/bin/xcrun")
+        #expect(await shell.lastArguments == ["xcresulttool", "get", "build-results", "--path", "/tmp/test.xcresult", "--compact"])
     }
 
     @Test
-    func testGetTestDetailsUsesExpectedCommandAndDecodes() throws {
+    func testGetTestDetailsUsesExpectedCommandAndDecodes() async throws {
         let json = """
         {
           "testIdentifier": "A/B",
@@ -50,18 +50,19 @@ struct XCResultToolClientTests {
         let client = XCResultToolClient(shell: shell)
         let path = URL(fileURLWithPath: "/tmp/test.xcresult")
 
-        let result = try client.getTestDetails(path: path, testId: "A/B")
+        let result = try await client.getTestDetails(path: path, testId: "A/B")
 
         #expect(result.testName == "testFoo()")
-        #expect(shell.lastArguments == [
+        #expect(await shell.lastArguments == [
             "xcresulttool", "get", "test-results", "test-details",
             "--path", "/tmp/test.xcresult",
-            "--test-id", "A/B"
+            "--test-id", "A/B",
+            "--compact"
         ])
     }
 
     @Test
-    func testGetMetricsDecodesObjectAsSingleElementArray() throws {
+    func testGetMetricsDecodesObjectAsSingleElementArray() async throws {
         let json = """
         {
           "testIdentifier": "PerfTests/testExample()",
@@ -89,7 +90,7 @@ struct XCResultToolClientTests {
         let shell = CapturingCommandline(response: Data(json.utf8))
         let client = XCResultToolClient(shell: shell)
 
-        let result = try client.getMetrics(path: URL(fileURLWithPath: "/tmp/test.xcresult"), testId: "PerfTests/testExample()")
+        let result = try await client.getMetrics(path: URL(fileURLWithPath: "/tmp/test.xcresult"), testId: "PerfTests/testExample()")
 
         #expect(result.count == 1)
         #expect(result[0].testRuns.count == 1)
@@ -97,22 +98,22 @@ struct XCResultToolClientTests {
     }
 
     @Test
-    func testGetMetricsDecodesEmptyArray() throws {
+    func testGetMetricsDecodesEmptyArray() async throws {
         let shell = CapturingCommandline(response: Data("[]".utf8))
         let client = XCResultToolClient(shell: shell)
 
-        let result = try client.getMetrics(path: URL(fileURLWithPath: "/tmp/test.xcresult"), testId: "NoPerf/test")
+        let result = try await client.getMetrics(path: URL(fileURLWithPath: "/tmp/test.xcresult"), testId: "NoPerf/test")
 
         #expect(result.isEmpty)
     }
 
     @Test
-    func testGetMetricsThrowsForUnexpectedPayload() throws {
+    func testGetMetricsThrowsForUnexpectedPayload() async throws {
         let shell = CapturingCommandline(response: Data("{\"foo\":\"bar\"}".utf8))
         let client = XCResultToolClient(shell: shell)
 
         do {
-            _ = try client.getMetrics(path: URL(fileURLWithPath: "/tmp/test.xcresult"), testId: "NoPerf/test")
+            _ = try await client.getMetrics(path: URL(fileURLWithPath: "/tmp/test.xcresult"), testId: "NoPerf/test")
             Issue.record("Expected getMetrics to throw for unexpected payload.")
         } catch let error as XCResultToolClient.ToolClientError {
             switch error {

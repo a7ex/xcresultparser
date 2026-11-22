@@ -7,11 +7,11 @@
 
 import Foundation
 
-protocol XCCovProviding {
-    func getCoverageData(path: URL) throws -> FileCoverage
-    func getCoverageReport(path: URL) throws -> CoverageReport
-    func getCoverageForFile(path: URL, filePath: String) throws -> String
-    func getCoverageFileList(path: URL) throws -> [String]
+protocol XCCovProviding: Sendable {
+    func getCoverageData(path: URL) async throws -> FileCoverage
+    func getCoverageReport(path: URL) async throws -> CoverageReport
+    func getCoverageForFile(path: URL, filePath: String) async throws -> String
+    func getCoverageFileList(path: URL) async throws -> [String]
 }
 
 struct XCCovClient: XCCovProviding {
@@ -26,35 +26,23 @@ struct XCCovClient: XCCovProviding {
         self.decoder = decoder
     }
 
-    func getCoverageData(path: URL) throws -> FileCoverage {
-        let data = try execute(arguments: coverageDataArguments(for: path))
+    func getCoverageData(path: URL) async throws -> FileCoverage {
+        let data = try await execute(arguments: coverageDataArguments(for: path))
         return try decode(FileCoverage.self, from: data)
     }
 
-    func getCoverageReport(path: URL) throws -> CoverageReport {
-        let data = try execute(arguments: coverageReportArguments(for: path))
+    func getCoverageReport(path: URL) async throws -> CoverageReport {
+        let data = try await execute(arguments: coverageReportArguments(for: path))
         return try decode(CoverageReport.self, from: data)
     }
 
-    /// Like `getCoverageData(path:)`, but terminates xccov if the task is cancelled.
-    func coverageData(path: URL) async throws -> FileCoverage {
-        let data = try await executeCancellable(arguments: coverageDataArguments(for: path))
-        return try decode(FileCoverage.self, from: data)
-    }
-
-    /// Like `getCoverageReport(path:)`, but terminates xccov if the task is cancelled.
-    func coverageReport(path: URL) async throws -> CoverageReport {
-        let data = try await executeCancellable(arguments: coverageReportArguments(for: path))
-        return try decode(CoverageReport.self, from: data)
-    }
-
-    func getCoverageForFile(path: URL, filePath: String) throws -> String {
-        let data = try execute(arguments: viewArguments(for: path) + ["--file", filePath, path.path])
+    func getCoverageForFile(path: URL, filePath: String) async throws -> String {
+        let data = try await execute(arguments: viewArguments(for: path) + ["--file", filePath, path.path])
         return String(decoding: data, as: UTF8.self)
     }
 
-    func getCoverageFileList(path: URL) throws -> [String] {
-        let data = try execute(arguments: viewArguments(for: path) + ["--file-list", path.path])
+    func getCoverageFileList(path: URL) async throws -> [String] {
+        let data = try await execute(arguments: viewArguments(for: path) + ["--file-list", path.path])
         return String(decoding: data, as: UTF8.self).components(separatedBy: "\n")
     }
 
@@ -74,12 +62,8 @@ struct XCCovClient: XCCovProviding {
         ["view", "--report", "--json", path.path]
     }
 
-    private func execute(arguments: [String]) throws -> Data {
-        try shell.execute(program: "/usr/bin/xcrun", with: ["xccov"] + arguments)
-    }
-
-    private func executeCancellable(arguments: [String]) async throws -> Data {
-        try await shell.executeCancellable(program: "/usr/bin/xcrun", with: ["xccov"] + arguments, at: nil)
+    private func execute(arguments: [String]) async throws -> Data {
+        try await shell.execute(program: "/usr/bin/xcrun", with: ["xccov"] + arguments)
     }
 
     private func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
