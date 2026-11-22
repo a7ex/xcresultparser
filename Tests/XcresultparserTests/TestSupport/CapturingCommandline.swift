@@ -3,11 +3,11 @@ import Foundation
 
 final class CapturingCommandline: Commandline {
     let response: Data
-    let error: Error?
+    let error: (any Error)?
     var lastProgram = ""
     var lastArguments: [String] = []
 
-    init(response: Data, error: Error? = nil) {
+    init(response: Data, error: (any Error)? = nil) {
         self.response = response
         self.error = error
     }

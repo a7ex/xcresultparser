@@ -6,11 +6,16 @@
 //
 
 import Foundation
+import SystemPackage
 
-protocol FileManaging {
-    func fileExists(atPath path: String, isDirectory: UnsafeMutablePointer<ObjCBool>?) -> Bool
+/// The file system queries JunitXML needs, so tests can replace them.
+protocol FileManaging: Sendable {
+    /// Whether a directory exists at `path`. An empty path is never a directory.
+    func directoryExists(atPath path: String) -> Bool
 }
 
 extension FileManager: FileManaging {
-    // just add protocol conformance to Foundation's FileManager
+    func directoryExists(atPath path: String) -> Bool {
+        (try? FilePath(path).stat().type) == .directory
+    }
 }

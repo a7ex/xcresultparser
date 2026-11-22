@@ -3,40 +3,79 @@ name: Swift
 on:
   push:
     branches: [ main ]
+  # Every pull request, including ones stacked on another pull request's branch.
   pull_request:
-    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Jobs get no token permissions unless they ask for them.
+permissions: {}
 
 jobs:
   build:
+    name: Build and test (${{ matrix.os }}, Xcode ${{ matrix.xcode }})
 
-    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Newest Xcode on the newest runner (macOS 27, currently a GitHub preview image).
+          - os: xcode-27
+            xcode: '27.2'
+            # Only publish the binary built with the latest toolchain.
+            upload-binary: true
+          # Newest Xcode 26 on the runner in between.
+          - os: macos-26
+            xcode: '26.6'
+          # Oldest supported Xcode (see Package.swift) on the oldest runner.
+          - os: macos-15
+            xcode: '26.0.1'
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
 
     permissions:
       contents: read
-      checks: write
+
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
+      BUILD_ARGS: -c release --arch arm64 --arch x86_64 --disable-sandbox
 
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@v7.0.1
+      with:
+        persist-credentials: false
     - name: Build
-      run: swift build -c release --disable-sandbox --arch arm64 --arch x86_64
+      run: |
+        swift build $BUILD_ARGS
+        # The universal build output moved from .build/apple to .build/out in Swift 6.4, so ask SwiftPM.
+        BIN_PATH=$(swift build $BUILD_ARGS --show-bin-path)
+        echo "BIN_PATH=$BIN_PATH" >> "$GITHUB_ENV"
     - name: Run tests
       run: |
         mkdir -p .build/test-results
         swift test -v --xunit-output .build/test-results/tests.xml --experimental-xunit-message-failure
     - name: Test report
-      uses: dorny/test-reporter@v3
+      # Written to the job summary (use-actions-summary), which needs no token permissions,
+      # so it also works for pull requests from forks.
       if: always()
+      uses: dorny/test-reporter@v3.0.0
       with:
-        name: Test Results
+        name: Test Results (${{ matrix.os }}, Xcode ${{ matrix.xcode }})
         path: .build/test-results/tests-swift-testing.xml
         reporter: java-junit
-    - uses: actions/upload-artifact@v7
+        use-actions-summary: 'true'
+    - uses: actions/upload-artifact@v7.0.2
       if: always()
       with:
-          name: test-results
+          name: test-results-${{ matrix.os }}-xcode-${{ matrix.xcode }}
           path: .build/test-results/*.xml
           if-no-files-found: error
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@v7.0.2
+      if: matrix.upload-binary
       with:
           name: xcresultparser
-          path: .build/apple/Products/Release/xcresultparser
+          path: ${{ env.BIN_PATH }}/xcresultparser
+          if-no-files-found: error

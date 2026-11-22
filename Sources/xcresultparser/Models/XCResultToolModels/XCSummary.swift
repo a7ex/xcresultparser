@@ -29,7 +29,7 @@ struct XCSummary: Codable {
 }
 
 extension XCSummary {
-    init(from decoder: Decoder) throws {
+    init(from decoder: any Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         title = try values.decode(String.self, forKey: .title)
         environmentDescription = try values.decode(String.self, forKey: .environmentDescription)

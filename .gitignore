@@ -99,3 +99,4 @@ TestResults/
 .scannerwork/
 sonarqube-coverage.xml
 sonarqube-testresults.xml
+.DS_Store
