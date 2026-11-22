@@ -61,7 +61,7 @@ jobs:
       # Written to the job summary (use-actions-summary), which needs no token permissions,
       # so it also works for pull requests from forks.
       if: always()
-      uses: dorny/test-reporter@v3.0.0
+      uses: dorny/test-reporter@v3.2.0
       with:
         name: Test Results (${{ matrix.os }}, Xcode ${{ matrix.xcode }})
         path: .build/test-results/tests-swift-testing.xml
