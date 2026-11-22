@@ -29,7 +29,8 @@ jobs:
       run: |
         swift build $BUILD_ARGS
         # The universal build output moved from .build/apple to .build/out in Swift 6.4, so ask SwiftPM.
-        echo "BIN_PATH=$(swift build $BUILD_ARGS --show-bin-path)" >> "$GITHUB_ENV"
+        BIN_PATH=$(swift build $BUILD_ARGS --show-bin-path)
+        echo "BIN_PATH=$BIN_PATH" >> "$GITHUB_ENV"
 
     - name: Attest build provenance
       uses: actions/attest@v4.2.2
