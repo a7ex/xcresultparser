@@ -47,4 +47,34 @@ struct SafeReplacementTests {
         #expect(!FileManager.default.directoryExists(atPath: missing.path + "/.."))
         #expect(FileManager.default.directoryExists(atPath: directoryLink.path + "/.."))
     }
+
+    @Test
+    func followsRelativeLinkChainsAndRejectsCycles() throws {
+        let manager = FileManager.default
+        let root = manager.temporaryDirectory.appending(path: UUID().uuidString)
+        let links = root.appending(path: "links")
+        try manager.createDirectory(at: links, withIntermediateDirectories: true)
+        defer { try? manager.removeItem(at: root) }
+        let file = root.appending(path: "file")
+        try Data().write(to: file)
+
+        func link(_ name: String, to target: String) throws -> String {
+            let path = links.appending(path: name).path
+            try manager.createSymbolicLink(atPath: path, withDestinationPath: target)
+            return path
+        }
+
+        let chain = try link("chain", to: "directory")
+        _ = try link("directory", to: "..")
+        let fileLink = try link("file-link", to: "../file")
+        let invalid = try link("invalid", to: "../file/..")
+        let cycle = try link("first", to: "second")
+        _ = try link("second", to: "first")
+
+        #expect(manager.directoryExists(atPath: chain))
+        #expect(manager.directoryExists(atPath: chain + "/"))
+        #expect(!manager.directoryExists(atPath: fileLink + "/"))
+        #expect(!manager.directoryExists(atPath: invalid))
+        #expect(!manager.directoryExists(atPath: cycle))
+    }
 }
