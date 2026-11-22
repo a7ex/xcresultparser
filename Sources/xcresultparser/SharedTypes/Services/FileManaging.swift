@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SystemPackage
 
 /// The file system queries JunitXML needs, so tests can replace them.
 protocol FileManaging: Sendable {
@@ -15,27 +16,6 @@ protocol FileManaging: Sendable {
 
 extension FileManager: FileManaging {
     func directoryExists(atPath path: String) -> Bool {
-        guard !path.isEmpty else { return false }
-        var candidate = path
-        for depth in 0...Int(MAXSYMLINKS) {
-            while candidate.count > 1 && candidate.hasSuffix("/") {
-                candidate.removeLast()
-            }
-            let attributes = try? attributesOfItem(atPath: candidate)
-            switch attributes?[.type] as? FileAttributeType {
-            case .typeDirectory:
-                return true
-            case .typeSymbolicLink:
-                guard depth < Int(MAXSYMLINKS),
-                      let target = try? destinationOfSymbolicLink(atPath: candidate) else { return false }
-                // Relative targets start at the link's parent. Preserve ".." so the
-                // filesystem checks each preceding component as it traverses the path.
-                let parent = candidate.lastIndex(of: "/").map { candidate[...$0] } ?? ""
-                candidate = target.hasPrefix("/") ? target : parent + target
-            default:
-                return false
-            }
-        }
-        return false
+        (try? FilePath(path).stat().type) == .directory
     }
 }

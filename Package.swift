@@ -60,7 +60,8 @@ let package = Package(
         .package(
             url: "https://github.com/apple/swift-argument-parser.git",
             from: "1.8.0"
-        )
+        ),
+        .package(url: "https://github.com/apple/swift-system.git", from: "1.9.0")
     ] + swiftLintDependencies,
     targets: [
         .executableTarget(
@@ -76,6 +77,7 @@ let package = Package(
                     name: "ArgumentParser",
                     package: "swift-argument-parser"
                 ),
+                .product(name: "SystemPackage", package: "swift-system"),
             ],
             path: "Sources",
             swiftSettings: swiftSettings,
