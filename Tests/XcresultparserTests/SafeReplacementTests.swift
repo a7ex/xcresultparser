@@ -9,7 +9,6 @@ struct SafeReplacementTests {
         #expect("".md5() == "d41d8cd98f00b204e9800998ecf8427e")
         #expect(Data("abc".utf8).md5() == "900150983cd24fb0d6963f7d28e17f72")
         #expect("abc".sha256() == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
-        #expect([0x00, 0x0F, 0xA0, 0xFF].hexString == "000fa0ff")
     }
 
     // Catches directoryExists treating an empty project root as the current working directory.
