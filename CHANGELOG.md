@@ -6,10 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version 3.0.0 - 2026-11-22
 ### CHANGES:
-- **Breaking change for Swift library clients:** Use `try await` when creating `XCResultFormatter`, `JunitXML`, `IssuesJSON`, or a coverage converter. For example, change `try JunitXML(with: url)` to `try await JunitXML(with: url)` in an async context.
+- **Breaking change for Swift library clients:** The initialisers of `XCResultFormatter`, `JunitXML`, `IssuesJSON`, `CoberturaCoverageConverter` and `SonarCoverageConverter` are now `async`. For example, change `try JunitXML(with: url)` to `try await JunitXML(with: url)` in an async context.
+- Run the `xcresulttool` calls concurrently for all output formats, and only run `xccov` when coverage data is needed. On large result bundles, `junit` and `xml` output, with or without `--coverage`, is about 30% faster.
+- Run `xcresulttool` and `xccov` with [swift-subprocess](https://github.com/swiftlang/swift-subprocess). The package now depends on swift-subprocess and swift-system.
 - Raise the minimum supported platform to macOS 15. Building from source now needs Xcode 26.2 or newer (swift-tools-version 6.2.3; swift-subprocess needs the Xcode 26.2 SDK).
 - Build in the Swift 6 language mode with the remaining upcoming features, strict memory safety and warnings as errors enabled.
 - `make install` now finds the built binary with `swift build --show-bin-path`, so it also works with Swift 6.4, which writes universal builds to `.build/out`.
+
+Thanks to [Brett Best](https://github.com/Brett-Best) for the Swift 6.2 modernisation and the move to swift-subprocess (#73, #74)!
 
 ## Version 2.3.0 - 2026-11-18
 ### CHANGES:
