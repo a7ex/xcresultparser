@@ -98,7 +98,7 @@ xcresultparser --help
 ```
 You should see the tool respond like this:
 ```
-OVERVIEW: xcresultparser 2.3.0
+OVERVIEW: xcresultparser 3.0.0
 Interpret binary .xcresult files and print summary in different formats: txt,
 xml, html or colored cli output.
 

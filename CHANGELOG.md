@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## Version 3.0.0 - 2026-11-22
 ### CHANGES:
 - **Breaking change for Swift library clients:** Use `try await` when creating `XCResultFormatter`, `JunitXML`, `IssuesJSON`, or a coverage converter. For example, change `try JunitXML(with: url)` to `try await JunitXML(with: url)` in an async context.
 - Raise the minimum supported platform to macOS 15. Building from source now needs Xcode 26.2 or newer (swift-tools-version 6.2.3; swift-subprocess needs the Xcode 26.2 SDK).
